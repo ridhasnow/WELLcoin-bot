@@ -22,7 +22,38 @@ app.listen(PORT, () => {
 });
 
 // Handle /start and send Web App button
+const fs = require('fs');
+
+// تحميل بيانات اللاعبين من ملف JSON
+let players = {};
+const dataFile = 'players.json';
+
+// إذا الملف موجود، نقرأه
+if (fs.existsSync(dataFile)) {
+  players = JSON.parse(fs.readFileSync(dataFile));
+}
+
+// عند دخول مستخدم جديد أو قديم
 bot.start((ctx) => {
+  const userId = ctx.from.id;
+  const username = ctx.from.username || ctx.from.first_name;
+
+  // إذا اللاعب جديد
+  if (!players[userId]) {
+    players[userId] = {
+      id: userId,
+      username: username,
+      coins: 0,
+      miningSpeed: 0.2,
+      lastMineTime: Date.now()
+    };
+    fs.writeFileSync(dataFile, JSON.stringify(players, null, 2));
+    ctx.reply(`Welcome ${username}!\nYour game account has been created 🎮`);
+  } else {
+    ctx.reply(`Welcome back ${username}!\nYour progress has been loaded 🔁`);
+  }
+});
+
   ctx.reply("Welcome to WELLcoin Game!", {
     reply_markup: {
       keyboard: [
