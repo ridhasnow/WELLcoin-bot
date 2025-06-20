@@ -1,24 +1,42 @@
 const { Telegraf } = require("telegraf");
 const express = require("express");
 const app = express();
+const path = require("path");
 
-// ضع توكن البوت هنا
+// Telegram bot token
 const bot = new Telegraf("7532250033:AAFtD6O80O4rTOeoHHnYKTFDa1yFLpxxrR8");
 
+// Middleware to handle Telegram Webhook
+app.use(bot.webhookCallback("/"));
+
+// Start command
 bot.start((ctx) => {
-  ctx.reply("أهلاً بك في لعبة WELLcoin 💰! اضغط على الأزرار للبدء.");
+  ctx.reply("🎮 Welcome to the WELLcoin game! Tap the buttons below to start mining.");
 });
 
+// Me command
 bot.command("me", (ctx) => {
-  ctx.reply("🔍 معلومات حسابك:\nرصيدك: 0.2 WELLcoin\nحالتك: فقير");
+  ctx.reply("🔍 Your account info:\nBalance: 0.2 WELLcoin\nStatus: Poor");
 });
 
-bot.launch();
+// Serve static frontend files from /public
+app.use(express.static("public"));
 
+// Serve index.html from root
 app.get("/", (req, res) => {
-  res.send("Bot is running...");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(3000, () => {
-  console.log("Web server running on port 3000");
+// Start Express server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Web server running on port ${PORT}`);
+});
+
+// Launch bot using Webhook (for Render)
+bot.launch({
+  webhook: {
+    domain: "https://wellcoin-bot.onrender.com",
+    port: PORT,
+  },
 });
