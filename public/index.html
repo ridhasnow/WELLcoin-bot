@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WELLcoin Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header, footer {
+      background: #333;
+      color: white;
+      padding: 10px;
+      text-align: center;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .character {
+      width: 150px;
+      height: 150px;
+      background: gray;
+      border-radius: 20px;
+    }
+    .bottom-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 10px;
+    }
+    .bottom-buttons button {
+      flex: 1;
+      margin: 5px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <header>💰 WELLcoin Game</header>
+  <main>
+    <div class="character">[character]</div>
+  </main>
+  <footer>
+    <div class="bottom-buttons">
+      <button>Me</button>
+      <button>Shop</button>
+      <button>Mission</button>
+      <button>Invite</button>
+    </div>
+  </footer>
+</body>
+</html>
