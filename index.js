@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 
 // ضع توكن البوت هنا
-const bot = new Telegraf("YOUR_TELEGRAM_BOT_TOKEN");
+const bot = new Telegraf("7532250033:AAFtD6O80O4rTOeoHHnYKTFDa1yFLpxxrR8");
 
 bot.start((ctx) => {
   ctx.reply("أهلاً بك في لعبة WELLcoin 💰! اضغط على الأزرار للبدء.");
