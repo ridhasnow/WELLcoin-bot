@@ -28,6 +28,11 @@
       height: 36px;
       margin-right: 10px;
       cursor: pointer;
+      border: 1px solid #ffd700;
+      border-radius: 50%;
+      padding: 4px;
+      background-color: #111;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
     }
 
     .character-container {
@@ -46,18 +51,38 @@
 
     .mining-bar {
       position: absolute;
-      bottom: 70px;
+      bottom: 85px;
       left: 50%;
       transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.6);
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 18px;
-      color: gold;
+      background-color: rgba(0, 0, 0, 0.4);
+      padding: 10px 18px;
+      border-radius: 18px;
+      font-size: 14px;
       font-weight: bold;
-      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-      text-align: center;
+      color: #ffd700;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
       border: 1px solid #ffd700;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .timer {
+      position: absolute;
+      bottom: 125px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 40px;
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 2px solid #ffd700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      color: #ffd700;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
     }
 
     .bottom-buttons {
@@ -87,86 +112,6 @@
       color: #000;
       font-weight: bold;
     }
-
-    /* SHOP MODAL */
-    .shop-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 1000;
-      display: none;
-      flex-direction: column;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .shop-title {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      text-align: center;
-      border-bottom: 2px solid #ffd700;
-      padding-bottom: 10px;
-    }
-
-    .shop-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 15px;
-      margin-top: 20px;
-    }
-
-    .item-card {
-      background-color: #111;
-      border: 1px solid #ffd700;
-      border-radius: 12px;
-      padding: 10px;
-      text-align: center;
-      color: #ffd700;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
-    }
-
-    .item-card img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      margin-bottom: 8px;
-    }
-
-    .item-title {
-      font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    .item-desc {
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-
-    .item-price {
-      font-size: 13px;
-      font-style: italic;
-    }
-
-    .close-shop {
-      margin-top: 20px;
-      padding: 8px 16px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ffd700;
-      background-color: #222;
-      color: #ffd700;
-      cursor: pointer;
-    }
-
-    .close-shop:hover {
-      background-color: #ffd700;
-      color: #000;
-    }
   </style>
 </head>
 <body>
@@ -176,6 +121,7 @@
 
   <div class="character-container">
     <img src="character.png" class="character" alt="Player Character" />
+    <div class="timer" id="timer">3:00</div>
     <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
   </div>
 
@@ -186,18 +132,33 @@
     <button class="btn">Invite</button>
   </div>
 
-  <!-- SHOP MODAL -->
-  <div class="shop-modal" id="shop-modal">
-    <div class="shop-title">🛒 WELLcoin Shop</div>
-    <div class="shop-grid">
-      <div class="item-card">
-        <img src="suit.png" alt="Fancy Suit" />
-        <div class="item-title">Fancy Suit</div>
-        <div class="item-desc">+0.0000010000/day</div>
-        <div class="item-price">10 WLC</div>
-      </div>
+  <script>
+    // التعدين الديناميكي
+    let coins = 0;
+    let active = true;
+    let secondsLeft = 3 * 60 * 60; // 3 ساعات
 
-      <!-- Add 19 more empty slots for future items -->
-      <!-- Example: -->
-      <div class="item-card">Coming Soon</div>
-      <div class="item-card">Coming Soon</div>
+    function updateMining() {
+      if (active) {
+        coins += (0.01 / (24 * 60 * 60));
+        document.getElementById("coin-count").textContent = coins.toFixed(10);
+      }
+    }
+
+    function updateTimer() {
+      if (secondsLeft > 0) {
+        secondsLeft--;
+        const hrs = Math.floor(secondsLeft / 3600);
+        const mins = Math.floor((secondsLeft % 3600) / 60);
+        const secs = secondsLeft % 60;
+        document.getElementById("timer").textContent = `${hrs}:${mins.toString().padStart(2, '0')}`;
+      } else {
+        active = false;
+      }
+    }
+
+    setInterval(updateMining, 1000);
+    setInterval(updateTimer, 1000);
+  </script>
+</body>
+</html>
