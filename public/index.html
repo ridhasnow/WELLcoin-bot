@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>WELLcoin Game</title>
     <style>
       body {
@@ -46,31 +46,39 @@
 
       .mining-bar {
         position: absolute;
-        bottom: 90px;
+        bottom: 70px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: #222;
-        border: 2px solid #ffd700;
-        padding: 8px 16px;
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: 10px 20px;
         border-radius: 20px;
-        font-size: 14px;
+        font-size: 18px;
+        color: gold;
+        font-weight: bold;
+        font-family: 'Segoe UI', sans-serif;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        text-align: center;
+        border: 1px solid #ffd700;
       }
 
       .bottom-buttons {
         display: flex;
-        justify-content: space-around;
+        justify-content: space-between;
+        gap: 6px;
         background-color: #111;
-        padding: 12px 0;
+        padding: 10px;
         border-top: 2px solid #ffd700;
       }
 
       .btn {
+        flex: 1;
+        text-align: center;
         color: #ffd700;
         background-color: #222;
         border: 1px solid #ffd700;
-        border-radius: 12px;
-        padding: 10px 16px;
-        font-size: 14px;
+        border-radius: 14px;
+        padding: 12px 0;
+        font-size: 16px;
         cursor: pointer;
         transition: 0.2s;
       }
@@ -78,9 +86,11 @@
       .btn:hover {
         background-color: #ffd700;
         color: #000;
+        font-weight: bold;
       }
     </style>
   </head>
+
   <body>
     <header>
       <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
@@ -88,7 +98,7 @@
 
     <div class="character-container">
       <img src="character.png" class="character" alt="Player Character" />
-      <div class="mining-bar">Mining Speed: 0.01 WELLcoin / 24h</div>
+      <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.01</span> WELLcoin / 24h</div>
     </div>
 
     <div class="bottom-buttons">
