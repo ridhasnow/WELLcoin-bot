@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WELLcoin Game</title>
     <style>
       body {
@@ -23,19 +23,15 @@
         padding: 10px;
       }
 
-      #ranked-wrapper {
-        background-color: rgba(34, 34, 34, 0.7);
-        border: 1px solid #ffd700;
-        border-radius: 10px;
-        padding: 5px;
-        box-shadow: 0 0 8px #ffd70088;
-      }
-
       #ranked {
         width: 36px;
         height: 36px;
+        margin-right: 10px;
         cursor: pointer;
-        display: block;
+        border: 2px solid #ffd700;
+        border-radius: 10px;
+        padding: 2px;
+        box-shadow: 0 0 10px #ffd70088;
       }
 
       .character-container {
@@ -44,50 +40,47 @@
         align-items: center;
         justify-content: center;
         position: relative;
+        flex-direction: column;
       }
 
       .character {
         max-height: 100%;
         max-width: 100%;
         object-fit: contain;
+        cursor: pointer;
       }
 
       .mining-bar {
         position: absolute;
-        bottom: 58px;
+        bottom: 72px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.4);
+        background-color: rgba(34, 34, 34, 0.6);
+        border: 2px solid #ffd700;
         padding: 8px 20px;
         border-radius: 20px;
-        font-size: 16px;
-        color: gold;
-        font-weight: bold;
-        font-family: 'Segoe UI', sans-serif;
+        font-size: 14px;
         text-align: center;
-        border: 1px solid #ffd700;
-        box-shadow: 0 0 8px #ffd70055;
-        white-space: nowrap;
+        box-shadow: 0 0 12px #ffd70088;
       }
 
       .bottom-buttons {
         display: flex;
-        justify-content: space-between;
-        gap: 6px;
+        justify-content: space-around;
         background-color: #111;
-        padding: 10px;
+        padding: 12px 8px;
         border-top: 2px solid #ffd700;
       }
 
       .btn {
         flex: 1;
-        text-align: center;
+        margin: 0 4px;
         color: #ffd700;
         background-color: #222;
         border: 1px solid #ffd700;
-        border-radius: 14px;
-        padding: 12px 0;
-        font-size: 16px;
+        border-radius: 12px;
+        padding: 10px 0;
+        font-size: 14px;
         cursor: pointer;
         transition: 0.2s;
       }
@@ -95,21 +88,17 @@
       .btn:hover {
         background-color: #ffd700;
         color: #000;
-        font-weight: bold;
       }
     </style>
   </head>
-
   <body>
     <header>
-      <div id="ranked-wrapper">
-        <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
-      </div>
+      <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
     </header>
 
     <div class="character-container">
-      <img src="character.png" class="character" alt="Player Character" />
-      <div class="mining-bar">⛏️ 0.01 WELLcoin / 24h</div>
+      <img src="character.png" class="character" alt="Player Character" onclick="restartMining()" />
+      <div class="mining-bar" id="miningBar">⛏️ Mining: 0.0000000000 WELLcoin / 24h</div>
     </div>
 
     <div class="bottom-buttons">
@@ -118,5 +107,45 @@
       <button class="btn">Missions</button>
       <button class="btn">Invite</button>
     </div>
+
+    <script>
+      let coins = 0;
+      let speed = 0.01 / (24 * 60 * 60); // per second
+      let interval;
+      let stopTimeout;
+
+      function formatCoins(value) {
+        return value.toFixed(10);
+      }
+
+      function updateMiningBar(paused = false) {
+        const bar = document.getElementById('miningBar');
+        bar.textContent = `⛏️ Mining: ${formatCoins(coins)} WELLcoin / 24h${paused ? ' (Paused ⏸️)' : ''}`;
+      }
+
+      function startMining() {
+        if (interval) return;
+        updateMiningBar();
+        interval = setInterval(() => {
+          coins += speed;
+          updateMiningBar();
+        }, 1000);
+        stopTimeout = setTimeout(stopMining, 3 * 60 * 60 * 1000); // 3 hours
+      }
+
+      function stopMining() {
+        clearInterval(interval);
+        clearTimeout(stopTimeout);
+        interval = null;
+        updateMiningBar(true);
+      }
+
+      function restartMining() {
+        stopMining();
+        startMining();
+      }
+
+      startMining();
+    </script>
   </body>
 </html>
