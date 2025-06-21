@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WELLcoin Game</title>
     <style>
       body {
@@ -14,7 +14,6 @@
         flex-direction: column;
         height: 100vh;
         overflow: hidden;
-        -webkit-tap-highlight-color: transparent; /* إلغاء الوميض الأزرق عند الضغط */
       }
 
       header {
@@ -30,10 +29,10 @@
         margin-right: 10px;
         cursor: pointer;
         border: 2px solid #ffd700;
-        border-radius: 50%;
+        border-radius: 8px;
         padding: 4px;
         background-color: #111;
-        box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+        box-shadow: 0 0 8px #ffd70050;
       }
 
       .character-container {
@@ -42,41 +41,43 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        flex-direction: column;
       }
 
       .character {
         max-height: 100%;
         max-width: 100%;
         object-fit: contain;
-        cursor: pointer;
-      }
-
-      .timer {
-        margin-top: 8px;
-        font-size: 16px;
-        color: #ffd700;
-        background-color: rgba(0, 0, 0, 0.4);
-        padding: 6px 14px;
-        border-radius: 16px;
-        border: 1px solid #ffd700;
-        font-weight: bold;
-        text-shadow: 0 0 4px gold;
       }
 
       .mining-bar {
-        position: relative;
-        background-color: rgba(0, 0, 0, 0.6);
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 18px;
+        position: absolute;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 8px 18px;
+        border-radius: 16px;
+        font-size: 16px;
         color: gold;
         font-weight: bold;
         font-family: 'Segoe UI', sans-serif;
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        text-align: center;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
         border: 1px solid #ffd700;
-        margin-top: 12px;
+        text-align: center;
+      }
+
+      .timer {
+        position: absolute;
+        bottom: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.3);
+        color: #ffd700;
+        font-size: 14px;
+        padding: 4px 10px;
+        border-radius: 50px;
+        border: 1px solid #ffd700;
+        box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
       }
 
       .bottom-buttons {
@@ -99,75 +100,23 @@
         font-size: 16px;
         cursor: pointer;
         transition: 0.2s;
+        outline: none;
+        user-select: none;
       }
 
       .btn:focus {
         outline: none;
       }
 
+      .btn:active {
+        transform: scale(0.98);
+        background-color: #333;
+      }
+
       .btn:hover {
         background-color: #ffd700;
         color: #000;
         font-weight: bold;
-      }
-
-      #shop-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.95);
-        display: none;
-        flex-direction: column;
-        color: #ffd700;
-        z-index: 1000;
-        padding: 20px;
-        overflow-y: auto;
-      }
-
-      .shop-title {
-        font-size: 24px;
-        margin-bottom: 20px;
-        text-align: center;
-        border-bottom: 2px solid #ffd700;
-        padding-bottom: 10px;
-      }
-
-      .shop-items {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 16px;
-      }
-
-      .shop-item {
-        background-color: #111;
-        border: 1px solid #ffd700;
-        padding: 12px;
-        border-radius: 14px;
-        text-align: center;
-      }
-
-      .shop-item img {
-        width: 100%;
-        height: auto;
-        border-radius: 10px;
-        margin-bottom: 10px;
-      }
-
-      .shop-item .name {
-        font-weight: bold;
-        margin-bottom: 6px;
-      }
-
-      .shop-item .effect {
-        font-size: 13px;
-        margin-bottom: 4px;
-      }
-
-      .shop-item .price {
-        font-size: 14px;
-        color: #aaa;
       }
     </style>
   </head>
@@ -178,76 +127,56 @@
     </header>
 
     <div class="character-container">
-      <img src="character.png" class="character" id="character" alt="Player Character" />
-      <div class="timer" id="timer">03:00:00</div>
+      <img src="character.png" class="character" alt="Player Character" onclick="restartMiningTimer()" />
       <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
+      <div class="timer" id="countdown">3:00:00</div>
     </div>
 
     <div class="bottom-buttons">
       <button class="btn">Me</button>
-      <button class="btn" id="shopBtn">Shop</button>
+      <button class="btn" onclick="openShop()">Shop</button>
       <button class="btn">Missions</button>
       <button class="btn">Invite</button>
     </div>
 
-    <div id="shop-modal">
-      <div class="shop-title">🛒 Shop</div>
-      <div class="shop-items">
-        <div class="shop-item">
-          <div class="name">✨ Elegant Suit</div>
-          <div class="effect">+0.0000010000 / 24h</div>
-          <div class="price">Price: 10 WLC</div>
-        </div>
-        <!-- يمكنك إضافة 19 عنصر آخر هنا لاحقًا -->
-      </div>
-    </div>
-
     <script>
-      let mining = true;
-      let coins = 0;
-      let speed = 0.00000000001157; // 0.01 / (24 * 60 * 60)
-      let timerSeconds = 10800;
+      let coinCount = 0.0;
+      let interval;
+      let countdown = 10800;
 
-      const timerEl = document.getElementById("timer");
-      const countEl = document.getElementById("coin-count");
-      const character = document.getElementById("character");
-      const shopModal = document.getElementById("shop-modal");
-      const shopBtn = document.getElementById("shopBtn");
-
-      function formatTime(secs) {
-        const h = String(Math.floor(secs / 3600)).padStart(2, '0');
-        const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
-        const s = String(secs % 60).padStart(2, '0');
-        return `${h}:${m}:${s}`;
+      function updateCoin() {
+        coinCount += 0.0000001157;
+        document.getElementById("coin-count").textContent = coinCount.toFixed(10);
       }
 
-      function update() {
-        if (mining && timerSeconds > 0) {
-          coins += speed;
-          countEl.textContent = coins.toFixed(10);
-          timerSeconds--;
-          timerEl.textContent = formatTime(timerSeconds);
-        }
+      function updateTimer() {
+        countdown--;
+        const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
+        const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
+        const s = Math.floor(countdown % 60).toString().padStart(2, '0');
+        document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
+
+        if (countdown <= 0) clearInterval(interval);
       }
 
-      setInterval(update, 1000);
+      function startMining() {
+        interval = setInterval(() => {
+          updateCoin();
+          updateTimer();
+        }, 1000);
+      }
 
-      character.addEventListener("click", () => {
-        if (timerSeconds <= 0) {
-          timerSeconds = 10800;
-          mining = true;
-        }
-      });
+      function restartMiningTimer() {
+        countdown = 10800;
+        clearInterval(interval);
+        startMining();
+      }
 
-      shopBtn.addEventListener("click", () => {
-        shopModal.style.display = "flex";
-      });
+      function openShop() {
+        alert("🛒 Shop coming soon!");
+      }
 
-      shopModal.addEventListener("click", (e) => {
-        if (e.target.id === "shop-modal") {
-          shopModal.style.display = "none";
-        }
-      });
+      startMining();
     </script>
   </body>
 </html>
