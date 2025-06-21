@@ -23,11 +23,19 @@
         padding: 10px;
       }
 
+      #ranked-wrapper {
+        background-color: rgba(34, 34, 34, 0.7);
+        border: 1px solid #ffd700;
+        border-radius: 10px;
+        padding: 5px;
+        box-shadow: 0 0 8px #ffd70088;
+      }
+
       #ranked {
         width: 36px;
         height: 36px;
-        margin-right: 10px;
         cursor: pointer;
+        display: block;
       }
 
       .character-container {
@@ -46,19 +54,20 @@
 
       .mining-bar {
         position: absolute;
-        bottom: 70px;
+        bottom: 58px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.6);
-        padding: 10px 20px;
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 8px 20px;
         border-radius: 20px;
-        font-size: 18px;
+        font-size: 16px;
         color: gold;
         font-weight: bold;
         font-family: 'Segoe UI', sans-serif;
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         text-align: center;
         border: 1px solid #ffd700;
+        box-shadow: 0 0 8px #ffd70055;
+        white-space: nowrap;
       }
 
       .bottom-buttons {
@@ -93,12 +102,14 @@
 
   <body>
     <header>
-      <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
+      <div id="ranked-wrapper">
+        <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
+      </div>
     </header>
 
     <div class="character-container">
       <img src="character.png" class="character" alt="Player Character" />
-      <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.01</span> WELLcoin / 24h</div>
+      <div class="mining-bar">⛏️ 0.01 WELLcoin / 24h</div>
     </div>
 
     <div class="bottom-buttons">
