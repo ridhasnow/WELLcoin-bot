@@ -1,237 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WELLcoin Game</title>
-    <style>
-      body {
-        margin: 0;
-        font-family: 'Segoe UI', sans-serif;
-        background-color: #000;
-        color: #ffd700;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WELLcoin Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #000;
+      color: #ffd700;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-      header {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        padding: 10px;
-      }
+    header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 10px;
+    }
 
-      #ranked {
-        width: 36px;
-        height: 36px;
-        margin-right: 10px;
-        cursor: pointer;
-        background-color: #222;
-        border: 2px solid #ffd700;
-        border-radius: 50%;
-        padding: 5px;
-      }
+    #ranked {
+      width: 36px;
+      height: 36px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
 
-      .character-container {
-        flex-grow: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-      }
+    .character-container {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
 
-      .character {
-        max-height: 100%;
-        max-width: 100%;
-        object-fit: contain;
-        cursor: pointer;
-      }
+    .character {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+    }
 
-      .mining-bar {
-        position: absolute;
-        bottom: 78px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.5);
-        border: 2px solid #ffd700;
-        padding: 6px 20px;
-        border-radius: 20px;
-        font-size: 13px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
+    .mining-bar {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 18px;
+      color: gold;
+      font-weight: bold;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      text-align: center;
+      border: 1px solid #ffd700;
+    }
 
-      .timer-circle {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        border: 2px solid #ffd700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        background-color: #111;
-        color: #ffd700;
-      }
+    .bottom-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      background-color: #111;
+      padding: 10px;
+      border-top: 2px solid #ffd700;
+    }
 
-      .bottom-buttons {
-        display: flex;
-        justify-content: space-between;
-        background-color: #111;
-        padding: 12px 4px;
-        border-top: 2px solid #ffd700;
-      }
+    .btn {
+      flex: 1;
+      text-align: center;
+      color: #ffd700;
+      background-color: #222;
+      border: 1px solid #ffd700;
+      border-radius: 14px;
+      padding: 12px 0;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
 
-      .btn {
-        color: #ffd700;
-        background-color: #222;
-        border: 1px solid #ffd700;
-        border-radius: 12px;
-        padding: 10px 14px;
-        font-size: 14px;
-        cursor: pointer;
-        flex: 1;
-        margin: 0 2px;
-        transition: 0.2s;
-      }
+    .btn:hover {
+      background-color: #ffd700;
+      color: #000;
+      font-weight: bold;
+    }
 
-      .btn:hover {
-        background-color: #ffd700;
-        color: #000;
-      }
+    /* SHOP MODAL */
+    .shop-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
+    }
 
-      /* Shop Panel */
-      #shopPanel {
-        display: none;
-        flex-direction: column;
-        padding: 20px;
-        background-color: #000;
-        color: #ffd700;
-        overflow-y: auto;
-        height: 100vh;
-      }
+    .shop-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      text-align: center;
+      border-bottom: 2px solid #ffd700;
+      padding-bottom: 10px;
+    }
 
-      .shop-title {
-        font-size: 20px;
-        margin-bottom: 10px;
-      }
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
 
-      .shop-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-      }
+    .item-card {
+      background-color: #111;
+      border: 1px solid #ffd700;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      color: #ffd700;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+    }
 
-      .shop-item {
-        border: 1px solid #ffd700;
-        background-color: #111;
-        border-radius: 12px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
+    .item-card img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
 
-      .shop-item img {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        margin-bottom: 6px;
-        border-radius: 6px;
-      }
+    .item-title {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
 
-      .shop-item .name {
-        font-weight: bold;
-      }
+    .item-desc {
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
 
-      .shop-item .desc {
-        font-size: 12px;
-        text-align: center;
-        margin: 4px 0;
-      }
+    .item-price {
+      font-size: 13px;
+      font-style: italic;
+    }
 
-      .shop-item .price {
-        font-size: 13px;
-        color: #ffd700;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
-    </header>
+    .close-shop {
+      margin-top: 20px;
+      padding: 8px 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ffd700;
+      background-color: #222;
+      color: #ffd700;
+      cursor: pointer;
+    }
 
-    <div class="character-container">
-      <img src="character.png" class="character" id="character" alt="Player Character" />
-      <div class="mining-bar">
-        <span>⛏ Mining: <span id="miningRate">0.0000000000</span> WELLcoin / 24h</span>
-        <div class="timer-circle" id="timer">3h</div>
+    .close-shop:hover {
+      background-color: #ffd700;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
+  </header>
+
+  <div class="character-container">
+    <img src="character.png" class="character" alt="Player Character" />
+    <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
+  </div>
+
+  <div class="bottom-buttons">
+    <button class="btn">Me</button>
+    <button class="btn" id="shop-btn">Shop</button>
+    <button class="btn">Missions</button>
+    <button class="btn">Invite</button>
+  </div>
+
+  <!-- SHOP MODAL -->
+  <div class="shop-modal" id="shop-modal">
+    <div class="shop-title">🛒 WELLcoin Shop</div>
+    <div class="shop-grid">
+      <div class="item-card">
+        <img src="suit.png" alt="Fancy Suit" />
+        <div class="item-title">Fancy Suit</div>
+        <div class="item-desc">+0.0000010000/day</div>
+        <div class="item-price">10 WLC</div>
       </div>
-    </div>
 
-    <div class="bottom-buttons">
-      <button class="btn" onclick="showMe()">Me</button>
-      <button class="btn" onclick="showShop()">Shop</button>
-      <button class="btn">Missions</button>
-      <button class="btn">Invite</button>
-    </div>
-
-    <div id="shopPanel">
-      <div class="shop-title">🛒 Shop</div>
-      <div class="shop-grid">
-        <div class="shop-item">
-          <img src="suit.png" alt="Fancy Suit">
-          <div class="name">Fancy Suit</div>
-          <div class="desc">+0.0000010000/day Mining Speed</div>
-          <div class="price">💰 10 WLC</div>
-        </div>
-        <!-- Placeholder for 19 more items -->
-      </div>
-    </div>
-
-    <script>
-      let mining = 0;
-      let timerSeconds = 3 * 3600;
-      let miningActive = true;
-
-      function formatRate(num) {
-        return num.toFixed(10);
-      }
-
-      function updateTimer() {
-        const h = Math.floor(timerSeconds / 3600);
-        const m = Math.floor((timerSeconds % 3600) / 60);
-        document.getElementById("timer").innerText = `${h}h`;
-      }
-
-      setInterval(() => {
-        if (miningActive && timerSeconds > 0) {
-          mining += 0.01 / (24 * 3600);
-          timerSeconds--;
-          document.getElementById("miningRate").innerText = formatRate(mining);
-          updateTimer();
-        } else {
-          miningActive = false;
-        }
-      }, 1000);
-
-      document.getElementById("character").addEventListener("click", () => {
-        if (!miningActive) {
-          miningActive = true;
-          timerSeconds = 3 * 3600;
-        }
-      });
-
-      function showShop() {
-        document.getElementById("shopPanel").style.display = "flex";
-      }
-
-      function showMe() {
-        document.getElementById("shopPanel").style.display = "none";
-      }
-    </script>
-  </body>
-</html>
+      <!-- Add 19 more empty slots for future items -->
+      <!-- Example: -->
+      <div class="item-card">Coming Soon</div>
+      <div class="item-card">Coming Soon</div>
