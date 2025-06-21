@@ -1,164 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WELLcoin Game</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #000;
-      color: #ffd700;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    header {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      padding: 10px;
-    }
-
-    #ranked {
-      width: 36px;
-      height: 36px;
-      margin-right: 10px;
-      cursor: pointer;
-      border: 1px solid #ffd700;
-      border-radius: 50%;
-      padding: 4px;
-      background-color: #111;
-      box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
-    }
-
-    .character-container {
-      flex-grow: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-
-    .character {
-      max-height: 100%;
-      max-width: 100%;
-      object-fit: contain;
-    }
-
-    .mining-bar {
-      position: absolute;
-      bottom: 85px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.4);
-      padding: 10px 18px;
-      border-radius: 18px;
-      font-size: 14px;
-      font-weight: bold;
-      color: #ffd700;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
-      border: 1px solid #ffd700;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .timer {
-      position: absolute;
-      bottom: 125px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 40px;
-      height: 40px;
-      background-color: rgba(0, 0, 0, 0.4);
-      border: 2px solid #ffd700;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-      color: #ffd700;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
-    }
-
-    .bottom-buttons {
-      display: flex;
-      justify-content: space-between;
-      gap: 6px;
-      background-color: #111;
-      padding: 10px;
-      border-top: 2px solid #ffd700;
-    }
-
-    .btn {
-      flex: 1;
-      text-align: center;
-      color: #ffd700;
-      background-color: #222;
-      border: 1px solid #ffd700;
-      border-radius: 14px;
-      padding: 12px 0;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .btn:hover {
-      background-color: #ffd700;
-      color: #000;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
-  </header>
-
-  <div class="character-container">
-    <img src="character.png" class="character" alt="Player Character" />
-    <div class="timer" id="timer">3:00</div>
-    <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
-  </div>
-
-  <div class="bottom-buttons">
-    <button class="btn">Me</button>
-    <button class="btn" id="shop-btn">Shop</button>
-    <button class="btn">Missions</button>
-    <button class="btn">Invite</button>
-  </div>
-
-  <script>
-    // التعدين الديناميكي
-    let coins = 0;
-    let active = true;
-    let secondsLeft = 3 * 60 * 60; // 3 ساعات
-
-    function updateMining() {
-      if (active) {
-        coins += (0.01 / (24 * 60 * 60));
-        document.getElementById("coin-count").textContent = coins.toFixed(10);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WELLcoin Game</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #000;
+        color: #ffd700;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
       }
-    }
 
-    function updateTimer() {
-      if (secondsLeft > 0) {
-        secondsLeft--;
-        const hrs = Math.floor(secondsLeft / 3600);
-        const mins = Math.floor((secondsLeft % 3600) / 60);
-        const secs = secondsLeft % 60;
-        document.getElementById("timer").textContent = `${hrs}:${mins.toString().padStart(2, '0')}`;
-      } else {
-        active = false;
+      header {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 10px;
       }
-    }
 
-    setInterval(updateMining, 1000);
-    setInterval(updateTimer, 1000);
-  </script>
-</body>
+      #ranked {
+        width: 36px;
+        height: 36px;
+        margin-right: 10px;
+        cursor: pointer;
+        border: 1px solid #ffd700;
+        border-radius: 50%;
+        padding: 4px;
+        box-shadow: 0 0 8px #ffd700;
+      }
+
+      .character-container {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .character {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+        cursor: pointer;
+      }
+
+      .mining-bar {
+        position: absolute;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 16px;
+        color: gold;
+        font-weight: bold;
+        font-family: 'Segoe UI', sans-serif;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        text-align: center;
+        border: 1px solid #ffd700;
+      }
+
+      .timer-circle {
+        position: absolute;
+        bottom: 130px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #ffd700;
+        font-weight: bold;
+        font-size: 14px;
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+      }
+
+      .bottom-buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+        background-color: #111;
+        padding: 10px;
+        border-top: 2px solid #ffd700;
+      }
+
+      .btn {
+        flex: 1;
+        text-align: center;
+        color: #ffd700;
+        background-color: #222;
+        border: 1px solid #ffd700;
+        border-radius: 14px;
+        padding: 12px 0;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .btn:focus {
+        outline: none;
+      }
+
+      .btn:hover {
+        background-color: #ffd700;
+        color: #000;
+        font-weight: bold;
+      }
+
+      #shop-container {
+        display: none;
+        flex-wrap: wrap;
+        padding: 12px;
+        gap: 10px;
+        justify-content: center;
+        background-color: #000;
+        overflow-y: auto;
+        height: 100%;
+      }
+
+      .item-card {
+        width: 140px;
+        background-color: #111;
+        border: 1px solid #ffd700;
+        border-radius: 12px;
+        padding: 10px;
+        color: #ffd700;
+        text-align: center;
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.2);
+      }
+
+      .item-card img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+      }
+
+      .item-title {
+        font-weight: bold;
+        margin-top: 6px;
+      }
+
+      .item-desc {
+        font-size: 12px;
+        margin: 4px 0;
+      }
+
+      .item-price {
+        font-size: 13px;
+        color: #ffd700;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
+    </header>
+
+    <div class="character-container">
+      <img src="character.png" class="character" alt="Player Character" onclick="resetMining()" />
+      <div class="timer-circle" id="timer">3:00:00</div>
+      <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
+    </div>
+
+    <div class="bottom-buttons">
+      <button class="btn" onclick="showSection('main')">Me</button>
+      <button class="btn" onclick="showSection('shop')">Shop</button>
+      <button class="btn">Missions</button>
+      <button class="btn">Invite</button>
+    </div>
+
+    <div id="shop-container">
+      <div class="item-card">
+        <img src="suit.png" alt="Suit" />
+        <div class="item-title">Elegant Suit</div>
+        <div class="item-desc">+0.0000010000/day</div>
+        <div class="item-price">10 WLC</div>
+      </div>
+      <!-- Space for 19 more -->
+    </div>
+
+    <script>
+      let miningActive = true;
+      let coin = 0;
+      let interval;
+      let timer = 3 * 60 * 60; // 3 hours
+
+      function formatTime(sec) {
+        const h = String(Math.floor(sec / 3600)).padStart(1, '0');
+        const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return `${h}:${m}:${s}`;
+      }
+
+      function updateTimer() {
+        const timerEl = document.getElementById("timer");
+        timerEl.textContent = formatTime(timer);
+        if (timer > 0) timer--;
+        else {
+          clearInterval(interval);
+          miningActive = false;
+        }
+      }
+
+      function updateMining() {
+        if (miningActive) {
+          coin += 0.0000000046296; // 0.01 / 86400
+          document.getElementById("coin-count").textContent = coin.toFixed(10);
+        }
+      }
+
+      function resetMining() {
+        if (!miningActive) {
+          timer = 3 * 60 * 60;
+          miningActive = true;
+          interval = setInterval(() => {
+            updateMining();
+            updateTimer();
+          }, 1000);
+        }
+      }
+
+      function showSection(section) {
+        document.getElementById("shop-container").style.display = section === 'shop' ? 'flex' : 'none';
+      }
+
+      interval = setInterval(() => {
+        updateMining();
+        updateTimer();
+      }, 1000);
+    </script>
+  </body>
 </html>
