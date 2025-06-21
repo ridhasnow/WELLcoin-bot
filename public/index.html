@@ -28,10 +28,10 @@
         height: 36px;
         margin-right: 10px;
         cursor: pointer;
+        background-color: #222;
         border: 2px solid #ffd700;
-        border-radius: 10px;
-        padding: 2px;
-        box-shadow: 0 0 10px #ffd70088;
+        border-radius: 50%;
+        padding: 5px;
       }
 
       .character-container {
@@ -40,7 +40,6 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        flex-direction: column;
       }
 
       .character {
@@ -52,42 +51,111 @@
 
       .mining-bar {
         position: absolute;
-        bottom: 72px;
+        bottom: 78px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: rgba(34, 34, 34, 0.6);
+        background-color: rgba(0, 0, 0, 0.5);
         border: 2px solid #ffd700;
-        padding: 8px 20px;
+        padding: 6px 20px;
         border-radius: 20px;
-        font-size: 14px;
-        text-align: center;
-        box-shadow: 0 0 12px #ffd70088;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .timer-circle {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        background-color: #111;
+        color: #ffd700;
       }
 
       .bottom-buttons {
         display: flex;
-        justify-content: space-around;
+        justify-content: space-between;
         background-color: #111;
-        padding: 12px 8px;
+        padding: 12px 4px;
         border-top: 2px solid #ffd700;
       }
 
       .btn {
-        flex: 1;
-        margin: 0 4px;
         color: #ffd700;
         background-color: #222;
         border: 1px solid #ffd700;
         border-radius: 12px;
-        padding: 10px 0;
+        padding: 10px 14px;
         font-size: 14px;
         cursor: pointer;
+        flex: 1;
+        margin: 0 2px;
         transition: 0.2s;
       }
 
       .btn:hover {
         background-color: #ffd700;
         color: #000;
+      }
+
+      /* Shop Panel */
+      #shopPanel {
+        display: none;
+        flex-direction: column;
+        padding: 20px;
+        background-color: #000;
+        color: #ffd700;
+        overflow-y: auto;
+        height: 100vh;
+      }
+
+      .shop-title {
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+
+      .shop-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .shop-item {
+        border: 1px solid #ffd700;
+        background-color: #111;
+        border-radius: 12px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .shop-item img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        margin-bottom: 6px;
+        border-radius: 6px;
+      }
+
+      .shop-item .name {
+        font-weight: bold;
+      }
+
+      .shop-item .desc {
+        font-size: 12px;
+        text-align: center;
+        margin: 4px 0;
+      }
+
+      .shop-item .price {
+        font-size: 13px;
+        color: #ffd700;
       }
     </style>
   </head>
@@ -97,55 +165,73 @@
     </header>
 
     <div class="character-container">
-      <img src="character.png" class="character" alt="Player Character" onclick="restartMining()" />
-      <div class="mining-bar" id="miningBar">⛏️ Mining: 0.0000000000 WELLcoin / 24h</div>
+      <img src="character.png" class="character" id="character" alt="Player Character" />
+      <div class="mining-bar">
+        <span>⛏ Mining: <span id="miningRate">0.0000000000</span> WELLcoin / 24h</span>
+        <div class="timer-circle" id="timer">3h</div>
+      </div>
     </div>
 
     <div class="bottom-buttons">
-      <button class="btn">Me</button>
-      <button class="btn">Shop</button>
+      <button class="btn" onclick="showMe()">Me</button>
+      <button class="btn" onclick="showShop()">Shop</button>
       <button class="btn">Missions</button>
       <button class="btn">Invite</button>
     </div>
 
+    <div id="shopPanel">
+      <div class="shop-title">🛒 Shop</div>
+      <div class="shop-grid">
+        <div class="shop-item">
+          <img src="suit.png" alt="Fancy Suit">
+          <div class="name">Fancy Suit</div>
+          <div class="desc">+0.0000010000/day Mining Speed</div>
+          <div class="price">💰 10 WLC</div>
+        </div>
+        <!-- Placeholder for 19 more items -->
+      </div>
+    </div>
+
     <script>
-      let coins = 0;
-      let speed = 0.01 / (24 * 60 * 60); // per second
-      let interval;
-      let stopTimeout;
+      let mining = 0;
+      let timerSeconds = 3 * 3600;
+      let miningActive = true;
 
-      function formatCoins(value) {
-        return value.toFixed(10);
+      function formatRate(num) {
+        return num.toFixed(10);
       }
 
-      function updateMiningBar(paused = false) {
-        const bar = document.getElementById('miningBar');
-        bar.textContent = `⛏️ Mining: ${formatCoins(coins)} WELLcoin / 24h${paused ? ' (Paused ⏸️)' : ''}`;
+      function updateTimer() {
+        const h = Math.floor(timerSeconds / 3600);
+        const m = Math.floor((timerSeconds % 3600) / 60);
+        document.getElementById("timer").innerText = `${h}h`;
       }
 
-      function startMining() {
-        if (interval) return;
-        updateMiningBar();
-        interval = setInterval(() => {
-          coins += speed;
-          updateMiningBar();
-        }, 1000);
-        stopTimeout = setTimeout(stopMining, 3 * 60 * 60 * 1000); // 3 hours
+      setInterval(() => {
+        if (miningActive && timerSeconds > 0) {
+          mining += 0.01 / (24 * 3600);
+          timerSeconds--;
+          document.getElementById("miningRate").innerText = formatRate(mining);
+          updateTimer();
+        } else {
+          miningActive = false;
+        }
+      }, 1000);
+
+      document.getElementById("character").addEventListener("click", () => {
+        if (!miningActive) {
+          miningActive = true;
+          timerSeconds = 3 * 3600;
+        }
+      });
+
+      function showShop() {
+        document.getElementById("shopPanel").style.display = "flex";
       }
 
-      function stopMining() {
-        clearInterval(interval);
-        clearTimeout(stopTimeout);
-        interval = null;
-        updateMiningBar(true);
+      function showMe() {
+        document.getElementById("shopPanel").style.display = "none";
       }
-
-      function restartMining() {
-        stopMining();
-        startMining();
-      }
-
-      startMining();
     </script>
   </body>
 </html>
