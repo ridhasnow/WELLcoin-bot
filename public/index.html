@@ -1,61 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WELLcoin Game</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background-color: #f0f0f0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header, footer {
-      background: #333;
-      color: white;
-      padding: 10px;
-      text-align: center;
-    }
-    main {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .character {
-      width: 150px;
-      height: 150px;
-      background: gray;
-      border-radius: 20px;
-    }
-    .bottom-buttons {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 10px;
-    }
-    .bottom-buttons button {
-      flex: 1;
-      margin: 5px;
-      padding: 10px;
-      font-size: 16px;
-    }
-  </style>
-</head>
-<body>
-  <header>💰 WELLcoin Game</header>
-  <main>
-    <div class="character">[character]</div>
-  </main>
-  <footer>
-    <div class="bottom-buttons">
-      <button>Me</button>
-      <button>Shop</button>
-      <button>Mission</button>
-      <button>Invite</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WELLcoin Game</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #000;
+        color: #ffd700;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      header {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 10px;
+      }
+
+      #ranked {
+        width: 36px;
+        height: 36px;
+        margin-right: 10px;
+        cursor: pointer;
+      }
+
+      .character-container {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .character {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+      }
+
+      .mining-bar {
+        position: absolute;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #222;
+        border: 2px solid #ffd700;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+      }
+
+      .bottom-buttons {
+        display: flex;
+        justify-content: space-around;
+        background-color: #111;
+        padding: 12px 0;
+        border-top: 2px solid #ffd700;
+      }
+
+      .btn {
+        color: #ffd700;
+        background-color: #222;
+        border: 1px solid #ffd700;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .btn:hover {
+        background-color: #ffd700;
+        color: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
+    </header>
+
+    <div class="character-container">
+      <img src="character.png" class="character" alt="Player Character" />
+      <div class="mining-bar">Mining Speed: 0.01 WELLcoin / 24h</div>
     </div>
-  </footer>
-</body>
+
+    <div class="bottom-buttons">
+      <button class="btn">Me</button>
+      <button class="btn">Shop</button>
+      <button class="btn">Missions</button>
+      <button class="btn">Invite</button>
+    </div>
+  </body>
 </html>
