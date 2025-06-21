@@ -1,72 +1,50 @@
-
 const { Telegraf } = require("telegraf");
 const express = require("express");
+const fs = require("fs");
 const path = require("path");
-require("dotenv").config();
 
 const app = express();
-const bot = new Telegraf("7532250033:AAFtD6O80O4rTOeoHHnYKTFDa1yFLpxxrR8");
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Serve static files from public folder
+// HTML page (optional, stays same)
 app.use(express.static("public"));
 
-// Web route to serve HTML UI
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+const playersFilePath = path.join(__dirname, "players.json");
 
-// Start Express server
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log("Web server running on port " + PORT);
-});
-
-// Handle /start and send Web App button
-const fs = require('fs');
-
-// تحميل بيانات اللاعبين من ملف JSON
+// تحميل بيانات اللاعبين
 let players = {};
-const dataFile = 'players.json';
-
-// إذا الملف موجود، نقرأه
-if (fs.existsSync(dataFile)) {
-  players = JSON.parse(fs.readFileSync(dataFile));
+if (fs.existsSync(playersFilePath)) {
+  try {
+    const data = fs.readFileSync(playersFilePath);
+    players = JSON.parse(data);
+  } catch (err) {
+    console.error("❌ Error reading players.json:", err);
+  }
 }
 
-// عند دخول مستخدم جديد أو قديم
+// عند تشغيل /start لأول مرة
 bot.start((ctx) => {
-  const userId = ctx.from.id;
-  const username = ctx.from.username || ctx.from.first_name;
+  const userId = ctx.from.id.toString();
+  const username = ctx.from.username || "Unknown";
 
-  // إذا اللاعب جديد
   if (!players[userId]) {
     players[userId] = {
-      id: userId,
-      username: username,
-      coins: 0,
+      username,
+      wellcoins: 0,
       miningSpeed: 0.2,
-      lastMineTime: Date.now()
+      joinedAt: new Date().toISOString(),
     };
-    fs.writeFileSync(dataFile, JSON.stringify(players, null, 2));
-    ctx.reply(`Welcome ${username}!\nYour game account has been created 🎮`);
+
+    // حفظ البيانات في players.json
+    fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
+    ctx.reply(`👋 Welcome, ${username}! You've been registered.`);
   } else {
-    ctx.reply(`Welcome back ${username}!\nYour progress has been loaded 🔁`);
+    ctx.reply(`👋 Welcome back, ${username}!`);
   }
 });
 
-  ctx.reply("Welcome to WELLcoin Game!", {
-    reply_markup: {
-      keyboard: [
-        [
-          {
-            text: "▶️ Play WELLcoin",
-            web_app: { url: "https://wellcoin-bot.onrender.com" },
-          },
-        ],
-      ],
-      resize_keyboard: true,
-    },
-  });
-});
-
 bot.launch();
+app.listen(10000, () => {
+  console.log("Web server running on port 10000");
+});
+console.log("Bot is running...");
