@@ -119,6 +119,83 @@
       color: #000;
       font-weight: bold;
     }
+
+    /* SHOP OVERLAY */
+    .shop-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 999;
+    }
+
+    .shop-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      color: gold;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 14px;
+      width: 100%;
+    }
+
+    .shop-item {
+      background-color: #111;
+      border: 1px solid #ffd700;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      color: #ffd700;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
+    }
+
+    .shop-item img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      margin-bottom: 8px;
+      background-color: #222;
+      border-radius: 8px;
+    }
+
+    .shop-item .name {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .shop-item .desc {
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .shop-item .price {
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .close-shop {
+      cursor: pointer;
+      background: none;
+      color: gold;
+      font-size: 20px;
+      border: none;
+    }
   </style>
 </head>
 <body>
@@ -139,68 +216,70 @@
     <button class="btn">Invite</button>
   </div>
 
+  <div class="shop-overlay" id="shop">
+    <div class="shop-header">
+      WELLcoin Shop
+      <button class="close-shop" onclick="closeShop()">✕</button>
+    </div>
+    <div class="shop-grid">
+      <div class="shop-item">
+        <img src="" alt="Suit" />
+        <div class="name">Elegant Suit</div>
+        <div class="desc">+0.0000010000 / 24h</div>
+        <div class="price">💰 10 WLC</div>
+      </div>
+      <!-- Add 19 more items -->
+      " + Array.from({length: 19}).map(() => `
+        <div class="shop-item">
+          <img src="" alt="Item" />
+          <div class="name">Coming Soon</div>
+          <div class="desc">---</div>
+          <div class="price">-- WLC</div>
+        </div>`).join('') + "
+    </div>
+  </div>
+
   <script>
-    let coinCount = parseFloat(localStorage.getItem("wellcoins")) || 0.0;
-    const miningSpeedPerSecond = 0.0000001157;
-    const miningDuration = 10800; // 3 ساعات
+    let coinCount = 0.0;
     let interval;
+    let countdown = 10800;
 
     function updateCoin() {
-      coinCount += miningSpeedPerSecond;
-      localStorage.setItem("wellcoins", coinCount.toFixed(10));
+      coinCount += 0.0000001157;
       document.getElementById("coin-count").textContent = coinCount.toFixed(10);
     }
 
     function updateTimer() {
-      const startTime = parseInt(localStorage.getItem("startTime"));
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const remaining = miningDuration - elapsed;
-
-      if (remaining > 0) {
-        const h = Math.floor(remaining / 3600).toString().padStart(1, '0');
-        const m = Math.floor((remaining % 3600) / 60).toString().padStart(2, '0');
-        const s = Math.floor(remaining % 60).toString().padStart(2, '0');
-        document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
-        updateCoin();
-      } else {
-        document.getElementById("countdown").textContent = "0:00:00";
-        clearInterval(interval);
-      }
+      countdown--;
+      const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
+      const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
+      const s = Math.floor(countdown % 60).toString().padStart(2, '0');
+      document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
+      if (countdown <= 0) clearInterval(interval);
     }
 
     function startMining() {
-      const startTime = localStorage.getItem("startTime");
-      if (!startTime) {
-        localStorage.setItem("startTime", Date.now().toString());
-      }
-      interval = setInterval(updateTimer, 1000);
+      interval = setInterval(() => {
+        updateCoin();
+        updateTimer();
+      }, 1000);
     }
 
     function restartMiningTimer() {
+      countdown = 10800;
       clearInterval(interval);
-      localStorage.setItem("startTime", Date.now().toString());
       startMining();
     }
 
     function openShop() {
-      alert("🛒 Shop coming soon!");
+      document.getElementById("shop").style.display = "flex";
     }
 
-    // Load saved coins
-    document.getElementById("coin-count").textContent = coinCount.toFixed(10);
-
-    // Start mining if session still valid
-    const savedStart = localStorage.getItem("startTime");
-    if (savedStart) {
-      const elapsed = Math.floor((Date.now() - parseInt(savedStart)) / 1000);
-      if (elapsed < miningDuration) {
-        startMining();
-      } else {
-        document.getElementById("countdown").textContent = "0:00:00";
-      }
-    } else {
-      startMining();
+    function closeShop() {
+      document.getElementById("shop").style.display = "none";
     }
+
+    startMining();
   </script>
 </body>
 </html>
