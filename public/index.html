@@ -120,81 +120,67 @@
       font-weight: bold;
     }
 
-    /* SHOP OVERLAY */
-    .shop-overlay {
-      position: fixed;
+    /* Shop Styles */
+    .shop-modal {
+      position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.85);
+      background-color: rgba(0, 0, 0, 0.95);
       display: none;
       flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      overflow-y: auto;
       z-index: 999;
+      overflow-y: auto;
     }
 
     .shop-header {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      color: gold;
-      font-size: 24px;
+      padding: 16px;
+      font-size: 22px;
       font-weight: bold;
+      text-align: center;
+      border-bottom: 1px solid #ffd700;
+      background-color: #111;
     }
 
-    .shop-grid {
+    .shop-items {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 14px;
-      width: 100%;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      padding: 20px;
     }
 
     .shop-item {
       background-color: #111;
       border: 1px solid #ffd700;
-      border-radius: 12px;
-      padding: 10px;
+      border-radius: 14px;
+      padding: 12px;
       text-align: center;
-      color: #ffd700;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.1);
     }
 
     .shop-item img {
-      width: 80px;
-      height: 80px;
+      width: 60px;
+      height: 60px;
       object-fit: contain;
       margin-bottom: 8px;
-      background-color: #222;
-      border-radius: 8px;
     }
 
-    .shop-item .name {
-      font-size: 14px;
+    .shop-item-name {
+      font-size: 15px;
       font-weight: bold;
       margin-bottom: 4px;
     }
 
-    .shop-item .desc {
+    .shop-item-effect {
       font-size: 12px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
-    .shop-item .price {
+    .shop-item-price {
       font-size: 13px;
-      font-weight: bold;
-    }
-
-    .close-shop {
-      cursor: pointer;
-      background: none;
-      color: gold;
-      font-size: 20px;
-      border: none;
+      color: #ffd700;
+      margin-top: 6px;
     }
   </style>
 </head>
@@ -216,26 +202,16 @@
     <button class="btn">Invite</button>
   </div>
 
-  <div class="shop-overlay" id="shop">
-    <div class="shop-header">
-      WELLcoin Shop
-      <button class="close-shop" onclick="closeShop()">✕</button>
-    </div>
-    <div class="shop-grid">
+  <div class="shop-modal" id="shop">
+    <div class="shop-header">🛒 WELLcoin Shop</div>
+    <div class="shop-items">
       <div class="shop-item">
-        <img src="" alt="Suit" />
-        <div class="name">Elegant Suit</div>
-        <div class="desc">+0.0000010000 / 24h</div>
-        <div class="price">💰 10 WLC</div>
+        <img src="item1.png" alt="Item 1" />
+        <div class="shop-item-name">Elegant Suit</div>
+        <div class="shop-item-effect">+0.0000010000 / 24h</div>
+        <div class="shop-item-price">💰 10 WLC</div>
       </div>
-      <!-- Add 19 more items -->
-      " + Array.from({length: 19}).map(() => `
-        <div class="shop-item">
-          <img src="" alt="Item" />
-          <div class="name">Coming Soon</div>
-          <div class="desc">---</div>
-          <div class="price">-- WLC</div>
-        </div>`).join('') + "
+      <!-- Placeholder for 19 more items -->
     </div>
   </div>
 
@@ -273,10 +249,6 @@
 
     function openShop() {
       document.getElementById("shop").style.display = "flex";
-    }
-
-    function closeShop() {
-      document.getElementById("shop").style.display = "none";
     }
 
     startMining();
