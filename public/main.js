@@ -19,11 +19,19 @@ function updateTimer() {
   if (countdown <= 0) clearInterval(interval);
 }
 
-function startMining() {
-  interval = setInterval(() => {
-    updateCoin();
-    updateTimer();
-  }, 1000);
+function resumeMining() {
+  const now = Date.now();
+  const timePassed = Math.floor((now - lastTimestamp) / 1000);
+  countdown -= timePassed;
+  if (countdown < 0) countdown = 0;
+  localStorage.setItem("lastTimestamp", now);
+  updateTimer();
+  if (countdown > 0) {
+    interval = setInterval(() => {
+      updateCoin();
+      updateTimer();
+    }, 1000);
+  }
 }
 
 function restartMiningTimer() {
@@ -31,17 +39,9 @@ function restartMiningTimer() {
   localStorage.setItem("countdown", countdown);
   localStorage.setItem("lastTimestamp", Date.now());
   clearInterval(interval);
-  startMining();
+  resumeMining();
 }
 
-function applyTimePassed() {
-  const now = Date.now();
-  const diff = Math.floor((now - lastTimestamp) / 1000);
-  countdown -= diff;
-  if (countdown < 0) countdown = 0;
-  localStorage.setItem("countdown", countdown);
-  localStorage.setItem("lastTimestamp", now);
-}
-
-applyTimePassed();
-startMining();
+window.onload = () => {
+  resumeMining();
+};
