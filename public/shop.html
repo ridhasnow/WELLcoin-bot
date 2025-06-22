@@ -1,97 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WELLcoin Shop</title>
-  <link rel="stylesheet" href="style.css">
   <style>
     body {
       margin: 0;
-      padding: 0;
-      background-color: #000;
       font-family: 'Segoe UI', sans-serif;
-      color: #ffd700;
+      background-color: #000;
+      color: #e6d8a3;
       overflow-y: scroll;
     }
 
     .back-button {
       position: fixed;
-      top: 15px;
-      left: 15px;
+      top: 10px;
+      left: 10px;
       background-color: #fff;
       color: #000;
       border: none;
-      border-radius: 10px;
-      padding: 10px;
-      cursor: pointer;
-      box-shadow: 0 0 10px #fff3;
+      border-radius: 8px;
+      padding: 6px 12px;
       font-size: 16px;
-      z-index: 100;
-      transition: 0.3s;
-    }
-
-    .back-button:hover {
-      background-color: #ffd700;
-      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      z-index: 10;
     }
 
     .shop-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
-      gap: 20px;
-      padding: 80px 20px 20px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 60px 10px 20px;
+      gap: 16px;
     }
 
-    .item {
+    .item-box {
+      width: 30%;
+      min-width: 220px;
       background-color: #111;
       border-radius: 12px;
-      padding: 10px;
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+      padding: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      height: 260px;
-      color: #ffd700;
+      color: #e6d8a3;
     }
 
-    .item img {
-      width: 80%;
-      height: auto;
-      max-height: 140px;
-      object-fit: contain;
-      margin-bottom: 8px;
+    .item-box img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 8px;
     }
 
-    .separator {
-      width: 80%;
+    .divider {
+      width: 100%;
       height: 1px;
       background-color: #555;
-      margin: 6px 0;
+      margin: 10px 0 6px;
     }
 
     .item-name {
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 15px;
+      font-weight: bold;
       text-align: center;
+      margin-bottom: 4px;
+      color: #fff;
+      text-shadow: 0 0 4px rgba(255,255,255,0.3);
     }
 
-    .buy-button {
-      background-color: #00cc66;
-      color: #fff;
-      padding: 6px 12px;
-      font-size: 14px;
+    .divider-bottom {
+      width: 100%;
+      height: 1px;
+      background-color: #444;
+      margin-bottom: 6px;
+    }
+
+    .item-details {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 13px;
+      gap: 8px;
+      color: #e6d8a3;
+    }
+
+    .vertical-line {
+      width: 1px;
+      height: 14px;
+      background-color: #666;
+    }
+
+    .buy-btn {
+      margin-top: 10px;
+      background-color: #0f0;
+      color: #000;
       border: none;
-      border-radius: 8px;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 0 6px #00cc6655;
+      box-shadow: 0 0 6px rgba(0, 255, 0, 0.5);
       transition: 0.2s;
     }
 
-    .buy-button:hover {
-      background-color: #00e676;
-      font-weight: bold;
+    .buy-btn:hover {
+      background-color: #00cc00;
     }
   </style>
 </head>
@@ -99,31 +117,37 @@
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
 
   <div class="shop-container">
-    <div class="item">
-      <img src="" alt="Product Image">
-      <div class="separator"></div>
+    <div class="item-box">
+      <img src="" alt="Elegant suit" />
+      <div class="divider"></div>
       <div class="item-name">Elegant Suit</div>
-      <button class="buy-button">Buy</button>
+      <div class="divider-bottom"></div>
+      <div class="item-details">
+        <span>10 WLC</span>
+        <div class="vertical-line"></div>
+        <span>+0.000001/day</span>
+      </div>
+      <button class="buy-btn">Buy</button>
     </div>
 
-    <!-- Empty placeholders for 19 more items -->
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
-    <div class="item"><img src="" alt=""><div class="separator"></div><div class="item-name">Coming Soon</div><button class="buy-button">Buy</button></div>
+    <!-- باقي المنتجات مكانها محفوظ -->
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
+    <div class="item-box"></div>
   </div>
 </body>
 </html>
