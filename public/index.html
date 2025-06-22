@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WELLcoin Game</title>
   <style>
     body {
@@ -51,34 +51,40 @@
 
     .mining-bar {
       position: absolute;
-      bottom: 70px;
+      bottom: 100px;
       left: 50%;
       transform: translateX(-50%);
       background-color: rgba(0, 0, 0, 0.5);
-      padding: 6px 18px;
+      padding: 8px 18px;
       border-radius: 16px;
-      font-size: 14px;
+      font-size: 15px;
       color: gold;
-      font-weight: 600;
-      font-family: 'Segoe UI Semibold', sans-serif;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+      font-weight: bold;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
       border: 1px solid #ffd700;
       text-align: center;
       white-space: nowrap;
     }
 
-    .timer {
+    .timer-circle {
       position: absolute;
-      bottom: 48px;
+      bottom: 55px;
       left: 50%;
       transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.3);
-      color: #ffd700;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid lime;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px lime;
+      background-color: rgba(0, 0, 0, 0.4);
       font-size: 13px;
-      padding: 4px 12px;
-      border-radius: 50px;
-      border: 1px solid #ffd700;
-      box-shadow: 0 0 4px rgba(255, 215, 0, 0.2);
+      color: #00ffcc;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
     }
 
     .bottom-buttons {
@@ -129,7 +135,7 @@
   <div class="character-container">
     <img src="character.png" class="character" alt="Player Character" onclick="restartMiningTimer()" />
     <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
-    <div class="timer" id="countdown">3:00:00</div>
+    <div class="timer-circle" id="countdown">3:00:00</div>
   </div>
 
   <div class="bottom-buttons">
@@ -151,10 +157,11 @@
 
     function updateTimer() {
       countdown--;
-      const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
+      const h = Math.floor(countdown / 3600).toString();
       const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
       const s = Math.floor(countdown % 60).toString().padStart(2, '0');
       document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
+
       if (countdown <= 0) clearInterval(interval);
     }
 
