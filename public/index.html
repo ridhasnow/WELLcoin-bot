@@ -119,69 +119,6 @@
       color: #000;
       font-weight: bold;
     }
-
-    /* Shop Styles */
-    .shop-modal {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.95);
-      display: none;
-      flex-direction: column;
-      z-index: 999;
-      overflow-y: auto;
-    }
-
-    .shop-header {
-      padding: 16px;
-      font-size: 22px;
-      font-weight: bold;
-      text-align: center;
-      border-bottom: 1px solid #ffd700;
-      background-color: #111;
-    }
-
-    .shop-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 12px;
-      padding: 20px;
-    }
-
-    .shop-item {
-      background-color: #111;
-      border: 1px solid #ffd700;
-      border-radius: 14px;
-      padding: 12px;
-      text-align: center;
-      box-shadow: 0 0 8px rgba(255, 215, 0, 0.1);
-    }
-
-    .shop-item img {
-      width: 60px;
-      height: 60px;
-      object-fit: contain;
-      margin-bottom: 8px;
-    }
-
-    .shop-item-name {
-      font-size: 15px;
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
-
-    .shop-item-effect {
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-
-    .shop-item-price {
-      font-size: 13px;
-      color: #ffd700;
-      margin-top: 6px;
-    }
   </style>
 </head>
 <body>
@@ -200,19 +137,6 @@
     <button class="btn" onclick="openShop()">Shop</button>
     <button class="btn">Missions</button>
     <button class="btn">Invite</button>
-  </div>
-
-  <div class="shop-modal" id="shop">
-    <div class="shop-header">🛒 WELLcoin Shop</div>
-    <div class="shop-items">
-      <div class="shop-item">
-        <img src="item1.png" alt="Item 1" />
-        <div class="shop-item-name">Elegant Suit</div>
-        <div class="shop-item-effect">+0.0000010000 / 24h</div>
-        <div class="shop-item-price">💰 10 WLC</div>
-      </div>
-      <!-- Placeholder for 19 more items -->
-    </div>
   </div>
 
   <script>
@@ -248,7 +172,7 @@
     }
 
     function openShop() {
-      document.getElementById("shop").style.display = "flex";
+      alert("🛒 Shop coming soon!");
     }
 
     startMining();
