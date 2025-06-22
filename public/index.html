@@ -140,34 +140,45 @@
   </div>
 
   <script>
-    let coinCount = 0.0;
+    let coinCount = parseFloat(localStorage.getItem("wellcoins")) || 0.0;
+    const miningSpeedPerSecond = 0.0000001157;
+    const miningDuration = 10800; // 3 ساعات
     let interval;
-    let countdown = 10800;
 
     function updateCoin() {
-      coinCount += 0.0000001157;
+      coinCount += miningSpeedPerSecond;
+      localStorage.setItem("wellcoins", coinCount.toFixed(10));
       document.getElementById("coin-count").textContent = coinCount.toFixed(10);
     }
 
     function updateTimer() {
-      countdown--;
-      const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
-      const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
-      const s = Math.floor(countdown % 60).toString().padStart(2, '0');
-      document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
-      if (countdown <= 0) clearInterval(interval);
+      const startTime = parseInt(localStorage.getItem("startTime"));
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = miningDuration - elapsed;
+
+      if (remaining > 0) {
+        const h = Math.floor(remaining / 3600).toString().padStart(1, '0');
+        const m = Math.floor((remaining % 3600) / 60).toString().padStart(2, '0');
+        const s = Math.floor(remaining % 60).toString().padStart(2, '0');
+        document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
+        updateCoin();
+      } else {
+        document.getElementById("countdown").textContent = "0:00:00";
+        clearInterval(interval);
+      }
     }
 
     function startMining() {
-      interval = setInterval(() => {
-        updateCoin();
-        updateTimer();
-      }, 1000);
+      const startTime = localStorage.getItem("startTime");
+      if (!startTime) {
+        localStorage.setItem("startTime", Date.now().toString());
+      }
+      interval = setInterval(updateTimer, 1000);
     }
 
     function restartMiningTimer() {
-      countdown = 10800;
       clearInterval(interval);
+      localStorage.setItem("startTime", Date.now().toString());
       startMining();
     }
 
@@ -175,7 +186,21 @@
       alert("🛒 Shop coming soon!");
     }
 
-    startMining();
+    // Load saved coins
+    document.getElementById("coin-count").textContent = coinCount.toFixed(10);
+
+    // Start mining if session still valid
+    const savedStart = localStorage.getItem("startTime");
+    if (savedStart) {
+      const elapsed = Math.floor((Date.now() - parseInt(savedStart)) / 1000);
+      if (elapsed < miningDuration) {
+        startMining();
+      } else {
+        document.getElementById("countdown").textContent = "0:00:00";
+      }
+    } else {
+      startMining();
+    }
   </script>
 </body>
 </html>
