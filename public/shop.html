@@ -30,16 +30,23 @@
     }
 
     .shop-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 60px 10px 20px;
-      gap: 16px;
-    }
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 60px 16px 20px;
+}
 
-    .item-box {
-      width: 30%;
-      min-width: 220px;
+.item-box {
+  background-color: #111;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #e6d8a3;
+}
+
       background-color: #111;
       border-radius: 12px;
       box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
