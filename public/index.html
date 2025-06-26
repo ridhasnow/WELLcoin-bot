@@ -18,6 +18,8 @@
   justify-content: flex-end;
   align-items: center;
   padding: 10px;
+  position: relative;
+  z-index: 2;
 }
 
 #ranked {
@@ -30,7 +32,27 @@
   padding: 4px;
   background-color: #111;
   box-shadow: 0 0 8px #ffd70050;
-  z-index: 11;
+}
+
+.balance-box {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+}
+
+.coin-icon {
+  width: 26px;
+  height: 26px;
+  margin-right: 6px;
+  filter: drop-shadow(0 0 2px gold);
+}
+
+svg {
+  width: 160px;
+  height: 40px;
 }
 
 .character-container {
@@ -123,26 +145,17 @@
 <body>
   <header>
     <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
-  </header>  <!-- SVG Balance Box -->  <svg width="240" height="60" style="position:absolute; top:10px; left:10px; z-index:10;" viewBox="0 0 240 60">
-    <defs>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs><rect x="4" y="4" rx="16" ry="16" width="232" height="52"
-      style="fill:rgba(0,0,0,0.4); stroke:#ffd700; stroke-width:2.5;"
-      filter="url(#glow)" />
-
-<image href="wellcoin-icon.png" x="16" y="15" width="28" height="28" />
-
-<text id="balance-amount" x="52" y="34" fill="#00cfff" font-size="16" font-weight="bold" 
-      font-family="'Segoe UI', sans-serif"
-      style="text-shadow: 0 0 6px gold;">0.0000000000</text>
-
-  </svg>  <div class="character-container">
+  </header>  <!-- 🪙 رصيد اللاعب -->  <div class="balance-box">
+    <img src="wellcoin-icon.png" alt="Coin Icon" class="coin-icon">
+    <svg viewBox="0 0 160 40">
+      <rect x="0" y="0" width="160" height="40" rx="12" ry="12" fill="rgba(0,0,0,0.3)" stroke="#ffd700" stroke-width="2">
+        <animate attributeName="stroke-opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite" />
+      </rect>
+      <text id="balance-amount" x="80" y="26" text-anchor="middle" fill="#3aaaff" font-size="14" font-weight="bold" style="text-shadow: 0 0 4px gold;">
+        0.0000000000
+      </text>
+    </svg>
+  </div>  <div class="character-container">
     <img src="character.png" class="character" alt="Player Character" onclick="restartMiningTimer()" />
     <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
     <div class="timer" id="countdown">3:00:00</div>
@@ -160,8 +173,10 @@
     function updateCoin() {
       coinCount += 0.0000001157;
       document.getElementById("coin-count").textContent = coinCount.toFixed(10);
-      balance += 0.0000001157;
+
+      // تحديث الرصيد داخل SVG
       document.getElementById("balance-amount").textContent = balance.toFixed(10);
+      balance += 0.0000001157;
     }
 
     function updateTimer() {
