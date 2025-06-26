@@ -15,16 +15,14 @@
       height: 100vh;
       overflow: hidden;
     }
-      <div class="balance-box">
-  <img src="wellcoin-icon.png" class="coin-icon" alt="WELLcoin" />
-  <span id="total-balance">0.000000</span>
-</div>
-    
+
     header {
       display: flex;
       justify-content: flex-end;
       align-items: center;
       padding: 10px;
+      position: relative;
+      z-index: 2;
     }
 
     #ranked {
@@ -40,66 +38,47 @@
     }
 
     .balance-box {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 18px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
-  font-size: 16px;
-  font-weight: bold;
-  color: #0cf;
-  text-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
-  font-family: 'Segoe UI', sans-serif;
-  animation: glow 1s infinite ease-in-out;
-  backdrop-filter: blur(6px);
-}
-
-.coin-icon {
-  width: 26px;
-  height: 26px;
-  filter: drop-shadow(0 0 2px gold);
-}
-
-@keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(255, 215, 0, 0.7);
-  }
-}
-
-.coin-icon {
-  width: 26px;
-  height: 26px;
-  filter: drop-shadow(0 0 2px gold);
-}
-
-#balance-amount {
-  color: #3aaaff;
-  font-size: 16px;
-  font-weight: bold;
-  text-shadow:
-    0 0 3px gold,
-    0 0 8px #ffd70050;
-}
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 18px;
+      background: radial-gradient(circle at top left, rgba(255,215,0,0.15), rgba(0,0,0,0.5));
+      border: 2px solid #ffd700;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.7), inset 0 0 6px rgba(255, 255, 255, 0.1);
+      font-size: 16px;
+      font-weight: bold;
+      color: #0cf;
+      text-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+      font-family: 'Segoe UI', sans-serif;
+      animation: glow 2s infinite ease-in-out;
+      backdrop-filter: blur(5px);
+    }
 
     .coin-icon {
-      width: 22px;
-      height: 22px;
+      width: 26px;
+      height: 26px;
+      filter: drop-shadow(0 0 3px gold);
+    }
+
+    @keyframes glow {
+      0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.4), inset 0 0 6px rgba(255, 255, 255, 0.05);
+      }
+      50% {
+        box-shadow: 0 0 18px rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.08);
+      }
     }
 
     #balance-amount {
       color: #3aaaff;
-      text-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
-      font-size: 15px;
+      font-size: 16px;
       font-weight: bold;
+      text-shadow: 0 0 6px gold, 0 0 8px #ffd70050;
     }
 
     .character-container {
@@ -221,8 +200,6 @@
     function updateCoin() {
       coinCount += 0.0000001157;
       document.getElementById("coin-count").textContent = coinCount.toFixed(10);
-      
-      // ✅ تحديث رصيد اللاعب
       balance += 0.0000001157;
       document.getElementById("balance-amount").textContent = balance.toFixed(10);
     }
