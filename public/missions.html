@@ -73,15 +73,16 @@
     .mission button:hover {
       background-color: #fff;
     }
+
     .mission-icon {
-  width: 70px;
-  height: 70px;
-  vertical-align: middle;
-  margin-right: 8px;
-  filter: drop-shadow(0 0 2px gold);
-  border-radius: 6px;
-}
-    
+      width: 70px;
+      height: 70px;
+      vertical-align: middle;
+      margin-right: 8px;
+      filter: drop-shadow(0 0 2px gold);
+      border-radius: 6px;
+    }
+
     /* ✅ إشعار النجاح */
     .claim-popup {
       position: fixed;
@@ -116,10 +117,10 @@
 
   <div class="mission">
     <h2>
-  <img src="daily-icon.png" class="mission-icon" alt="Daily Icon" />
-  Daily Rewards
-</h2>
-    <p>Come back every 24h and earn 0.5 WLC</p>
+      <img src="daily-icon.png" class="mission-icon" alt="Daily Icon" />
+      Daily Rewards
+    </h2>
+    <p>Come back every 24h and earn 0.00001 WLC</p>
     <button onclick="claimReward()">Claim</button>
   </div>
 
@@ -136,19 +137,19 @@
   </div>
 
   <!-- ✅ إشعار النجاح -->
-  <div id="claim-popup" class="claim-popup">✅ +0.5 WLC</div>
+  <div id="claim-popup" class="claim-popup">✅ +0.00001 WLC</div>
 
   <script>
     function claimReward() {
       const popup = document.getElementById("claim-popup");
+      popup.textContent = "✅ +0.00001 WLC";
       popup.style.display = "block";
-      
+
       setTimeout(() => {
         popup.style.display = "none";
       }, 3000);
 
-      // يمكنك هنا لاحقاً إضافة زيادة الرصيد فعلياً بالـ storage
-      // مثل localStorage.setItem("balance", value);
+      // مستقبلاً يمكننا ربط هذا بالرصيد العام في localStorage
     }
   </script>
 </body>
