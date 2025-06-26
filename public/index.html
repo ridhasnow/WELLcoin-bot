@@ -34,7 +34,35 @@
       background-color: #111;
       box-shadow: 0 0 8px #ffd70050;
     }
-    
+
+    .balance-box {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background-color: rgba(255, 215, 0, 0.08);
+      border: 2px solid #ffd700;
+      border-radius: 18px;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+      font-family: 'Segoe UI Semibold', sans-serif;
+      z-index: 999;
+    }
+
+    .coin-icon {
+      width: 22px;
+      height: 22px;
+    }
+
+    #balance-amount {
+      color: #3aaaff;
+      text-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
+      font-size: 15px;
+      font-weight: bold;
+    }
+
     .character-container {
       flex-grow: 1;
       display: flex;
@@ -126,6 +154,12 @@
     <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
   </header>
 
+  <!-- 🪙 رصيد اللاعب -->
+  <div class="balance-box">
+    <img src="wellcoin-icon.png" alt="Coin Icon" class="coin-icon">
+    <span id="balance-amount">0.0000000000</span>
+  </div>
+
   <div class="character-container">
     <img src="character.png" class="character" alt="Player Character" onclick="restartMiningTimer()" />
     <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
@@ -141,12 +175,17 @@
 
   <script>
     let coinCount = 0.0;
+    let balance = 0.0;
     let interval;
     let countdown = 10800;
 
     function updateCoin() {
       coinCount += 0.0000001157;
       document.getElementById("coin-count").textContent = coinCount.toFixed(10);
+      
+      // ✅ تحديث رصيد اللاعب
+      balance += 0.0000001157;
+      document.getElementById("balance-amount").textContent = balance.toFixed(10);
     }
 
     function updateTimer() {
@@ -169,10 +208,6 @@
       countdown = 10800;
       clearInterval(interval);
       startMining();
-    }
-
-    function openShop() {
-      alert("🛒 Shop coming soon!");
     }
 
     startMining();
