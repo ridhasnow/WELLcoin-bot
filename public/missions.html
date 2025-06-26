@@ -70,8 +70,14 @@
       transition: 0.2s;
     }
 
-    .mission button:hover {
+    .mission button:hover:enabled {
       background-color: #fff;
+    }
+
+    .mission button:disabled {
+      background-color: #444;
+      color: #0f0;
+      cursor: not-allowed;
     }
 
     .mission-icon {
@@ -83,7 +89,6 @@
       border-radius: 6px;
     }
 
-    /* ✅ إشعار النجاح */
     .claim-popup {
       position: fixed;
       top: 50%;
@@ -103,10 +108,16 @@
     }
 
     @keyframes fadeInOut {
-      0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-      10%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-      90%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      0%   { opacity: 0; transform: scale(0.9); }
+      10%  { opacity: 1; transform: scale(1.05); }
+      90%  { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.9); }
+    }
+
+    .timer-text {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #aaa;
     }
   </style>
 </head>
@@ -121,7 +132,8 @@
       Daily Rewards
     </h2>
     <p>Come back every 24h and earn 0.00001 WLC</p>
-    <button onclick="claimReward()">Claim</button>
+    <button id="claim-btn" onclick="claimReward()">Claim</button>
+    <div id="timer" class="timer-text"></div>
   </div>
 
   <div class="mission">
@@ -136,21 +148,58 @@
     <button disabled>Progress...</button>
   </div>
 
-  <!-- ✅ إشعار النجاح -->
   <div id="claim-popup" class="claim-popup">✅ +0.00001 WLC</div>
 
   <script>
-    function claimReward() {
-      const popup = document.getElementById("claim-popup");
-      popup.textContent = "✅ +0.00001 WLC";
-      popup.style.display = "block";
+    const CLAIM_KEY = "dailyClaimTimestamp";
+    const BALANCE_KEY = "wellcoinBalance";
+    const CLAIM_AMOUNT = 0.00001;
+    const CLAIM_INTERVAL = 24 * 60 * 60 * 1000;
 
+    const btn = document.getElementById("claim-btn");
+    const timerDiv = document.getElementById("timer");
+
+    function updateTimer() {
+      const lastClaim = localStorage.getItem(CLAIM_KEY);
+      if (!lastClaim) return;
+
+      const diff = Date.now() - parseInt(lastClaim);
+      const remaining = CLAIM_INTERVAL - diff;
+
+      if (remaining > 0) {
+        btn.disabled = true;
+        btn.textContent = "Claimed ✅";
+
+        const hours = Math.floor(remaining / 3600000).toString().padStart(2, '0');
+        const minutes = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
+        const seconds = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
+        timerDiv.textContent = `Next claim in ${hours}:${minutes}:${seconds}`;
+      } else {
+        btn.disabled = false;
+        btn.textContent = "Claim";
+        timerDiv.textContent = "";
+      }
+    }
+
+    function claimReward() {
+      const now = Date.now();
+      localStorage.setItem(CLAIM_KEY, now);
+
+      let balance = parseFloat(localStorage.getItem(BALANCE_KEY)) || 0;
+      balance += CLAIM_AMOUNT;
+      localStorage.setItem(BALANCE_KEY, balance.toFixed(10));
+
+      const popup = document.getElementById("claim-popup");
+      popup.style.display = "block";
       setTimeout(() => {
         popup.style.display = "none";
       }, 3000);
 
-      // مستقبلاً يمكننا ربط هذا بالرصيد العام في localStorage
+      updateTimer();
     }
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
   </script>
 </body>
 </html>
