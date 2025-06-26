@@ -73,7 +73,15 @@
     .mission button:hover {
       background-color: #fff;
     }
-
+    .mission-icon {
+  width: 26px;
+  height: 26px;
+  vertical-align: middle;
+  margin-right: 8px;
+  filter: drop-shadow(0 0 2px gold);
+  border-radius: 6px;
+}
+    
     /* ✅ إشعار النجاح */
     .claim-popup {
       position: fixed;
@@ -107,7 +115,10 @@
   <h1>Available Missions</h1>
 
   <div class="mission">
-    <h2>🪙 Claim your daily reward</h2>
+    <h2>
+  <img src="daily-icon.png" class="mission-icon" alt="Daily Icon" />
+  Claim 0.5 WLC
+</h2>
     <p>Come back every 24h and earn 0.5 WLC</p>
     <button onclick="claimReward()">Claim</button>
   </div>
