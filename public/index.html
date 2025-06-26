@@ -75,7 +75,7 @@
     }
 
     #balance-amount {
-  color: #ffd700; /* ذهبي */
+  color: #ffd700;
   font-size: 16px;
   font-weight: bold;
   text-shadow: 0 0 6px #fff799, 0 0 10px #ffdc73;
@@ -192,16 +192,19 @@
   </div>
 
   <script>
-    let coinCount = 0.0;
-    let balance = 0.0;
+    let coinCount = parseFloat(localStorage.getItem("coinCount")) || 0.0;
+    let balance = parseFloat(localStorage.getItem("balance")) || 0.0;
+    let countdown = parseInt(localStorage.getItem("countdown")) || 10800;
     let interval;
-    let countdown = 10800;
 
     function updateCoin() {
       coinCount += 0.0000001157;
-      document.getElementById("coin-count").textContent = coinCount.toFixed(10);
       balance += 0.0000001157;
+      document.getElementById("coin-count").textContent = coinCount.toFixed(10);
       document.getElementById("balance-amount").textContent = balance.toFixed(10);
+
+      localStorage.setItem("coinCount", coinCount);
+      localStorage.setItem("balance", balance);
     }
 
     function updateTimer() {
@@ -210,6 +213,8 @@
       const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
       const s = Math.floor(countdown % 60).toString().padStart(2, '0');
       document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
+      localStorage.setItem("countdown", countdown);
+
       if (countdown <= 0) clearInterval(interval);
     }
 
@@ -223,7 +228,19 @@
     function restartMiningTimer() {
       countdown = 10800;
       clearInterval(interval);
+      localStorage.setItem("countdown", countdown);
       startMining();
+    }
+
+    document.getElementById("coin-count").textContent = coinCount.toFixed(10);
+    document.getElementById("balance-amount").textContent = balance.toFixed(10);
+    document.getElementById("countdown").textContent = formatTime(countdown);
+
+    function formatTime(seconds) {
+      const h = Math.floor(seconds / 3600).toString().padStart(1, '0');
+      const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+      const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${s}`;
     }
 
     startMining();
