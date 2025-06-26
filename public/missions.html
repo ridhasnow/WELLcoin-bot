@@ -96,9 +96,11 @@
       text-shadow: 0 0 8px #0f08, 0 0 12px #0f08;
       box-shadow: 0 0 16px gold;
       z-index: 999;
-      opacity: 0;
-      animation: fadeInOut 3s forwards;
-    }
+      .claim-popup {
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+}
 
     @keyframes fadeInOut {
       0% { opacity: 0; transform: translateX(-50%) scale(0.8); }
