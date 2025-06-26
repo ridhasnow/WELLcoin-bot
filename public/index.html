@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -191,24 +192,32 @@
   </div>
 
   <script>
-    let coinCount = 0.0;
-    let balance = 0.0;
+    let coinCount = parseFloat(localStorage.getItem("coinCount")) || 0.0;
+    let balance = parseFloat(localStorage.getItem("balance")) || 0.0;
+    let countdown = parseInt(localStorage.getItem("countdown")) || 10800;
     let interval;
-    let countdown = 10800;
 
     function updateCoin() {
       coinCount += 0.0000001157;
-      document.getElementById("coin-count").textContent = coinCount.toFixed(10);
       balance += 0.0000001157;
+
+      document.getElementById("coin-count").textContent = coinCount.toFixed(10);
       document.getElementById("balance-amount").textContent = balance.toFixed(10);
+
+      localStorage.setItem("coinCount", coinCount);
+      localStorage.setItem("balance", balance);
     }
 
     function updateTimer() {
+      if (countdown <= 0) return;
+
       countdown--;
       const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
       const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
       const s = Math.floor(countdown % 60).toString().padStart(2, '0');
       document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
+      localStorage.setItem("countdown", countdown);
+
       if (countdown <= 0) clearInterval(interval);
     }
 
@@ -221,9 +230,14 @@
 
     function restartMiningTimer() {
       countdown = 10800;
+      localStorage.setItem("countdown", countdown);
       clearInterval(interval);
       startMining();
     }
+
+    // تحديث القيم عند بداية الصفحة
+    document.getElementById("coin-count").textContent = coinCount.toFixed(10);
+    document.getElementById("balance-amount").textContent = balance.toFixed(10);
 
     startMining();
   </script>
