@@ -69,8 +69,42 @@
       transition: 0.2s;
     }
 
-    .mission button:hover {
+    .mission button:disabled {
+      background-color: #555;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+
+    .mission button:hover:enabled {
       background-color: #fff;
+    }
+
+    /* ✅ إشعار CLAIM */
+    .claim-popup {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #000;
+      border: 2px solid gold;
+      border-radius: 12px;
+      padding: 20px 28px;
+      color: #0f0;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      text-shadow: 0 0 8px #0f08, 0 0 12px #0f08;
+      box-shadow: 0 0 16px gold;
+      z-index: 999;
+      opacity: 0;
+      animation: fadeInOut 3s forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateX(-50%) scale(0.8); }
+      10% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+      90% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(-50%) scale(0.8); }
     }
   </style>
 </head>
@@ -79,23 +113,59 @@
 
   <h1>Available Missions</h1>
 
+  <!-- ✅ المهمة الأولى -->
   <div class="mission">
-    <h2>🪙 Claim 5 WELLcoin</h2>
-    <p>Log in daily to receive your free bonus.</p>
-    <button onclick="alert('✅ Claimed!')">Claim</button>
+    <h2>🪙 Daily Login Reward</h2>
+    <p>Come back every 24h to claim your daily reward.</p>
+    <button id="claim-btn" onclick="claimDaily()">Claim 0.5 WLC</button>
   </div>
 
+  <!-- 📨 المهمة الثانية -->
   <div class="mission">
     <h2>📨 Invite a Friend</h2>
     <p>Get 3 WELLcoin for every friend you invite.</p>
     <button onclick="alert('🔗 Coming Soon')">Invite</button>
   </div>
 
+  <!-- 🎯 المهمة الثالثة -->
   <div class="mission">
     <h2>🎯 Reach 0.01 WELLcoin</h2>
     <p>Earn by mining or buying upgrades!</p>
     <button disabled>Progress...</button>
   </div>
 
+  <!-- ✨ إشعار CLAIM -->
+  <div id="claim-popup" class="claim-popup">+0.5 WLC ✅</div>
+
+  <script>
+    const CLAIM_KEY = 'dailyClaimTimestamp';
+    const REWARD_AMOUNT = 0.5;
+
+    function claimDaily() {
+      const now = Date.now();
+      localStorage.setItem(CLAIM_KEY, now);
+      document.getElementById("claim-btn").disabled = true;
+
+      // عرض الإشعار المتوهج
+      const popup = document.getElementById("claim-popup");
+      popup.style.display = 'block';
+      popup.classList.remove("fadeOut");
+
+      // إخفاؤه تلقائيًا بعد 3 ثوانٍ
+      setTimeout(() => {
+        popup.style.display = 'none';
+      }, 3000);
+    }
+
+    // منع الضغط المتكرر قبل 24 ساعة
+    window.onload = () => {
+      const lastClaim = parseInt(localStorage.getItem(CLAIM_KEY)) || 0;
+      const now = Date.now();
+      const elapsed = (now - lastClaim) / 1000;
+      if (elapsed < 86400) {
+        document.getElementById("claim-btn").disabled = true;
+      }
+    };
+  </script>
 </body>
 </html>
