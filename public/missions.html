@@ -11,6 +11,7 @@
       background-color: #000;
       color: #ffd700;
       padding: 60px 16px 20px;
+      position: relative;
     }
 
     .back-button {
@@ -73,20 +74,71 @@
       background-color: #fff;
     }
 
+    /* ✅ إشعار النجاح */
     .claim-popup {
       position: fixed;
-      top: 30%;
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background-color: #000;
-      color: #00ff80;
-      font-size: 22px;
+      background: #000;
+      color: #00ff88;
+      padding: 16px 32px;
+      font-size: 20px;
       font-weight: bold;
+      border-radius: 14px;
       border: 2px solid #ffd700;
-      border-radius: 12px;
-      padding: 16px 28px;
-      text-align: center;
-      z-index: 100;
+      box-shadow: 0 0 20px gold;
+      z-index: 9999;
       display: none;
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.5), 0 0 20px rgba(0, 255, 128, 0.5);
-      text-shadow: 0 0 6px #00ff80, 0 0
+      animation: fadeInOut 3s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+      0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      10%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+      90%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    }
+  </style>
+</head>
+<body>
+  <button class="back-button" onclick="window.location.href='index.html'">←</button>
+
+  <h1>Available Missions</h1>
+
+  <div class="mission">
+    <h2>🪙 Claim your daily reward</h2>
+    <p>Come back every 24h and earn 0.5 WLC</p>
+    <button onclick="claimReward()">Claim</button>
+  </div>
+
+  <div class="mission">
+    <h2>📨 Invite a Friend</h2>
+    <p>Get 3 WELLcoin for every friend you invite.</p>
+    <button onclick="alert('🔗 Coming Soon')">Invite</button>
+  </div>
+
+  <div class="mission">
+    <h2>🎯 Reach 0.01 WELLcoin</h2>
+    <p>Earn by mining or buying upgrades!</p>
+    <button disabled>Progress...</button>
+  </div>
+
+  <!-- ✅ إشعار النجاح -->
+  <div id="claim-popup" class="claim-popup">✅ +0.5 WLC</div>
+
+  <script>
+    function claimReward() {
+      const popup = document.getElementById("claim-popup");
+      popup.style.display = "block";
+      
+      setTimeout(() => {
+        popup.style.display = "none";
+      }, 3000);
+
+      // يمكنك هنا لاحقاً إضافة زيادة الرصيد فعلياً بالـ storage
+      // مثل localStorage.setItem("balance", value);
+    }
+  </script>
+</body>
+</html>
