@@ -136,11 +136,35 @@
     <div id="timer" class="timer-text"></div>
   </div>
 
-  <div class="mission">
-    <h2>📨 Invite a Friend</h2>
-    <p>Get 3 WELLcoin for every friend you invite.</p>
-    <button onclick="alert('🔗 Coming Soon')">Invite</button>
-  </div>
+  <div class="mission" id="youtube-mission">
+  <h2>
+    <img src="youtube-icon.png" class="mission-icon" alt="YouTube Icon" />
+    Join us on YouTube
+  </h2>
+  <p>Subscribe to our channel and earn 1 WLC</p>
+  <button id="join-btn" onclick="handleJoin()">Join Now</button>
+</div>
+
+<!-- ✅ Popup عند الضغط على Claim -->
+<div id="popup-yt" class="claim-popup" style="display: none; text-align: center;">
+  ✅ +1 WLC<br /><br />
+  <span style="color: white; font-size: 13px; display: block;">
+    ⚠️ If you unsubscribe, the reward will be deducted after checking your tasks.<br>
+    Don’t cheat, we’re on the same team.
+  </span>
+  <br />
+  <button onclick="agreeYT()" style="
+    margin-top: 12px;
+    padding: 6px 18px;
+    border: none;
+    border-radius: 10px;
+    background-color: #007BFF;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 0 6px #007BFF90;
+    cursor: pointer;">I agree</button>
+</div>
 
   <div class="mission">
     <h2>🎯 Reach 0.01 WELLcoin</h2>
@@ -201,5 +225,59 @@
     updateTimer();
     setInterval(updateTimer, 1000);
   </script>
+  <script>
+  // ... الكود القديم موجود هنا
+
+  let hasJoined = localStorage.getItem("joinedYT") === "true";
+  let hasClaimedYT = localStorage.getItem("claimedYT") === "true";
+
+  function handleJoin() {
+    localStorage.setItem("joinedYT", "true");
+    setTimeout(() => {
+      document.getElementById("join-btn").textContent = "Claim";
+      document.getElementById("join-btn").onclick = showYTClaim;
+    }, 1000);
+    window.open("https://youtube.com/@wellcoin-y6b?si=tMl1fl7txJ9r_Cet", "_blank");
+  }
+
+  function showYTClaim() {
+    if (hasClaimedYT) return;
+    document.getElementById("popup-yt").style.display = "block";
+  }
+
+  function agreeYT() {
+    document.getElementById("popup-yt").style.display = "none";
+
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
+    balance += 1;
+    localStorage.setItem("balance", balance);
+    localStorage.setItem("claimedYT", "true");
+
+    const balanceEl = document.getElementById("balance-amount");
+    if (balanceEl) balanceEl.textContent = balance.toFixed(10);
+
+    const joinBtn = document.getElementById("join-btn");
+    if (joinBtn) {
+      joinBtn.textContent = "Claimed";
+      joinBtn.disabled = true;
+      joinBtn.style.opacity = "0.6";
+      joinBtn.style.cursor = "default";
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    if (hasJoined && !hasClaimedYT) {
+      const joinBtn = document.getElementById("join-btn");
+      joinBtn.textContent = "Claim";
+      joinBtn.onclick = showYTClaim;
+    } else if (hasClaimedYT) {
+      const joinBtn = document.getElementById("join-btn");
+      joinBtn.textContent = "Claimed";
+      joinBtn.disabled = true;
+      joinBtn.style.opacity = "0.6";
+      joinBtn.style.cursor = "default";
+    }
+  });
+</script>
 </body>
 </html>
