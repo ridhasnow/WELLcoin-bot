@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -11,145 +12,175 @@
       color: #ffd700;
       padding: 60px 16px 20px;
       position: relative;
-    }.back-button {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  background-color: #fff;
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-  z-index: 10;
-}
-
-h1 {
-  text-align: center;
-  color: #ffd700;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
-}
-
-.mission {
-  background-color: #111;
-  border: 1px solid #ffd700;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
-}
-
-.mission h2 {
-  margin: 0 0 8px;
-  font-size: 18px;
-  color: #fff;
-  text-shadow: 0 0 4px rgba(255,255,255,0.3);
-}
-
-.mission p {
-  margin: 0;
-  font-size: 14px;
-  color: #e6d8a3;
-}
-
-.mission button {
-  margin-top: 10px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 8px;
-  background-color: #ffd700;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.mission button:hover:enabled {
-  background-color: #fff;
-}
-
-.mission button:disabled {
-  background-color: #444;
-  color: #0f0;
-  cursor: not-allowed;
-}
-
-.mission-icon {
-  width: 70px;
-  height: 70px;
-  vertical-align: middle;
-  margin-right: 8px;
-  filter: drop-shadow(0 0 2px gold);
-  border-radius: 6px;
-}
-
-.claim-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #000;
-  color: #00ff88;
-  padding: 16px 32px;
-  font-size: 20px;
-  font-weight: bold;
-  border-radius: 14px;
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 20px gold;
-  z-index: 9999;
-  display: none;
-  animation: fadeInOut 3s ease-in-out;
-}
-
-@keyframes fadeInOut {
-  0%   { opacity: 0; transform: scale(0.9); }
-  10%  { opacity: 1; transform: scale(1.05); }
-  90%  { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.9); }
-}
-
-.timer-text {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #aaa;
-}
-
+    }
+    .back-button {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: #fff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      z-index: 10;
+    }
+    h1 {
+      text-align: center;
+      color: #ffd700;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+    }
+    .mission {
+      background-color: #111;
+      border: 1px solid #ffd700;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
+    }
+    .mission h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      color: #fff;
+      text-shadow: 0 0 4px rgba(255,255,255,0.3);
+    }
+    .mission p {
+      margin: 0;
+      font-size: 14px;
+      color: #e6d8a3;
+    }
+    .mission button {
+      margin-top: 10px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      background-color: #ffd700;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .mission button:hover:enabled {
+      background-color: #fff;
+    }
+    .mission button:disabled {
+      background-color: #444;
+      color: #0f0;
+      cursor: not-allowed;
+    }
+    .mission-icon {
+      width: 70px;
+      height: 70px;
+      vertical-align: middle;
+      margin-right: 8px;
+      filter: drop-shadow(0 0 2px gold);
+      border-radius: 6px;
+    }
+    .claim-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #000;
+      color: #00ff88;
+      padding: 16px 32px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 14px;
+      border: 2px solid #ffd700;
+      box-shadow: 0 0 20px gold;
+      z-index: 9999;
+      display: none;
+      text-align: center;
+    }
+    .popup-message {
+      font-size: 13px;
+      margin-top: 8px;
+      line-height: 1.6;
+      font-weight: 500;
+      color: white;
+    }
+    .popup-agree-btn {
+      margin-top: 12px;
+      padding: 6px 14px;
+      background-color: #0099ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 0 8px #0099ff;
+      cursor: pointer;
+    }
+    .popup-small {
+      font-size: 14px;
+      color: #0f0;
+    }
+    .timer-text {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
-  <h1>Available Missions</h1>  <div class="mission">
-    <h2><img src="daily-icon.png" class="mission-icon" alt="Daily Icon" /> Daily Rewards</h2>
+  <h1>Available Missions</h1>
+
+  <!-- ✅ Daily Mission -->
+  <div class="mission">
+    <h2><img src="daily-icon.png" class="mission-icon" />Daily Rewards</h2>
     <p>Come back every 24h and earn 0.00001 WLC</p>
     <button id="claim-btn" onclick="claimReward()">Claim</button>
     <div id="timer" class="timer-text"></div>
-  </div>  <script>
+  </div>
+
+  <!-- ✅ Social Missions -->
+  <div id="missions-container"></div>
+
+  <!-- ✅ Claim Popup -->
+  <div id="claim-popup" class="claim-popup">✅ +0.00001 WLC</div>
+
+  <!-- ✅ Generic Popup -->
+  <div id="social-popup" class="claim-popup">
+    <div id="popup-title">+1 WLC</div>
+    <div class="popup-message">
+      ⚠️ If you unsubscribe, the reward will be deducted after checking your tasks.<br>
+      Don’t cheat, we’re on the same team.
+    </div>
+    <button class="popup-agree-btn" onclick="closeSocialPopup()">I agree</button>
+  </div>
+
+  <!-- ✅ Thank you Popup -->
+  <div id="social-popup-again" class="claim-popup popup-small">
+    ✅ Thanks for visiting our page again!
+  </div>
+
+  <script>
+    // Daily Reward
     const CLAIM_KEY = "dailyClaimTimestamp";
     const BALANCE_KEY = "wellcoinBalance";
     const CLAIM_AMOUNT = 0.00001;
     const CLAIM_INTERVAL = 24 * 60 * 60 * 1000;
-
     const btn = document.getElementById("claim-btn");
     const timerDiv = document.getElementById("timer");
 
     function updateTimer() {
       const lastClaim = localStorage.getItem(CLAIM_KEY);
       if (!lastClaim) return;
-
       const diff = Date.now() - parseInt(lastClaim);
       const remaining = CLAIM_INTERVAL - diff;
 
       if (remaining > 0) {
         btn.disabled = true;
         btn.textContent = "Claimed ✅";
-
-        const hours = Math.floor(remaining / 3600000).toString().padStart(2, '0');
-        const minutes = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
-        const seconds = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
-        timerDiv.textContent = `Next claim in ${hours}:${minutes}:${seconds}`;
+        const h = Math.floor(remaining / 3600000).toString().padStart(2, '0');
+        const m = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
+        const s = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
+        timerDiv.textContent = `Next claim in ${h}:${m}:${s}`;
       } else {
         btn.disabled = false;
         btn.textContent = "Claim";
@@ -158,24 +189,83 @@ h1 {
     }
 
     function claimReward() {
-      const now = Date.now();
-      localStorage.setItem(CLAIM_KEY, now);
-
+      localStorage.setItem(CLAIM_KEY, Date.now());
       let balance = parseFloat(localStorage.getItem(BALANCE_KEY)) || 0;
       balance += CLAIM_AMOUNT;
       localStorage.setItem(BALANCE_KEY, balance.toFixed(10));
-
-      const popup = document.createElement("div");
-      popup.className = "claim-popup";
-      popup.textContent = "✅ +0.00001 WLC";
-      document.body.appendChild(popup);
-      popup.style.display = "block";
-      setTimeout(() => popup.remove(), 3000);
-
+      document.getElementById("claim-popup").style.display = "block";
+      setTimeout(() => {
+        document.getElementById("claim-popup").style.display = "none";
+      }, 3000);
       updateTimer();
     }
 
     updateTimer();
     setInterval(updateTimer, 1000);
-  </script></body>
+
+    // Social Missions
+    const missions = [
+      { id: "youtube", label: "Join us on YouTube", icon: "youtube-icon.png", link: "https://youtube.com/@wellcoin-y6b?si=tMl1fl7txJ9r_Cet" },
+      { id: "telegram", label: "Join us on Telegram", icon: "telegram-icon.png", link: "https://t.me/WELLcoinofficial" },
+      { id: "instagram", label: "Join us on Instagram", icon: "instagram-icon.png", link: "https://www.instagram.com/wellcoin1/profilecard/?igsh=MTBpbDBsNWM2eWV2eA==" },
+      { id: "facebook", label: "Join us on Facebook", icon: "facebook-icon.png", link: "https://www.facebook.com/share/16ewW62yTg/?mibextid=qi2Omg" },
+      { id: "tiktok", label: "Join us on TikTok", icon: "tiktok-icon.png", link: "https://www.tiktok.com/@wellcoin6?_t=ZN-8xXkS03VLMs&_r=1" },
+      { id: "x", label: "Join us on X", icon: " twitter-icon.png", link: "https://x.com/WELLcoin2024?s=09" },
+    ];
+
+    const container = document.getElementById("missions-container");
+    missions.forEach(({ id, label, icon, link }) => {
+      const div = document.createElement("div");
+      div.className = "mission";
+      div.innerHTML = `
+        <h2><img src="${icon}" class="mission-icon" />${label}</h2>
+        <p>Get 1 WLC for joining us</p>
+        <button id="${id}-btn" onclick="handleSocial('${id}', '${link}')">Join Now</button>
+      `;
+      container.appendChild(div);
+    });
+
+    function handleSocial(id, link) {
+      const key = `mission-${id}`;
+      const btn = document.getElementById(`${id}-btn`);
+      window.open(link, "_blank");
+
+      setTimeout(() => {
+        if (!localStorage.getItem(key)) {
+          document.getElementById("social-popup").style.display = "block";
+          document.getElementById("social-popup").setAttribute("data-id", id);
+        } else {
+          document.getElementById("social-popup-again").style.display = "block";
+          setTimeout(() => {
+            document.getElementById("social-popup-again").style.display = "none";
+          }, 3000);
+        }
+      }, 1000);
+    }
+
+    function closeSocialPopup() {
+      const id = document.getElementById("social-popup").getAttribute("data-id");
+      const key = `mission-${id}`;
+      const btn = document.getElementById(`${id}-btn`);
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, "true");
+        let balance = parseFloat(localStorage.getItem(BALANCE_KEY)) || 0;
+        balance += 1;
+        localStorage.setItem(BALANCE_KEY, balance.toFixed(10));
+        if (btn) btn.textContent = "Claimed";
+      }
+      document.getElementById("social-popup").style.display = "none";
+    }
+
+    window.addEventListener("load", () => {
+      missions.forEach(({ id }) => {
+        const key = `mission-${id}`;
+        if (localStorage.getItem(key)) {
+          const btn = document.getElementById(`${id}-btn`);
+          if (btn) btn.textContent = "Claimed";
+        }
+      });
+    });
+  </script>
+</body>
 </html>
