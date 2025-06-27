@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -192,14 +191,35 @@
   </div>
 
   <script>
+    const miningRatePerSecond = 0.0000001157;
+    let interval;
+
     let coinCount = parseFloat(localStorage.getItem("coinCount")) || 0.0;
     let balance = parseFloat(localStorage.getItem("balance")) || 0.0;
     let countdown = parseInt(localStorage.getItem("countdown")) || 10800;
-    let interval;
+    let lastPlayed = parseInt(localStorage.getItem("lastPlayed")) || Date.now();
+
+    const now = Date.now();
+    const secondsPassed = Math.floor((now - lastPlayed) / 1000);
+
+    if (secondsPassed > 0 && countdown > 0) {
+      const effectiveSeconds = Math.min(countdown, secondsPassed);
+      const coinsEarned = miningRatePerSecond * effectiveSeconds;
+
+      coinCount += coinsEarned;
+      balance += coinsEarned;
+      countdown -= effectiveSeconds;
+
+      if (countdown < 0) countdown = 0;
+
+      localStorage.setItem("coinCount", coinCount);
+      localStorage.setItem("balance", balance);
+      localStorage.setItem("countdown", countdown);
+    }
 
     function updateCoin() {
-      coinCount += 0.0000001157;
-      balance += 0.0000001157;
+      coinCount += miningRatePerSecond;
+      balance += miningRatePerSecond;
 
       document.getElementById("coin-count").textContent = coinCount.toFixed(10);
       document.getElementById("balance-amount").textContent = balance.toFixed(10);
@@ -235,9 +255,12 @@
       startMining();
     }
 
-    // تحديث القيم عند بداية الصفحة
     document.getElementById("coin-count").textContent = coinCount.toFixed(10);
     document.getElementById("balance-amount").textContent = balance.toFixed(10);
+
+    window.addEventListener("beforeunload", () => {
+      localStorage.setItem("lastPlayed", Date.now());
+    });
 
     startMining();
   </script>
