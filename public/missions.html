@@ -88,8 +88,7 @@
       line-height: 1.4;
     }
     .popup button,
-    .invite-popup button,
-    .copy-popup button {
+    .invite-popup button {
       margin-top: 14px;
       padding: 10px 20px;
       background: #0099ff;
@@ -101,7 +100,7 @@
       box-shadow: 0 0 10px #0099ff;
       cursor: pointer;
     }
-    .invite-popup, .copy-popup {
+    .invite-popup {
       color: white;
     }
     .invite-link {
@@ -114,6 +113,11 @@
       word-break: break-word;
       box-shadow: 0 0 10px white;
     }
+    .copy-popup {
+      box-shadow: 0 0 14px #fff;
+      color: #fff;
+      font-weight: bold;
+    }
     .timer-text {
       font-size: 13px;
       margin-top: 6px;
@@ -124,47 +128,169 @@
 <body>
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
   <h1 style="text-align:center;">Available Missions</h1>
-  <div class="mission">
-    <h2><img src="daily-icon.png" class="mission-icon" />Daily Rewards</h2>
-    <p>Come back every 24h and earn 0.00001 WLC</p>
-    <button id="claim-btn" onclick="claimReward()">Claim</button>
-    <div id="timer" class="timer-text"></div>
-  </div>
   <div id="missions-container"></div>
   <div id="invite-popup" class="invite-popup">
     <div class="invite-link" id="invite-link-text"></div>
     <button onclick="copyInviteLink()">Copy</button><br/>
     <button onclick="closeInvitePopup()">Close</button>
   </div>
-  <div id="copy-popup" class="copy-popup">
-    <h3 style="color: #fff; text-shadow: 0 0 5px #fff;">✅ Link copied successfully!</h3>
-    <button onclick="closeCopyPopup()">OK</button>
-  </div>
   <div id="reward-popup" class="popup">
     <h3 id="reward-title"></h3>
     <p>⚠️ Any fake referrals or cheating will freeze your account balance.</p>
     <button onclick="closeRewardPopup()">I understand</button>
   </div>
+  <div id="copy-popup" class="copy-popup">✅ Link copied successfully!</div>
   <script>
-    // Daily reward timer and balance logic (unchanged)
-    // ...
-    const missions = [
-      { id: "youtube", label: "Join us on YouTube", icon: "youtube-icon.png", link: "https://youtube.com/@wellcoin-y6b" },
-      { id: "telegram", label: "Join us on Telegram", icon: "telegram-icon.png", link: "https://t.me/WELLcoinofficial" },
-      { id: "instagram", label: "Join us on Instagram", icon: "instagram-icon.png", link: "https://www.instagram.com/wellcoin1" },
-      { id: "facebook", label: "Join us on Facebook", icon: "facebook-icon.png", link: "https://facebook.com/wellcoin" },
-      { id: "tiktok", label: "Join us on TikTok", icon: "tiktok-icon.png", link: "https://www.tiktok.com/@wellcoin6" },
-      { id: "x", label: "Join us on X", icon: "twitter-icon.png", link: "https://x.com/WELLcoin2024" }
-    ];function copyInviteLink() {
-  navigator.clipboard.writeText(inviteLink)
-    .then(() => {
-      document.getElementById("copy-popup").style.display = "block";
-    })
-    .catch(() => alert("Failed to copy"));
+    const container = document.getElementById("missions-container");
+    const telegramId = localStorage.getItem("telegramId") || "123456";
+    const inviteLink = `https://wellcoin.com/invite?ref=${telegramId}`;const socialMissions = [
+  { id: "youtube", label: "Join us on YouTube", icon: "youtube-icon.png", link: "https://youtube.com/@wellcoin-y6b" },
+  { id: "telegram", label: "Join us on Telegram", icon: "telegram-icon.png", link: "https://t.me/WELLcoinofficial" },
+  { id: "instagram", label: "Join us on Instagram", icon: "instagram-icon.png", link: "https://www.instagram.com/wellcoin1" },
+  { id: "facebook", label: "Join us on Facebook", icon: "facebook-icon.png", link: "https://www.facebook.com/share/16ewW62yTg/?mibextid=qi2Omg" },
+  { id: "tiktok", label: "Join us on TikTok", icon: "tiktok-icon.png", link: "https://www.tiktok.com/@wellcoin6" },
+  { id: "x", label: "Join us on X", icon: "twitter-icon.png", link: "https://x.com/WELLcoin2024?s=09" }
+];
+
+const inviteMissions = [
+  { id: "invite5", label: "Invite 5 Friends", reward: 0.5, target: 5, img: "invi1.png" },
+  { id: "invite20", label: "Invite 20 Friends", reward: 2, target: 20, img: "invit2.png" },
+  { id: "invite100", label: "Invite 100 Friends", reward: 10, target: 100, img: "invit3.png" }
+];
+
+function renderSocialMissions() {
+  socialMissions.forEach(({ id, label, icon, link }) => {
+    const div = document.createElement("div");
+    div.className = "mission";
+    div.innerHTML = `
+      <h2><img src="${icon}" class="mission-icon" />${label}</h2>
+      <p>Get 1 WLC for joining us</p>
+      <button onclick="handleSocial('${id}', '${link}')">Join Now</button>
+    `;
+    container.appendChild(div);
+  });
 }
-function closeCopyPopup() {
-  document.getElementById("copy-popup").style.display = "none";
+
+function handleSocial(id, link) {
+  const key = `mission-${id}`;
+  window.open(link, "_blank");
+  if (!localStorage.getItem(key)) {
+    localStorage.setItem(key, "true");
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
+    balance += 1;
+    localStorage.setItem("balance", balance.toFixed(10));
+  }
 }
+
+function renderInviteMissions() {
+  inviteMissions.forEach(({ id, label, reward, target, img }) => {
+    const invited = parseInt(localStorage.getItem(`${id}-invited`) || "0");
+    const claimed = localStorage.getItem(`${id}-claimed`);
+    const canClaim = invited >= target;
+    const div = document.createElement("div");
+    div.className = "mission";
+    div.innerHTML = `
+      <h2><img src="${img}" class="mission-icon" />${label}</h2>
+      <p>Invite ${target} friends to earn ${reward}$</p>
+      <progress value="${invited}" max="${target}" style="width:100%;height:14px;margin-top:10px;"></progress>
+      <div style="margin-top:6px;">${invited}/${target}</div>
+      <button onclick="goInvite()" style="margin-right:8px;">Go Invite</button>
+      <button onclick="copyInviteLink()">Copy</button>
+      <button id="${id}-claim" onclick="claimInvite('${id}', ${reward})" style="margin-left:8px; ${canClaim ? '' : 'display:none;'}">${claimed ? 'Claimed ✅' : 'Claim'}</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderDailyReward() {
+  const div = document.createElement("div");
+  div.className = "mission";
+  div.innerHTML = `
+    <h2><img src="daily-icon.png" class="mission-icon" />Daily Rewards</h2>
+    <p>Come back every 24h and earn 0.00001 WLC</p>
+    <button id="claim-btn" onclick="claimReward()">Claim</button>
+    <div id="timer" class="timer-text"></div>
+  `;
+  container.prepend(div);
+}
+
+function claimReward() {
+  const CLAIM_KEY = "dailyClaimTimestamp";
+  const CLAIM_AMOUNT = 0.00001;
+  localStorage.setItem(CLAIM_KEY, Date.now());
+  let balance = parseFloat(localStorage.getItem("balance")) || 0;
+  balance += CLAIM_AMOUNT;
+  localStorage.setItem("balance", balance.toFixed(10));
+  updateTimer();
+}
+
+function updateTimer() {
+  const CLAIM_KEY = "dailyClaimTimestamp";
+  const CLAIM_INTERVAL = 24 * 60 * 60 * 1000;
+  const btn = document.getElementById("claim-btn");
+  const timerDiv = document.getElementById("timer");
+  const lastClaim = localStorage.getItem(CLAIM_KEY);
+  if (!lastClaim) return;
+  const diff = Date.now() - parseInt(lastClaim);
+  const remaining = CLAIM_INTERVAL - diff;
+  if (remaining > 0) {
+    btn.disabled = true;
+    btn.textContent = "Claimed ✅";
+    const h = Math.floor(remaining / 3600000).toString().padStart(2, '0');
+    const m = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
+    const s = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
+    timerDiv.textContent = `Next claim in ${h}:${m}:${s}`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = "Claim";
+    timerDiv.textContent = "";
+  }
+}
+
+function goInvite() {
+  document.getElementById("invite-link-text").textContent = inviteLink;
+  document.getElementById("invite-popup").style.display = "block";
+}
+
+function closeInvitePopup() {
+  document.getElementById("invite-popup").style.display = "none";
+}
+
+function copyInviteLink() {
+  navigator.clipboard.writeText(inviteLink).then(() => {
+    const popup = document.getElementById("copy-popup");
+    popup.style.display = "block";
+    setTimeout(() => {
+      popup.style.display = "none";
+    }, 2000);
+  });
+}
+
+function claimInvite(id, reward) {
+  const claimedKey = `${id}-claimed`;
+  if (!localStorage.getItem(claimedKey)) {
+    localStorage.setItem(claimedKey, "true");
+    localStorage.setItem(`${id}-usdt`, reward);
+    document.getElementById(`${id}-claim`).disabled = true;
+    document.getElementById(`${id}-claim`).textContent = "Claimed ✅";
+    showRewardPopup(reward);
+  }
+}
+
+function showRewardPopup(rewardText) {
+  document.getElementById("reward-title").textContent = `🎉 Congratulations you earned ${rewardText}$`;
+  document.getElementById("reward-popup").style.display = "block";
+}
+
+function closeRewardPopup() {
+  document.getElementById("reward-popup").style.display = "none";
+}
+
+renderDailyReward();
+renderSocialMissions();
+renderInviteMissions();
+updateTimer();
+setInterval(updateTimer, 1000);
 
   </script>
 </body>
