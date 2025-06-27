@@ -101,107 +101,81 @@ h1 {
   box-shadow: 0 0 20px gold;
   z-index: 9999;
   display: none;
+  animation: fadeInOut 3s ease-in-out;
 }
 
-.popup-message {
-  font-size: 13px;
+@keyframes fadeInOut {
+  0%   { opacity: 0; transform: scale(0.9); }
+  10%  { opacity: 1; transform: scale(1.05); }
+  90%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); }
+}
+
+.timer-text {
   margin-top: 8px;
-  line-height: 1.6;
-  font-weight: 500;
-  color: white;
-  text-align: center;
-}
-
-.popup-button {
-  margin-top: 12px;
-  padding: 6px 14px;
-  background-color: #0099ff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: bold;
-  box-shadow: 0 0 8px #0099ff;
-  cursor: pointer;
+  font-size: 13px;
+  color: #aaa;
 }
 
   </style>
 </head>
 <body>
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
-  <h1>Available Missions</h1>  <div id="missions"></div>  <div id="popup" class="claim-popup" style="flex-direction: column; align-items: center; text-align: center;">
-    <div id="popup-title">+1 WLC</div>
-    <div id="popup-message" class="popup-message">⚠️ If you unsubscribe, the reward will be deducted after checking your tasks.<br>Don’t cheat, we’re on the same team.</div>
-    <button id="popup-btn" class="popup-button" onclick="closePopup()">I agree</button>
+  <h1>Available Missions</h1>  <div class="mission">
+    <h2><img src="daily-icon.png" class="mission-icon" alt="Daily Icon" /> Daily Rewards</h2>
+    <p>Come back every 24h and earn 0.00001 WLC</p>
+    <button id="claim-btn" onclick="claimReward()">Claim</button>
+    <div id="timer" class="timer-text"></div>
   </div>  <script>
-    const socialMissions = [
-      { id: "youtube", name: "Join us on YouTube", img: "youtube-icon.png", url: "https://youtube.com/@wellcoin-y6b?si=tMl1fl7txJ9r_Cet" },
-      { id: "telegram", name: "Join us on Telegram", img: "telegram-icon.png", url: "https://t.me/WELLcoinofficial" },
-      { id: "tiktok", name: "Join us on TikTok", img: "tiktok-icon.png", url: "https://www.tiktok.com/@wellcoin6?_t=ZN-8xXkS03VLMs&_r=1" },
-      { id: "facebook", name: "Join us on Facebook", img: "facebook-icon.png", url: "https://www.facebook.com/share/16ewW62yTg/?mibextid=qi2Omg" },
-      { id: "instagram", name: "Join us on Instagram", img: "instagram-icon.png", url: "https://www.instagram.com/wellcoin1/profilecard/?igsh=MTBpbDBsNWM2eWV2eA==" },
-      { id: "twitter", name: "Join us on X (Twitter)", img: "twitter-icon.png", url: "https://x.com/WELLcoin2024?s=09" }
-    ];
+    const CLAIM_KEY = "dailyClaimTimestamp";
+    const BALANCE_KEY = "wellcoinBalance";
+    const CLAIM_AMOUNT = 0.00001;
+    const CLAIM_INTERVAL = 24 * 60 * 60 * 1000;
 
-    const container = document.getElementById("missions");
+    const btn = document.getElementById("claim-btn");
+    const timerDiv = document.getElementById("timer");
 
-    socialMissions.forEach(({ id, name, img, url }) => {
-      const claimed = localStorage.getItem(`mission_${id}`) === "true";
-      const div = document.createElement("div");
-      div.className = "mission";
-      div.innerHTML = `
-        <h2><img src="${img}" class="mission-icon"> ${name}</h2>
-        <p>Subscribe and earn 1 WLC</p>
-        <button id="btn-${id}">${claimed ? "Claimed" : "Join Now"}</button>
-      `;
+    function updateTimer() {
+      const lastClaim = localStorage.getItem(CLAIM_KEY);
+      if (!lastClaim) return;
 
-      container.appendChild(div);
+      const diff = Date.now() - parseInt(lastClaim);
+      const remaining = CLAIM_INTERVAL - diff;
 
-      document.getElementById(`btn-${id}`).onclick = () => {
-        window.open(url, "_blank");
+      if (remaining > 0) {
+        btn.disabled = true;
+        btn.textContent = "Claimed ✅";
 
-        if (!claimed) {
-          setTimeout(() => {
-            showPopup(id, true);
-          }, 1000);
-        } else {
-          setTimeout(() => {
-            showPopup(id, false);
-          }, 1000);
-        }
-      };
-    });
-
-    function showPopup(id, isFirst) {
-      const popup = document.getElementById("popup");
-      const title = document.getElementById("popup-title");
-      const message = document.getElementById("popup-message");
-      const button = document.getElementById("popup-btn");
-
-      popup.style.display = "flex";
-
-      if (isFirst) {
-        title.textContent = "+1 WLC";
-        message.innerHTML = "⚠️ If you unsubscribe, the reward will be deducted after checking your tasks.<br>Don’t cheat, we’re on the same team.";
-        button.style.display = "inline-block";
-        button.onclick = () => {
-          popup.style.display = "none";
-          localStorage.setItem(`mission_${id}`, "true");
-          const current = parseFloat(localStorage.getItem("balance")) || 0;
-          localStorage.setItem("balance", (current + 1).toFixed(10));
-          const btn = document.getElementById(`btn-${id}`);
-          if (btn) btn.textContent = "Claimed";
-        };
+        const hours = Math.floor(remaining / 3600000).toString().padStart(2, '0');
+        const minutes = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
+        const seconds = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
+        timerDiv.textContent = `Next claim in ${hours}:${minutes}:${seconds}`;
       } else {
-        title.textContent = "✅ Thanks for visiting again!";
-        message.innerHTML = "";
-        button.style.display = "none";
-        setTimeout(() => popup.style.display = "none", 3000);
+        btn.disabled = false;
+        btn.textContent = "Claim";
+        timerDiv.textContent = "";
       }
     }
 
-    function closePopup() {
-      document.getElementById("popup").style.display = "none";
+    function claimReward() {
+      const now = Date.now();
+      localStorage.setItem(CLAIM_KEY, now);
+
+      let balance = parseFloat(localStorage.getItem(BALANCE_KEY)) || 0;
+      balance += CLAIM_AMOUNT;
+      localStorage.setItem(BALANCE_KEY, balance.toFixed(10));
+
+      const popup = document.createElement("div");
+      popup.className = "claim-popup";
+      popup.textContent = "✅ +0.00001 WLC";
+      document.body.appendChild(popup);
+      popup.style.display = "block";
+      setTimeout(() => popup.remove(), 3000);
+
+      updateTimer();
     }
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
   </script></body>
 </html>
