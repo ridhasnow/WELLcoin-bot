@@ -249,9 +249,9 @@
       const btn = document.getElementById(`${id}-btn`);
       if (!localStorage.getItem(key)) {
         localStorage.setItem(key, "true");
-        let balance = parseFloat(localStorage.getItem(BALANCE_KEY)) || 0;
+        let balance = parseFloat(localStorage.getItem("balance")) || 0;
         balance += 1;
-        localStorage.setItem(BALANCE_KEY, balance.toFixed(10));
+        localStorage.setItem("balance", balance.toFixed(10));
         if (btn) btn.textContent = "Claimed";
       }
       document.getElementById("social-popup").style.display = "none";
