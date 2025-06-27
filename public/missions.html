@@ -124,7 +124,7 @@
       font-size: 13px;
       color: #aaa;
     }
-  </style>
+    </style>
 </head>
 <body>
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
@@ -140,6 +140,9 @@
 
   <!-- ✅ Social Missions -->
   <div id="missions-container"></div>
+
+  <!-- ✅ Invite Friends Missions -->
+  <div id="invite-missions"></div>
 
   <!-- ✅ Claim Popup -->
   <div id="claim-popup" class="claim-popup">✅ +0.00001 WLC</div>
@@ -157,6 +160,22 @@
   <!-- ✅ Thank you Popup -->
   <div id="social-popup-again" class="claim-popup popup-small">
     ✅ Thanks for visiting our page again!
+  </div>
+
+  <!-- ✅ Invite Link Popup -->
+  <div id="invite-popup" class="claim-popup" style="display:none;">
+    <div style="font-size:18px; color:#ffd700; margin-bottom:8px;">Your Invite Link</div>
+    <div id="invite-link" style="background:#111;padding:8px;border-radius:8px;color:#fff;word-break:break-all;margin-bottom:12px;"></div>
+    <button onclick="copyInviteLink()" style="background:#0099ff;color:white;font-weight:bold;padding:6px 18px;border-radius:8px;border:none;box-shadow:0 0 8px #0099ff;cursor:pointer;">Copy</button>
+  </div>
+
+  <!-- ✅ Invite Reward Popup -->
+  <div id="invite-reward-popup" class="claim-popup" style="display:none;">
+    <div style="color:#00ff88;font-size:22px;font-weight:bold;margin-bottom:10px;">Congratulations! You claimed <span id="invite-reward-amount"></span></div>
+    <div style="color:white;font-size:15px;margin-bottom:14px;line-height:1.6;">
+      You can claim your USDT any time you want.
+    </div>
+    <button onclick="closeInviteRewardPopup()" style="background:#0099ff;color:#fff;font-weight:bold;padding:7px 24px;border-radius:9px;font-size:17px;box-shadow:0 4px 16px #0099ff;cursor:pointer;">OK</button>
   </div>
 
   <script>
@@ -210,7 +229,7 @@
       { id: "instagram", label: "Join us on Instagram", icon: "instagram-icon.png", link: "https://www.instagram.com/wellcoin1/profilecard/?igsh=MTBpbDBsNWM2eWV2eA==" },
       { id: "facebook", label: "Join us on Facebook", icon: "facebook-icon.png", link: "https://www.facebook.com/share/16ewW62yTg/?mibextid=qi2Omg" },
       { id: "tiktok", label: "Join us on TikTok", icon: "tiktok-icon.png", link: "https://www.tiktok.com/@wellcoin6?_t=ZN-8xXkS03VLMs&_r=1" },
-      { id: "x", label: "Join us on X", icon: " twitter-icon.png", link: "https://x.com/WELLcoin2024?s=09" },
+      { id: "x", label: "Join us on X", icon: "twitter-icon.png", link: "https://x.com/WELLcoin2024?s=09" }
     ];
 
     const container = document.getElementById("missions-container");
@@ -266,6 +285,143 @@
         }
       });
     });
+    });
+
+    // =============== INVITE FRIENDS MISSIONS ===============
+    // تفاصيل المهام
+    const inviteMissions = [
+      {
+        id: "invite5",
+        label: "Invite 5 Friends",
+        goal: 5,
+        reward: 0.5,
+        rewardText: "$0.5",
+      },
+      {
+        id: "invite20",
+        label: "Invite 20 Friends",
+        goal: 20,
+        reward: 2,
+        rewardText: "$2",
+      },
+      {
+        id: "invite100",
+        label: "Invite 100 Friends",
+        goal: 100,
+        reward: 10,
+        rewardText: "$10",
+      }
+    ];
+
+    // توليد رابط إحالة خاص (هنا نولد ID عشوائي أو لاحقًا نستعمل معرف تيليجرام/إيميل)
+    function getMyReferral() {
+      let ref = localStorage.getItem("myReferralCode");
+      if (!ref) {
+        ref = "user-" + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem("myReferralCode", ref);
+      }
+      return window.location.origin + "/?ref=" + ref;
+    }
+
+    // إظهار popup رابط الدعوة
+    function showInvitePopup() {
+      document.getElementById("invite-link").textContent = getMyReferral();
+      document.getElementById("invite-popup").style.display = "block";
+    }
+
+    // نسخ الرابط
+    function copyInviteLink() {
+      const link = document.getElementById("invite-link").textContent;
+      navigator.clipboard.writeText(link);
+      document.getElementById("invite-popup").style.display = "none";
+    }
+
+    // إظهار popup المكافأة بعد النجاح
+    function showInviteReward(amount) {
+      document.getElementById("invite-reward-amount").textContent = amount + " USDT";
+      document.getElementById("invite-reward-popup").style.display = "block";
+    }
+
+    function closeInviteRewardPopup() {
+      document.getElementById("invite-reward-popup").style.display = "none";
+    }
+
+    // توليد واجهات المهام الخاصة بالدعوات
+    function renderInviteMissions() {
+      const container = document.getElementById("invite-missions");
+      inviteMissions.forEach((mission) => {
+        const progress = parseInt(localStorage.getItem(mission.id + "-progress")) || 0;
+        const completed = localStorage.getItem(mission.id + "-done") === "true";
+        const barPercent = Math.min(progress / mission.goal, 1) * 100;
+        let btnText = "Go Invite";
+        let btnDisabled = false;
+        if (completed) {
+          btnText = "Claimed";
+          btnDisabled = true;
+        } else if (progress >= mission.goal) {
+          btnText = "Claim";
+        }
+
+        // تصميم progress bar احترافي
+        container.innerHTML += `
+          <div class="mission">
+            <h2>
+              <img src="invite-icon.png" class="mission-icon" />
+              ${mission.label}
+            </h2>
+            <div style="display:flex;align-items:center;margin:12px 0 8px 0;">
+              <div style="flex:1; height:20px; background:#222; border-radius:9px; overflow:hidden; box-shadow:0 0 8px #ffd70066;">
+                <div style="height:100%; width:${barPercent}%; background:linear-gradient(90deg,#00ff88 40%,#ffd700 100%);transition:width 0.5s;"></div>
+              </div>
+              <div style="min-width:58px; margin-left:10px; color:#fff; font-size:15px; font-weight:bold; text-shadow:0 0 4px #000;">${progress}/${mission.goal}</div>
+            </div>
+            <p>Invite friends and get <span style="color:#00ff88;font-weight:bold">${mission.rewardText}</span></p>
+            <button id="${mission.id}-btn" onclick="handleInviteMission('${mission.id}')" ${btnDisabled ? 'disabled' : ''}>${btnText}</button>
+          </div>
+        `;
+      });
+    }
+    renderInviteMissions();
+
+    // التعامل مع زر المهمة
+    window.handleInviteMission = function (id) {
+      const mission = inviteMissions.find((m) => m.id === id);
+      let progress = parseInt(localStorage.getItem(mission.id + "-progress")) || 0;
+      const completed = localStorage.getItem(mission.id + "-done") === "true";
+
+      if (completed) return;
+
+      if (progress >= mission.goal) {
+        // استحقاق المكافأة
+        localStorage.setItem(mission.id + "-done", "true");
+        showInviteReward(mission.rewardText);
+
+        // (مستقبلاً: هنا نضيف الرصيد للدولار في صفحة Me)
+        // يمكنك استبدال هذا السطر بحفظ منفصل إذا أردت
+        // let usdt = parseFloat(localStorage.getItem("usdtBalance")) || 0;
+        // usdt += mission.reward;
+        // localStorage.setItem("usdtBalance", usdt.toFixed(2));
+
+        // تغيير الزر
+        document.getElementById(mission.id + "-btn").textContent = "Claimed";
+        document.getElementById(mission.id + "-btn").disabled = true;
+      } else {
+        // فتح رابط الدعوة ونسخ الرابط
+        showInvitePopup();
+
+        // في كل مرة تعتبرها دعوة (لاحقاً هنا تضع كود التحقق إذا فعلاً صديق جديد)
+        progress++;
+        localStorage.setItem(mission.id + "-progress", progress);
+
+        // تحديث progress bar/النص والزر بدون تحديث الصفحة
+        setTimeout(() => {
+          // إعادة رسم الشريط
+          document.getElementById("invite-missions").innerHTML = "";
+          renderInviteMissions();
+        }, 300);
+      }
+    }
+
   </script>
 </body>
 </html>
