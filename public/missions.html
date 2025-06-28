@@ -130,20 +130,28 @@
   </style>
 </head>
 <body>
+                   <!--زر الرجوع الى الوراء -->
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
+                  <!--عنوان الصفحةاللي فيها الميسيون-->
   <h1 style="text-align:center;">Available Missions</h1>  <div class="mission">
+                  <!--المهمة الاولى مهمة المكافأة اليومية-->
     <h2><img src="daily-icon.png" class="mission-icon" />Daily Rewards</h2>
     <p>Come back every 24h and earn 0.00001 WLC</p>
     <button id="claim-btn" onclick="claimReward()">Claim</button>
     <div id="timer" class="timer-text"></div>
-  </div>  <div id="missions-container"></div>  <div id="invite-popup" class="invite-popup">
+              <!--كود اللي عبارة على حاوية لمجميع مهمات السوشيال ميديا و استدعاء اصدقاء-->
+      </div>  <div id="missions-container"></div>
+              <!--نافذة منبثقة تظهر كود الدعوة عند الضغط go invit -->
+  <div id="invite-popup" class="invite-popup">
     <div class="invite-link" id="invite-link-text"></div>
     <button onclick="copyInviteLink()">Copy</button><br/>
     <button onclick="closeInvitePopup()">Close</button>
+              <!-- نافذة منبثقة تظهر عند الضغط على claim باش ياخذ مكافاته-->
   </div>  <div id="reward-popup" class="popup">
     <h3 id="reward-title"></h3>
     <p>⚠️ Any fake referrals or cheating will freeze your account balance.</p>
     <button onclick="closeRewardPopup()">I understand</button>
+              <!-- نافذة منبثقة تضهر لمهام السوشيال ميديا عند الاشتراك الناجح-->
   </div>  <div id="social-popup" class="social-popup">
     <div id="popup-title">+1 WLC</div>
     <div class="popup-message">
@@ -151,10 +159,12 @@
       Don’t cheat, we’re on the same team.
     </div>
     <button class="popup-agree-btn" onclick="closeSocialPopup()">I agree</button>
+             <!-- نافذة منبثقة تظهر الذا اللاعب ضغط مرة اخرى على join now في مهام السوشيال -->
   </div>  <div id="social-popup-again" class="social-popup-again popup-small">
     ✅ Thanks for visiting our page again!
-  </div>  <script>
-// ✅ Daily Mission Logic
+  </div> 
+  <script>
+         //الميكانيك الخاص مهمة المكافأة اليومية 
 const CLAIM_KEY = "dailyClaimTimestamp";
 const BALANCE_KEY = "wellcoinBalance";
 const CLAIM_AMOUNT = 0.00001;
@@ -192,7 +202,7 @@ function claimReward() {
 updateTimer();
 setInterval(updateTimer, 1000);
 
-// ✅ Social Missions
+            // ميكانيك الخاص بمهمات السوشيال ميديا
 const missions = [
   { id: "youtube", label: "Join us on YouTube", icon: "youtube-icon.png", link: "https://youtube.com/@wellcoin-y6b" },
   { id: "telegram", label: "Join us on Telegram", icon: "telegram-icon.png", link: "https://t.me/WELLcoinofficial" },
@@ -224,6 +234,7 @@ function handleSocial(id, link) {
       document.getElementById("social-popup").setAttribute("data-id", id);
     } else {
       document.getElementById("social-popup-again").style.display = "block";
+      btn.textContent = "Claimed"; // تحديث يدوي بعد الضغط مباشرة
       setTimeout(() => {
         document.getElementById("social-popup-again").style.display = "none";
       }, 3000);
