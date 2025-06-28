@@ -219,15 +219,17 @@
     }
 
     function updateCoin() {
-      coinCount += miningRatePerSecond;
-      balance += miningRatePerSecond;
+  if (countdown <= 0) return; // 🛑 أوقف التعدين إذا انتهى الوقت
 
-      document.getElementById("coin-count").textContent = coinCount.toFixed(10);
-      document.getElementById("balance-amount").textContent = balance.toFixed(10);
+  coinCount += miningRatePerSecond;
+  balance += miningRatePerSecond;
 
-      localStorage.setItem("coinCount", coinCount);
-      localStorage.setItem("balance", balance);
-    }
+  document.getElementById("coin-count").textContent = coinCount.toFixed(10);
+  document.getElementById("balance-amount").textContent = balance.toFixed(10);
+
+  localStorage.setItem("coinCount", coinCount);
+  localStorage.setItem("balance", balance);
+}
 
     function updateTimer() {
       if (countdown <= 0) return;
