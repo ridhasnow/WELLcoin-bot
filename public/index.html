@@ -96,36 +96,39 @@
     }
 
     .mining-bar {
-      position: absolute;
-      bottom: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.5);
-      padding: 6px 18px;
-      border-radius: 16px;
-      font-size: 14px;
-      color: gold;
-      font-weight: 600;
-      font-family: 'Segoe UI Semibold', sans-serif;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
-      border: 1px solid #ffd700;
-      text-align: center;
-      white-space: nowrap;
-    }
+  position: absolute;
+  bottom: 58px; /* يوازي حافة الأزرار العلوية تمامًا */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 6px 18px;
+  border-radius: 16px;
+  font-size: 14px;
+  color: gold;
+  font-weight: 600;
+  font-family: 'Segoe UI Semibold', sans-serif;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+  border: 1px solid #ffd700;
+  text-align: center;
+  white-space: nowrap;
+  z-index: 3;
+}
 
     .timer {
-      position: absolute;
-      bottom: 48px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.3);
-      color: #ffd700;
-      font-size: 13px;
-      padding: 4px 12px;
-      border-radius: 50px;
-      border: 1px solid #ffd700;
-      box-shadow: 0 0 4px rgba(255, 215, 0, 0.2);
-    }
+  position: absolute;
+  bottom: 92px; /* أعلى من البار الجديد بـ 34px تقريبا */
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(255,215,0,0.4), rgba(0,0,0,0.6));
+  color: #90ff90;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 50px;
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.6), inset 0 0 3px #fff, 0 0 8px #00ff0077;
+  font-weight: bold;
+  z-index: 4;
+}
 
     .bottom-buttons {
   display: flex;
