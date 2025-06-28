@@ -214,12 +214,16 @@ const missions = [
 
 const container = document.getElementById("missions-container");
 missions.forEach(({ id, label, icon, link }) => {
+  const claimed = localStorage.getItem(`mission-${id}`); // تحقق من التخزين
+  const buttonText = claimed ? "Claimed ✅" : "Join Now";
+  const isDisabled = claimed ? "disabled" : "";
+
   const div = document.createElement("div");
   div.className = "mission";
   div.innerHTML = `
     <h2><img src="${icon}" class="mission-icon" />${label}</h2>
     <p>Get 1 WLC for joining us</p>
-    <button id="${id}-btn" onclick="handleSocial('${id}', '${link}')">Join Now</button>
+    <button id="${id}-btn" onclick="handleSocial('${id}', '${link}')" ${isDisabled}>${buttonText}</button>
   `;
   container.appendChild(div);
 });
