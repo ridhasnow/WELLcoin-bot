@@ -95,38 +95,6 @@
       object-fit: contain;
     }
 
-    .mining-bar {
-      position: absolute;
-      bottom: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.5);
-      padding: 6px 18px;
-      border-radius: 16px;
-      font-size: 14px;
-      color: gold;
-      font-weight: 600;
-      font-family: 'Segoe UI Semibold', sans-serif;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
-      border: 1px solid #ffd700;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .timer {
-      position: absolute;
-      bottom: 48px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.3);
-      color: #ffd700;
-      font-size: 13px;
-      padding: 4px 12px;
-      border-radius: 50px;
-      border: 1px solid #ffd700;
-      box-shadow: 0 0 4px rgba(255, 215, 0, 0.2);
-    }
-
     .mining-frame {
   position: relative;
   width: 92%;
@@ -231,8 +199,10 @@
                                 <!--ميكانيك الضغط على الصورة حتى يعيد تشغيل عداد التعديد-->
 <div class="character-container">
   <img src="character.png" class="character" alt="Player Character" onclick="restartMiningTimer()" />
-</div> 
-  <div class="mining-frame">
+</div>
+
+<!-- الكادر الجديد مع التنين -->
+<div class="mining-frame">
   <img src="dragon-frame.png" class="frame-image" alt="Frame" />
   <div class="frame-content">
     <div id="mining-text">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
