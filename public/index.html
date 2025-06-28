@@ -95,60 +95,37 @@
       object-fit: contain;
     }
 
-    .mining-frame {
-  position: relative;
-  width: 95%;
-  max-width: 520px;
-  height: 140px;
-  margin: 0 auto 16px auto;
-  background: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 5;
-}
+    .mining-bar {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 6px 18px;
+      border-radius: 16px;
+      font-size: 14px;
+      color: gold;
+      font-weight: 600;
+      font-family: 'Segoe UI Semibold', sans-serif;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+      border: 1px solid #ffd700;
+      text-align: center;
+      white-space: nowrap;
+    }
 
-.frame-image {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.frame-content {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  color: #ffd700;
-  font-weight: bold;
-  font-size: 15px;
-  font-family: 'Segoe UI', sans-serif;
-  padding: 4px 8px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-#mining-text {
-  margin-bottom: 6px;
-  font-size: 15px;
-  text-shadow: 1px 1px 2px #000;
-  white-space: nowrap;
-}
-
-.timer-frame {
-  font-size: 14px;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
-  color: #ffd700;
-  box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
-  white-space: nowrap;
-}
+    .timer {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.3);
+      color: #ffd700;
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 50px;
+      border: 1px solid #ffd700;
+      box-shadow: 0 0 4px rgba(255, 215, 0, 0.2);
+    }
 
     .bottom-buttons {
   display: flex;
@@ -204,18 +181,11 @@
     <span id="balance-amount">0.0000000000</span>
   </div>
                                 <!--ميكانيك الضغط على الصورة حتى يعيد تشغيل عداد التعديد-->
-<div class="character-container">
-  <img src="character.png" class="character" alt="Player Character" onclick="restartMiningTimer()" />
-</div>
-
-<!-- الكادر الجديد مع التنين -->
-<div class="mining-frame">
-  <img src="dragon-frame.png" class="frame-image" alt="Frame" />
-  <div class="frame-content">
-    <div id="mining-text">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
-    <div id="countdown" class="timer-frame">3:00:00</div>
+  <div class="character-container">
+    <img src="character.png" class="character" alt="Player Character" onclick="restartMiningTimer()" />
+    <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
+    <div class="timer" id="countdown">3:00:00</div>
   </div>
-</div>
                               <!--ميكانيك الازرار-->
   <div class="bottom-buttons">
     <button class="btn">Me</button>
