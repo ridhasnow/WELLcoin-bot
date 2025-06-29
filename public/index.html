@@ -246,13 +246,10 @@
   if (secondsPassed > 0 && countdown > 0) {
     const effectiveSeconds = Math.min(countdown, secondsPassed);
     const coinsEarned = miningRatePerSecond * effectiveSeconds;
-
     coinCount += coinsEarned;
     balance += coinsEarned;
     countdown -= effectiveSeconds;
-
     if (countdown < 0) countdown = 0;
-
     localStorage.setItem("coinCount", coinCount);
     localStorage.setItem("balance", balance);
     localStorage.setItem("countdown", countdown);
@@ -295,41 +292,34 @@
 
   document.getElementById("coin-count").textContent = coinCount.toFixed(10);
   document.getElementById("balance-amount").textContent = balance.toFixed(10);
-  
+
+  window.addEventListener("beforeunload", () => {
+    localStorage.setItem("lastPlayed", Date.now());
+  });
 
   window.addEventListener("load", () => {
-  const usernameBox = document.getElementById("username-inside");
+    const usernameBox = document.getElementById("username-inside");
 
-  if (window.Telegram && Telegram.WebApp) {
-    Telegram.WebApp.ready();
+    if (window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.ready();
+      const tg = Telegram.WebApp;
 
-    const tg = Telegram.WebApp;
-
-    // جرب نطبع الـ initData عشان نتاكد انه واصل من تيليجرام
-    document.body.insertAdjacentHTML("beforeend", `
-      <div style="position:fixed;bottom:10px;left:10px;background:black;color:lime;padding:5px;z-index:9999;font-size:10px;">
-        ${tg.initData || "initData is empty"}
-      </div>
-    `);
-
-    // تأكد إن initData موجود
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-      const user = tg.initDataUnsafe.user;
-      const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
-      usernameBox.textContent = fullName;
+      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        const user = tg.initDataUnsafe.user;
+        const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
+        usernameBox.textContent = fullName;
+      } else {
+        usernameBox.textContent = "Unknown Player";
+      }
     } else {
-      // طباعة بيانات تيليجرام كاملة على الشاشة لفحصها
-document.body.insertAdjacentHTML("beforeend", `
-  <div style="position:fixed;bottom:10px;left:10px;background:black;color:lime;padding:5px;z-index:9999;font-size:10px;">
-    <b>initData:</b><br>${tg.initData}<br><br>
-    <b>user:</b><br>${JSON.stringify(tg.initDataUnsafe?.user || {}, null, 2)}
-  </div>
-`);
-      usernameBox.textContent = "Unknown Player";
+      usernameBox.textContent = "❌ Not in Telegram";
     }
-  } else {
-    usernameBox.textContent = "❌ Not in Telegram";
-  }
-});
+
+    // ✅ تأكد من تشغيل التعدين دائمًا إذا العداد > 0
+    if (countdown > 0) {
+      startMining();
+    } else {
+      document.getElementById("countdown").textContent = "0:00:00";
+    }
   });
 </script>
