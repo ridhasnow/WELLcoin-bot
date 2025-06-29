@@ -4,12 +4,14 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-const bot = new Telegraf(process.env.BOT_TOKEN); // ✅ نستخدم التوكن من env
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// خدمة صفحة HTML للعبة
 app.use(express.static("public"));
 
 const playersFilePath = path.join(__dirname, "players.json");
 
+// تحميل بيانات اللاعبين من ملف JSON
 let players = {};
 if (fs.existsSync(playersFilePath)) {
   try {
@@ -20,6 +22,7 @@ if (fs.existsSync(playersFilePath)) {
   }
 }
 
+// عند تنفيذ /start من طرف اللاعب
 bot.start((ctx) => {
   const userId = ctx.from.id.toString();
   const username = ctx.from.username || "Unknown";
@@ -32,19 +35,20 @@ bot.start((ctx) => {
       joinedAt: new Date().toISOString(),
     };
 
+    // حفظ بيانات اللاعب
     fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
     ctx.reply(`👋 Welcome, ${username}! You've been registered.`);
-ctx.replyWithGame('WELLcoin_SavemeGame'); // هنا اسم اللعبة من BotFather
   } else {
     ctx.reply(`👋 Welcome back, ${username}!`);
   }
 
-  // ✅ هذا السطر يظهر زر Play الرسمي من Telegram
-  ctx.replyWithGame('WELLcoin_SavemeGame');
+  // إرسال زر "Play" الرسمي المرتبط باللعبة
+  ctx.replyWithGame("WELLcoin_SavemeGame"); // <-- استبدلها بالـ short name تبع لعبتك من BotFather
 });
 
+// إطلاق البوت والسيرفر
 bot.launch();
 app.listen(10000, () => {
-  console.log("Web server running on port 10000");
+  console.log("✅ Web server running on port 10000");
 });
-console.log("Bot is running...");
+console.log("✅ Bot is running...");
