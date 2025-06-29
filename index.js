@@ -6,12 +6,12 @@ const path = require("path");
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// خدمة صفحة HTML للعبة
 app.use(express.static("public"));
+app.use(express.json());
 
 const playersFilePath = path.join(__dirname, "players.json");
 
-// تحميل بيانات اللاعبين من ملف JSON
+// تحميل بيانات اللاعبين
 let players = {};
 if (fs.existsSync(playersFilePath)) {
   try {
@@ -22,7 +22,7 @@ if (fs.existsSync(playersFilePath)) {
   }
 }
 
-// عند تنفيذ /start من طرف اللاعب
+// نقطة البداية
 bot.start((ctx) => {
   const userId = ctx.from.id.toString();
   const username = ctx.from.username || "Unknown";
@@ -35,20 +35,26 @@ bot.start((ctx) => {
       joinedAt: new Date().toISOString(),
     };
 
-    // حفظ بيانات اللاعب
     fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
-    ctx.reply(`👋 Welcome, ${username}! You've been registered.`);
+    ctx.replyWithGame("WELLcoin_SavemeGame");
   } else {
     ctx.reply(`👋 Welcome back, ${username}!`);
   }
-
-  // إرسال زر "Play" الرسمي المرتبط باللعبة
-  ctx.replyWithGame("WELLcoin_SavemeGame"); // <-- استبدلها بالـ short name تبع لعبتك من BotFather
 });
 
-// إطلاق البوت والسيرفر
-bot.launch();
-app.listen(10000, () => {
-  console.log("✅ Web server running on port 10000");
+// تلقي Callback من زر Play Game
+bot.on("callback_query", (ctx) => {
+  if (ctx.callbackQuery.game_short_name === "WELLcoin_SavemeGame") {
+    ctx.answerCallbackQuery();
+    ctx.replyWithGame("WELLcoin_SavemeGame");
+  }
 });
-console.log("✅ Bot is running...");
+
+// ربط Webhook
+app.use(bot.webhookCallback("/telegraf"));
+
+app.listen(10000, async () => {
+  const url = "https://wellcoin-bot.onrender.com"; // رابط موقعك
+  await bot.telegram.setWebhook(`${url}/telegraf`);
+  console.log("✅ Webhook connected to:", `${url}/telegraf`);
+});
