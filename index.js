@@ -43,18 +43,23 @@ bot.start((ctx) => {
 });
 
           // تلقي Callback من زر Play Game
-bot.on("callback_query", async (ctx) => {
-  const query = ctx.callbackQuery;
+bot.start(async (ctx) => {
+  const userId = ctx.from.id.toString();
+  const username = ctx.from.username || "Unknown";
 
-  if (query.game_short_name === "WELLcoin_SavemeGame") {
-    // أجب على الزر عشان يوقف التحميل
-    if (typeof ctx.answerCbQuery === 'function') {
-      await ctx.answerCbQuery();
-    }
+  if (!players[userId]) {
+    players[userId] = {
+      username,
+      wellcoins: 0,
+      miningSpeed: 0.2,
+      joinedAt: new Date().toISOString(),
+    };
 
-    // أرسل اللعبة للمستخدم
-    await ctx.telegram.sendGame(query.from.id, "WELLcoin_SavemeGame");
+    fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
   }
+
+  // ✅ إرسال رسالة اللعبة هنا
+  await ctx.telegram.sendGame(ctx.chat.id, "WELLcoin_SavemeGame");
 });
 
 // ربط Webhook
