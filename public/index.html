@@ -316,20 +316,17 @@
   }
 });
 
-    Telegram.WebApp.ready();
 
-window.addEventListener("DOMContentLoaded", () => {
-  const tg = window.Telegram.WebApp;
-  const usernameBox = document.getElementById("username-inside");
+const tg = window.Telegram.WebApp;
+const usernameBox = document.getElementById("username-inside");
 
-  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-    const user = tg.initDataUnsafe.user;
-    const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
-    usernameBox.textContent = fullName;
-  } else {
-    usernameBox.textContent = "Unknown Player";
-  }
-});
+if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+  const user = tg.initDataUnsafe.user;
+  const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
+  usernameBox.textContent = fullName;
+} else {
+  usernameBox.textContent = "Unknown Player";
+}
   </script>
 </body>
 </html>
