@@ -34,13 +34,13 @@ bot.start((ctx) => {
 
     fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
     ctx.reply(`👋 Welcome, ${username}! You've been registered.`);
-ctx.replyWithGame('WELLcoin_SavemeGame'); // هنا اسم اللعبة من BotFather
+ctx.replyWithGame('WELLcoinGameBot'); // هنا اسم اللعبة من BotFather
   } else {
     ctx.reply(`👋 Welcome back, ${username}!`);
   }
 
   // ✅ هذا السطر يظهر زر Play الرسمي من Telegram
-  ctx.replyWithGame('WELLcoin_SavemeGame');
+  ctx.replyWithGame('WELLcoinGameBot');
 });
 
 bot.launch();
