@@ -42,13 +42,14 @@ bot.start((ctx) => {
   }
 });
 
-// تلقي Callback من زر Play Game
-bot.on("callback_query", (ctx) => {
+          // تلقي Callback من زر Play Game
+bot.on("callback_query", async (ctx) => {
   if (ctx.callbackQuery.game_short_name === "WELLcoin_SavemeGame") {
     if (ctx.callbackQuery && typeof ctx.answerCbQuery === 'function') {
-  ctx.answerCbQuery();
-};
-    ctx.replyWithGame("WELLcoin_SavemeGame");
+      await ctx.answerCbQuery(); // ✅ ضروري عشان ما يظل الزر يدور
+    }
+
+    await ctx.replyWithGame("WELLcoin_SavemeGame");
   }
 });
 
