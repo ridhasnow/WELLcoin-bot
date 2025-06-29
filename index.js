@@ -22,7 +22,7 @@ if (fs.existsSync(playersFilePath)) {
   }
 }
 
-// نقطة البداية
+// أمر start - يرسل زر Play Now فقط
 bot.start((ctx) => {
   const userId = ctx.from.id.toString();
   const username = ctx.from.username || "Unknown";
@@ -37,33 +37,23 @@ bot.start((ctx) => {
     fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
   }
 
-  // أرسل زر اللعبة
-  ctx.reply("Click the button below to play:", {
-  reply_markup: {
-    inline_keyboard: [
-      [{ text: "▶️ Play Now", web_app: { url: "https://t.me/WELLcoinGameBot?startapp" } }]
-    ]
-  }
+  // زر فتح اللعبة
+  ctx.reply("👋 Welcome! Click below to start playing WELLcoin:", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "▶️ Play WELLcoin Game", web_app: { url: "https://t.me/WELLcoinGameBot?startapp" } }]
+      ]
+    }
   });
 });
 
-// تلقي Callback من زر Play Game
-bot.on("callback_query", async (ctx) => {
-  const query = ctx.callbackQuery;
+// ❌ حذفنا الـ callback_query لأنه ماعاد نحتاجه مع Web App فقط
 
-  if (query.game_short_name === "WELLcoin_SavemeGame" || query.data === "play") {
-    if (typeof ctx.answerCbQuery === 'function') {
-      await ctx.answerCbQuery(); // مهم جدًا
-    }
-    await ctx.telegram.sendGame(query.from.id, "WELLcoin_SavemeGame");
-  }
-});
-
-// Webhook
+// ربط Webhook
 app.use(bot.webhookCallback("/telegraf"));
 
 app.listen(10000, async () => {
-  const url = "https://wellcoin-bot.onrender.com"; // رابطك على Render
+  const url = "https://wellcoin-bot.onrender.com"; // رابطك
   await bot.telegram.setWebhook(`${url}/telegraf`);
   console.log("✅ Webhook connected to:", `${url}/telegraf`);
 });
