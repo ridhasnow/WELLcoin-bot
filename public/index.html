@@ -298,28 +298,20 @@
   });
 
   window.addEventListener("load", () => {
-    const usernameBox = document.getElementById("username-inside");
+  // عرض اليوزر من التخزين المحلي
+  const usernameBox = document.getElementById("username-inside");
+  const savedUsername = localStorage.getItem("username");
 
-    if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.ready();
-      const tg = Telegram.WebApp;
+  if (savedUsername) {
+    usernameBox.textContent = savedUsername;
+  } else {
+    usernameBox.textContent = "No username";
+  }
 
-      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        const user = tg.initDataUnsafe.user;
-        const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
-        usernameBox.textContent = fullName;
-      } else {
-        usernameBox.textContent = "Unknown Player";
-      }
-    } else {
-      usernameBox.textContent = "❌ Not in Telegram";
-    }
-
-    // ✅ تأكد من تشغيل التعدين دائمًا إذا العداد > 0
-    if (countdown > 0) {
-      startMining();
-    } else {
-      document.getElementById("countdown").textContent = "0:00:00";
-    }
-  });
-</script>
+  // تشغيل التعدين إذا فيه وقت باقي
+  if (countdown > 0) {
+    startMining();
+  } else {
+    document.getElementById("countdown").textContent = "0:00:00";
+  }
+});
