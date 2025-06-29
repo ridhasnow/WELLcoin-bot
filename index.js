@@ -34,34 +34,36 @@ bot.start((ctx) => {
       miningSpeed: 0.2,
       joinedAt: new Date().toISOString(),
     };
-
     fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
-    ctx.replyWithGame("WELLcoin_SavemeGame");
-  } else {
-    ctx.reply(`👋 Welcome back, ${username}!`);
   }
+
+  // أرسل زر اللعبة
+  ctx.reply("👋 You've been registered! Click the button below to play.", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "▶️ Play WELLcoin Game", callback_game: {}, callback_data: "play" }]
+      ]
+    }
+  });
 });
 
-          // تلقي Callback من زر Play Game
+// تلقي Callback من زر Play Game
 bot.on("callback_query", async (ctx) => {
   const query = ctx.callbackQuery;
 
-  if (query.game_short_name === "WELLcoin_SavemeGame") {
-    // أجب على الزر عشان يوقف التحميل
+  if (query.game_short_name === "WELLcoin_SavemeGame" || query.data === "play") {
     if (typeof ctx.answerCbQuery === 'function') {
-      await ctx.answerCbQuery();
+      await ctx.answerCbQuery(); // مهم جدًا
     }
-
-    // أرسل اللعبة للمستخدم
     await ctx.telegram.sendGame(query.from.id, "WELLcoin_SavemeGame");
   }
 });
 
-// ربط Webhook
+// Webhook
 app.use(bot.webhookCallback("/telegraf"));
 
 app.listen(10000, async () => {
-  const url = "https://wellcoin-bot.onrender.com"; // رابط موقعك
+  const url = "https://wellcoin-bot.onrender.com"; // رابطك على Render
   await bot.telegram.setWebhook(`${url}/telegraf`);
   console.log("✅ Webhook connected to:", `${url}/telegraf`);
 });
