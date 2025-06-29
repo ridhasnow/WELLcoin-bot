@@ -45,7 +45,9 @@ bot.start((ctx) => {
 // تلقي Callback من زر Play Game
 bot.on("callback_query", (ctx) => {
   if (ctx.callbackQuery.game_short_name === "WELLcoin_SavemeGame") {
-    ctx.answerCallbackQuery();
+    if (ctx.callbackQuery && typeof ctx.answerCbQuery === 'function') {
+  ctx.answerCbQuery();
+};
     ctx.replyWithGame("WELLcoin_SavemeGame");
   }
 });
