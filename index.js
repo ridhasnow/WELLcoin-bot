@@ -38,12 +38,12 @@ bot.start((ctx) => {
   }
 
   // أرسل زر اللعبة
-  ctx.reply("👋 You've been registered! Click the button below to play.", {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "▶️ Play WELLcoin Game", callback_game: {}, callback_data: "play" }]
-      ]
-    }
+  ctx.reply("Click the button below to play:", {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: "▶️ Play Now", web_app: { url: "https://t.me/WELLcoinGameBot?startapp" } }]
+    ]
+  }
   });
 });
 
