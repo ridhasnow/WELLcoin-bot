@@ -158,7 +158,7 @@
     .username-frame {
   position: absolute;
   top: 4px;              /* رفعه للأعلى */
-  left: 70%;             /* تقريبه يمين نحو زر الرانكد */
+  left: 72%;             /* تقريبه يمين نحو زر الرانكد */
   transform: translateX(-50%);
   width: 215px;
   height: 60px;
@@ -308,16 +308,28 @@
       localStorage.setItem("lastPlayed", Date.now());
     });
 
+    window.addEventListener("load", () => {
+  if (countdown > 0) {
     startMining();
+  } else {
+    document.getElementById("countdown").textContent = "0:00:00";
+  }
+});
 
-    const tg = window.Telegram.WebApp;
-if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-  const user = tg.initDataUnsafe.user;
-  const name = user.first_name + (user.last_name ? " " + user.last_name : "");
-  document.getElementById("username-inside").textContent = name;
-} else {
-  document.getElementById("username-inside").textContent = "Unknown Player";
-}
+    Telegram.WebApp.ready();
+
+window.addEventListener("DOMContentLoaded", () => {
+  const tg = window.Telegram.WebApp;
+  const usernameBox = document.getElementById("username-inside");
+
+  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    const user = tg.initDataUnsafe.user;
+    const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
+    usernameBox.textContent = fullName;
+  } else {
+    usernameBox.textContent = "Unknown Player";
+  }
+});
   </script>
 </body>
 </html>
