@@ -232,86 +232,99 @@
   </div>
 
   <script>
-  const miningRatePerSecond = 0.0000001157;
-  let interval;
+  <script>
+const miningRatePerSecond = 0.0000001157;
+let interval;
 
-  let coinCount = parseFloat(localStorage.getItem("coinCount")) || 0.0;
-  let balance = parseFloat(localStorage.getItem("balance")) || 0.0;
-  let countdown = parseInt(localStorage.getItem("countdown")) || 10800;
-  let lastPlayed = parseInt(localStorage.getItem("lastPlayed")) || Date.now();
+// تحميل البيانات
+let coinCount = parseFloat(localStorage.getItem("coinCount")) || 0.0;
+let balance = parseFloat(localStorage.getItem("balance")) || 0.0;
+let countdown = parseInt(localStorage.getItem("countdown")) || 10800;
+let lastPlayed = parseInt(localStorage.getItem("lastPlayed")) || Date.now();
 
-  const now = Date.now();
-  const secondsPassed = Math.floor((now - lastPlayed) / 1000);
+// حساب الوقت المنقضي من آخر جلسة
+const now = Date.now();
+const secondsPassed = Math.floor((now - lastPlayed) / 1000);
 
-  if (secondsPassed > 0 && countdown > 0) {
-    const effectiveSeconds = Math.min(countdown, secondsPassed);
-    const coinsEarned = miningRatePerSecond * effectiveSeconds;
-    coinCount += coinsEarned;
-    balance += coinsEarned;
-    countdown -= effectiveSeconds;
-    if (countdown < 0) countdown = 0;
-    localStorage.setItem("coinCount", coinCount);
-    localStorage.setItem("balance", balance);
-    localStorage.setItem("countdown", countdown);
-  }
+if (secondsPassed > 0 && countdown > 0) {
+  const effectiveSeconds = Math.min(countdown, secondsPassed);
+  const coinsEarned = miningRatePerSecond * effectiveSeconds;
 
-  function updateCoin() {
-    if (countdown <= 0) return;
-    coinCount += miningRatePerSecond;
-    balance += miningRatePerSecond;
-    document.getElementById("coin-count").textContent = coinCount.toFixed(10);
-    document.getElementById("balance-amount").textContent = balance.toFixed(10);
-    localStorage.setItem("coinCount", coinCount);
-    localStorage.setItem("balance", balance);
-  }
+  coinCount += coinsEarned;
+  balance += coinsEarned;
+  countdown -= effectiveSeconds;
 
-  function updateTimer() {
-    if (countdown <= 0) return;
-    countdown--;
-    const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
-    const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
-    const s = Math.floor(countdown % 60).toString().padStart(2, '0');
-    document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
-    localStorage.setItem("countdown", countdown);
-    if (countdown <= 0) clearInterval(interval);
-  }
+  if (countdown < 0) countdown = 0;
 
-  function startMining() {
-    interval = setInterval(() => {
-      updateCoin();
-      updateTimer();
-    }, 1000);
-  }
+  localStorage.setItem("coinCount", coinCount);
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("countdown", countdown);
+}
 
-  function restartMiningTimer() {
-    countdown = 10800;
-    localStorage.setItem("countdown", countdown);
-    clearInterval(interval);
-    startMining();
-  }
+// تحديث رصيد العملات
+function updateCoin() {
+  if (countdown <= 0) return;
+  coinCount += miningRatePerSecond;
+  balance += miningRatePerSecond;
+  document.getElementById("coin-count").textContent = coinCount.toFixed(10);
+  document.getElementById("balance-amount").textContent = balance.toFixed(10);
+  localStorage.setItem("coinCount", coinCount);
+  localStorage.setItem("balance", balance);
+}
 
+// تحديث العداد الزمني
+function updateTimer() {
+  if (countdown <= 0) return;
+  countdown--;
+  const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
+  const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
+  const s = Math.floor(countdown % 60).toString().padStart(2, '0');
+  document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
+  localStorage.setItem("countdown", countdown);
+  if (countdown <= 0) clearInterval(interval);
+}
+
+// بدء التعدين
+function startMining() {
+  interval = setInterval(() => {
+    updateCoin();
+    updateTimer();
+  }, 1000);
+}
+
+// إعادة تعيين العداد
+function restartMiningTimer() {
+  countdown = 10800;
+  localStorage.setItem("countdown", countdown);
+  clearInterval(interval);
+  startMining();
+}
+
+// تحميل الصفحة
+window.addEventListener("load", () => {
   document.getElementById("coin-count").textContent = coinCount.toFixed(10);
   document.getElementById("balance-amount").textContent = balance.toFixed(10);
 
-  window.addEventListener("beforeunload", () => {
-    localStorage.setItem("lastPlayed", Date.now());
-  });
-
-  window.addEventListener("load", () => {
-  // عرض اليوزر من التخزين المحلي
   const usernameBox = document.getElementById("username-inside");
   const savedUsername = localStorage.getItem("username");
 
+  // عرض اليوزر من التخزين المحلي
   if (savedUsername) {
     usernameBox.textContent = savedUsername;
   } else {
-    usernameBox.textContent = "No username";
+    usernameBox.textContent = "Unknown Player";
   }
 
-  // تشغيل التعدين إذا فيه وقت باقي
+  // شغل التعدين إذا باقي وقت
   if (countdown > 0) {
     startMining();
   } else {
     document.getElementById("countdown").textContent = "0:00:00";
   }
 });
+
+// قبل الخروج نحفظ الوقت
+window.addEventListener("beforeunload", () => {
+  localStorage.setItem("lastPlayed", Date.now());
+});
+</script>
