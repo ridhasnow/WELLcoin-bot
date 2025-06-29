@@ -232,101 +232,94 @@
   </div>
 
   <script>
-    if (window.Telegram.WebApp) {
-  Telegram.WebApp.ready(); // مهم جدًا
-}
-    const miningRatePerSecond = 0.0000001157;
-    let interval;
+  const miningRatePerSecond = 0.0000001157;
+  let interval;
 
-    let coinCount = parseFloat(localStorage.getItem("coinCount")) || 0.0;
-    let balance = parseFloat(localStorage.getItem("balance")) || 0.0;
-    let countdown = parseInt(localStorage.getItem("countdown")) || 10800;
-    let lastPlayed = parseInt(localStorage.getItem("lastPlayed")) || Date.now();
+  let coinCount = parseFloat(localStorage.getItem("coinCount")) || 0.0;
+  let balance = parseFloat(localStorage.getItem("balance")) || 0.0;
+  let countdown = parseInt(localStorage.getItem("countdown")) || 10800;
+  let lastPlayed = parseInt(localStorage.getItem("lastPlayed")) || Date.now();
 
-    const now = Date.now();
-    const secondsPassed = Math.floor((now - lastPlayed) / 1000);
+  const now = Date.now();
+  const secondsPassed = Math.floor((now - lastPlayed) / 1000);
 
-    if (secondsPassed > 0 && countdown > 0) {
-      const effectiveSeconds = Math.min(countdown, secondsPassed);
-      const coinsEarned = miningRatePerSecond * effectiveSeconds;
+  if (secondsPassed > 0 && countdown > 0) {
+    const effectiveSeconds = Math.min(countdown, secondsPassed);
+    const coinsEarned = miningRatePerSecond * effectiveSeconds;
 
-      coinCount += coinsEarned;
-      balance += coinsEarned;
-      countdown -= effectiveSeconds;
+    coinCount += coinsEarned;
+    balance += coinsEarned;
+    countdown -= effectiveSeconds;
 
-      if (countdown < 0) countdown = 0;
+    if (countdown < 0) countdown = 0;
 
-      localStorage.setItem("coinCount", coinCount);
-      localStorage.setItem("balance", balance);
-      localStorage.setItem("countdown", countdown);
-    }
+    localStorage.setItem("coinCount", coinCount);
+    localStorage.setItem("balance", balance);
+    localStorage.setItem("countdown", countdown);
+  }
 
-    function updateCoin() {
-  if (countdown <= 0) return; // 🛑 أوقف التعدين إذا انتهى الوقت
+  function updateCoin() {
+    if (countdown <= 0) return;
+    coinCount += miningRatePerSecond;
+    balance += miningRatePerSecond;
+    document.getElementById("coin-count").textContent = coinCount.toFixed(10);
+    document.getElementById("balance-amount").textContent = balance.toFixed(10);
+    localStorage.setItem("coinCount", coinCount);
+    localStorage.setItem("balance", balance);
+  }
 
-  coinCount += miningRatePerSecond;
-  balance += miningRatePerSecond;
+  function updateTimer() {
+    if (countdown <= 0) return;
+    countdown--;
+    const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
+    const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
+    const s = Math.floor(countdown % 60).toString().padStart(2, '0');
+    document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
+    localStorage.setItem("countdown", countdown);
+    if (countdown <= 0) clearInterval(interval);
+  }
+
+  function startMining() {
+    interval = setInterval(() => {
+      updateCoin();
+      updateTimer();
+    }, 1000);
+  }
+
+  function restartMiningTimer() {
+    countdown = 10800;
+    localStorage.setItem("countdown", countdown);
+    clearInterval(interval);
+    startMining();
+  }
 
   document.getElementById("coin-count").textContent = coinCount.toFixed(10);
   document.getElementById("balance-amount").textContent = balance.toFixed(10);
 
-  localStorage.setItem("coinCount", coinCount);
-  localStorage.setItem("balance", balance);
-}
+  window.addEventListener("beforeunload", () => {
+    localStorage.setItem("lastPlayed", Date.now());
+  });
 
-    function updateTimer() {
-      if (countdown <= 0) return;
-
-      countdown--;
-      const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
-      const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
-      const s = Math.floor(countdown % 60).toString().padStart(2, '0');
-      document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
-      localStorage.setItem("countdown", countdown);
-
-      if (countdown <= 0) clearInterval(interval);
-    }
-
-    function startMining() {
-      interval = setInterval(() => {
-        updateCoin();
-        updateTimer();
-      }, 1000);
-    }
-
-    function restartMiningTimer() {
-      countdown = 10800;
-      localStorage.setItem("countdown", countdown);
-      clearInterval(interval);
+  window.addEventListener("load", () => {
+    if (countdown > 0) {
       startMining();
+    } else {
+      document.getElementById("countdown").textContent = "0:00:00";
     }
 
-    document.getElementById("coin-count").textContent = coinCount.toFixed(10);
-    document.getElementById("balance-amount").textContent = balance.toFixed(10);
+    if (window.Telegram.WebApp) {
+      Telegram.WebApp.ready(); // لازم Telegram يكون جاهز
 
-    window.addEventListener("beforeunload", () => {
-      localStorage.setItem("lastPlayed", Date.now());
-    });
+      const tg = Telegram.WebApp;
+      const usernameBox = document.getElementById("username-inside");
 
-    window.addEventListener("load", () => {
-  if (countdown > 0) {
-    startMining();
-  } else {
-    document.getElementById("countdown").textContent = "0:00:00";
-  }
-});
-
-
-const tg = window.Telegram.WebApp;
-const usernameBox = document.getElementById("username-inside");
-
-if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-  const user = tg.initDataUnsafe.user;
-  const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
-  usernameBox.textContent = fullName;
-} else {
-  usernameBox.textContent = "Unknown Player";
-}
-  </script>
-</body>
-</html>
+      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        const user = tg.initDataUnsafe.user;
+        const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
+        usernameBox.textContent = fullName;
+      } else {
+        usernameBox.textContent = "Unknown Player";
+      }
+    }
+  });
+</script>
