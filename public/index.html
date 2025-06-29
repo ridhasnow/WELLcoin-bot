@@ -318,6 +318,13 @@
       const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
       usernameBox.textContent = fullName;
     } else {
+      // طباعة بيانات تيليجرام كاملة على الشاشة لفحصها
+document.body.insertAdjacentHTML("beforeend", `
+  <div style="position:fixed;bottom:10px;left:10px;background:black;color:lime;padding:5px;z-index:9999;font-size:10px;">
+    <b>initData:</b><br>${tg.initData}<br><br>
+    <b>user:</b><br>${JSON.stringify(tg.initDataUnsafe?.user || {}, null, 2)}
+  </div>
+`);
       usernameBox.textContent = "Unknown Player";
     }
   } else {
