@@ -307,19 +307,22 @@
       document.getElementById("countdown").textContent = "0:00:00";
     }
 
-    if (window.Telegram.WebApp) {
-      Telegram.WebApp.ready(); // لازم Telegram يكون جاهز
+    if (window.Telegram && window.Telegram.WebApp) {
+  Telegram.WebApp.ready();
 
-      const tg = Telegram.WebApp;
-      const usernameBox = document.getElementById("username-inside");
+  const tg = Telegram.WebApp;
+  const usernameBox = document.getElementById("username-inside");
 
-      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        const user = tg.initDataUnsafe.user;
-        const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
-        usernameBox.textContent = fullName;
-      } else {
-        usernameBox.textContent = "Unknown Player";
-      }
+  if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    const user = tg.initDataUnsafe.user;
+    const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
+    usernameBox.textContent = fullName;
+  } else {
+    usernameBox.textContent = "Unknown Player";
+  }
+} else {
+  document.getElementById("username-inside").textContent = "Unknown Player";
+}
     }
   });
 </script>
