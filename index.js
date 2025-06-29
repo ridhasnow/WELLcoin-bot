@@ -44,12 +44,16 @@ bot.start((ctx) => {
 
           // تلقي Callback من زر Play Game
 bot.on("callback_query", async (ctx) => {
-  if (ctx.callbackQuery.game_short_name === "WELLcoin_SavemeGame") {
-    if (ctx.callbackQuery && typeof ctx.answerCbQuery === 'function') {
-      await ctx.answerCbQuery(); // ✅ ضروري عشان ما يظل الزر يدور
+  const query = ctx.callbackQuery;
+
+  if (query.game_short_name === "WELLcoin_SavemeGame") {
+    // أجب على الزر عشان يوقف التحميل
+    if (typeof ctx.answerCbQuery === 'function') {
+      await ctx.answerCbQuery();
     }
 
-    await ctx.replyWithGame("WELLcoin_SavemeGame");
+    // أرسل اللعبة للمستخدم
+    await ctx.telegram.sendGame(query.from.id, "WELLcoin_SavemeGame");
   }
 });
 
