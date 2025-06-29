@@ -295,29 +295,34 @@
 
   document.getElementById("coin-count").textContent = coinCount.toFixed(10);
   document.getElementById("balance-amount").textContent = balance.toFixed(10);
+  
 
-  <script>
   window.addEventListener("load", () => {
-    const usernameBox = document.getElementById("username-inside");
+  const usernameBox = document.getElementById("username-inside");
 
-    if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.ready();
-      console.log("✅ Telegram WebApp loaded");
+  if (window.Telegram && Telegram.WebApp) {
+    Telegram.WebApp.ready();
 
-      const tg = Telegram.WebApp;
+    const tg = Telegram.WebApp;
 
-      console.log("initDataUnsafe:", tg.initDataUnsafe);
+    // جرب نطبع الـ initData عشان نتاكد انه واصل من تيليجرام
+    document.body.insertAdjacentHTML("beforeend", `
+      <div style="position:fixed;bottom:10px;left:10px;background:black;color:lime;padding:5px;z-index:9999;font-size:10px;">
+        ${tg.initData || "initData is empty"}
+      </div>
+    `);
 
-      if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        const user = tg.initDataUnsafe.user;
-        const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
-        usernameBox.textContent = fullName;
-      } else {
-        usernameBox.textContent = "❌ Unknown Player";
-      }
+    // تأكد إن initData موجود
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      const user = tg.initDataUnsafe.user;
+      const fullName = user.first_name + (user.last_name ? " " + user.last_name : "");
+      usernameBox.textContent = fullName;
     } else {
-      console.log("❌ Telegram WebApp not available");
-      usernameBox.textContent = "❌ Not in Telegram App";
+      usernameBox.textContent = "Unknown Player";
     }
+  } else {
+    usernameBox.textContent = "❌ Not in Telegram";
+  }
+});
   });
 </script>
