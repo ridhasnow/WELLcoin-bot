@@ -4,14 +4,12 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const bot = new Telegraf(process.env.BOT_TOKEN); // ✅ نستخدم التوكن من env
 
-// HTML page (optional, stays same)
 app.use(express.static("public"));
 
 const playersFilePath = path.join(__dirname, "players.json");
 
-// تحميل بيانات اللاعبين
 let players = {};
 if (fs.existsSync(playersFilePath)) {
   try {
@@ -22,7 +20,6 @@ if (fs.existsSync(playersFilePath)) {
   }
 }
 
-// عند تشغيل /start لأول مرة
 bot.start((ctx) => {
   const userId = ctx.from.id.toString();
   const username = ctx.from.username || "Unknown";
@@ -35,12 +32,14 @@ bot.start((ctx) => {
       joinedAt: new Date().toISOString(),
     };
 
-    // حفظ البيانات في players.json
     fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
     ctx.reply(`👋 Welcome, ${username}! You've been registered.`);
   } else {
     ctx.reply(`👋 Welcome back, ${username}!`);
   }
+
+  // ✅ هذا السطر يظهر زر Play الرسمي من Telegram
+  ctx.replyWithGame('WELLcoin_SavemeGame');
 });
 
 bot.launch();
