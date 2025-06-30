@@ -5,51 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to WELLcoin</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body, html {
       height: 100%;
-      overflow: hidden;
       font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+      position: relative;
       background: black;
       color: white;
     }
 
-    video {
+    video#bg-video {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       object-fit: cover;
       z-index: -1;
     }
 
+    .button-container {
+      position: fixed;
+      bottom: 50px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      z-index: 2;
+    }
+
     .ready-btn {
-      position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 14px 32px;
+      padding: 14px 30px;
       font-size: 18px;
       font-weight: bold;
-      background: #007bff;
       color: white;
+      background: #007bff;
       border: none;
       border-radius: 12px;
-      box-shadow: 0 0 20px #007bff;
       cursor: pointer;
-      z-index: 2;
+      box-shadow: 0 0 15px #007bff;
+      transition: background 0.3s;
+    }
+
+    .ready-btn:hover {
+      background: #0056b3;
     }
 
     .popup {
       position: fixed;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       background: #111;
       padding: 30px;
@@ -82,25 +84,26 @@
 </head>
 <body>
 
-  <!-- ✅ فيديو الخلفية -->
-  <video id="bg-video" autoplay muted playsinline loop>
+  <!-- ✅ الفيديو -->
+  <video id="bg-video" autoplay muted playsinline>
     <source src="background.mp4" type="video/mp4" />
   </video>
 
-  <!-- ✅ زر I'm Ready -->
-  <button class="ready-btn" onclick="showPopup()">I’m Ready</button>
+  <!-- ✅ الزر -->
+  <div class="button-container">
+    <button class="ready-btn" onclick="handleStart()">I’m Ready</button>
+  </div>
 
-  <!-- ✅ نافذة الاسم -->
+  <!-- ✅ نافذة إدخال الاسم -->
   <div class="popup" id="usernamePopup">
     <input type="text" id="usernameInput" placeholder="Enter your username" />
     <button onclick="saveUsername()">Save</button>
   </div>
 
   <script>
-    function showPopup() {
+    function handleStart() {
       const video = document.getElementById("bg-video");
       video.muted = false;
-      video.currentTime = 0;
       video.play();
 
       document.getElementById("usernamePopup").style.display = "flex";
@@ -116,7 +119,7 @@
       window.location.href = "index.html";
     }
 
-    // تخطي صفحة الترحيب لو الاسم محفوظ
+    // ✅ لو الاسم محفوظ، ما نعرض الفيديو
     window.addEventListener("load", () => {
       const existing = localStorage.getItem("username");
       if (existing) {
