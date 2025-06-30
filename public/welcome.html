@@ -140,14 +140,16 @@
     <button id="saveBtn" onclick="handleSaveOrReturn()">Save</button>
   </div>  <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-      authDomain: "wellcoinbotgame.firebaseapp.com",
-      projectId: "wellcoinbotgame",
-      storageBucket: "wellcoinbotgame.appspot.com",
-      messagingSenderId: "108640533638",
-      appId: "1:108640533638:web:ed07516d96ac38f47f6507",
-      measurementId: "G-3H07CXT2PF"
-    };
+  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+  authDomain: "wellcoinbotgame.firebaseapp.com",
+  databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app", // ✅ أضف هذا السطر
+  projectId: "wellcoinbotgame",
+  storageBucket: "wellcoinbotgame.appspot.com",
+  messagingSenderId: "108640533638",
+  appId: "1:108640533638:web:ed07516d96ac38f47f6507",
+  measurementId: "G-3H07CXT2PF"
+};
+
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
