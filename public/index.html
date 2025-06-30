@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WELLcoin Game</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     body {
       margin: 0;
@@ -26,15 +29,15 @@
     }
 
     #ranked {
-  width: 27px;
-  height: 27px;
-  margin-right: 22px;
-  cursor: pointer;
-  padding: 14px;
-  background-color: transparent;
-  border: none;
-  box-shadow: none;
-}
+      width: 27px;
+      height: 27px;
+      margin-right: 22px;
+      cursor: pointer;
+      padding: 14px;
+      background-color: transparent;
+      border: none;
+      box-shadow: none;
+    }
 
     .balance-box {
       position: absolute;
@@ -95,136 +98,130 @@
     }
 
     .mining-bar {
-  position: absolute;
-  bottom: 10px; /* يوازي حافة الأزرار العلوية تمامًا */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 6px 18px;
-  border-radius: 16px;
-  font-size: 14px;
-  color: gold;
-  font-weight: 600;
-  font-family: 'Segoe UI Semibold', sans-serif;
-  box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
-  border: 1px solid #ffd700;
-  text-align: center;
-  white-space: nowrap;
-  z-index: 3;
-}
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 6px 18px;
+      border-radius: 16px;
+      font-size: 14px;
+      color: gold;
+      font-weight: 600;
+      font-family: 'Segoe UI Semibold', sans-serif;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
+      border: 1px solid #ffd700;
+      text-align: center;
+      white-space: nowrap;
+      z-index: 3;
+    }
 
     .timer {
-  position: absolute;
-  bottom: 44px; /* أعلى من البار الجديد بـ 34px تقريبا */
-  left: 50%;
-  transform: translateX(-50%);
-  background: radial-gradient(circle, rgba(255,215,0,0.4), rgba(0,0,0,0.6));
-  color: #90ff90;
-  font-size: 13px;
-  padding: 6px 14px;
-  border-radius: 50px;
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 6px rgba(255, 215, 0, 0.6), inset 0 0 3px #fff, 0 0 8px #00ff0077;
-  font-weight: bold;
-  z-index: 4;
-}
+      position: absolute;
+      bottom: 44px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(255,215,0,0.4), rgba(0,0,0,0.6));
+      color: #90ff90;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 50px;
+      border: 2px solid #ffd700;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.6), inset 0 0 3px #fff, 0 0 8px #00ff0077;
+      font-weight: bold;
+      z-index: 4;
+    }
 
     .bottom-buttons {
-  display: flex;
-  justify-content: space-between;
-  gap: 6px;
-  background-color: rgba(20, 20, 20, 0.5); /* أسود فاتح شفاف */
-  padding: 10px;
-  border-top: none;
-  backdrop-filter: blur(4px);
-}
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      background-color: rgba(20, 20, 20, 0.5);
+      padding: 10px;
+      border-top: none;
+      backdrop-filter: blur(4px);
+    }
 
     .btn {
-  flex: 1;
-  text-align: center;
-  color: #ffd700;
-  background-color: #0a0a0a; /* أسود غامق */
-  border: none; /* نحذف الإطار */
-  border-radius: 14px;
-  padding: 12px 0;
-  font-size: 16px;
-  font-family: Helvetica, sans-serif;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.2s;
-  text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.15); /* تأثير 3D للنص */
-  box-shadow: 0 4px 6px rgba(255, 215, 0, 0.15); /* ضل طفيف */
-}
+      flex: 1;
+      text-align: center;
+      color: #ffd700;
+      background-color: #0a0a0a;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 0;
+      font-size: 16px;
+      font-family: Helvetica, sans-serif;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 6px rgba(255, 215, 0, 0.15);
+    }
+
     .username-frame {
-  position: absolute;
-  top: 4px;              /* رفعه للأعلى */
-  left: 72%;             /* تقريبه يمين نحو زر الرانكد */
-  transform: translateX(-50%);
-  width: 215px;
-  height: 60px;
-  z-index: 3;
-}
+      position: absolute;
+      top: 4px;
+      left: 72%;
+      transform: translateX(-50%);
+      width: 215px;
+      height: 60px;
+      z-index: 3;
+    }
 
-.dragon-frame-img {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-  z-index: 1;
-}
+    .dragon-frame-img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      z-index: 1;
+    }
 
-#username-inside {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  color: #fff;
-  font-weight: bold;
-  font-size: 14px;
-  padding: 10px 12px;
-  text-shadow: 0 0 6px gold;
-}
-
-    .btn:focus {
-      outline: none;
+    #username-inside {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px;
+      padding: 10px 12px;
+      text-shadow: 0 0 6px gold;
     }
 
     .btn:hover {
-  background-color: #1a1a1a;
-  color: #ffd700;
-  box-shadow: 0 6px 10px rgba(255, 215, 0, 0.25);
-}
+      background-color: #1a1a1a;
+      color: #ffd700;
+      box-shadow: 0 6px 10px rgba(255, 215, 0, 0.25);
+    }
 
-.btn:active {
-  transform: scale(0.97);
-  background-color: #111;
-}
-    
+    .btn:active {
+      transform: scale(0.97);
+      background-color: #111;
+    }
   </style>
 </head>
 <body>
   <header>
-                                 <!--ميكانيك زر الرانكد-->
     <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
   </header>
-                                <!--ميكانيك مربع البالانس الرئيسي-->
+
   <div class="balance-box">
     <img src="wellcoin-icon.png" alt="Coin Icon" class="coin-icon">
     <span id="balance-amount">0.0000000000</span>
   </div>
-  
-                               <!--ميكانيك مربع اليوزرنايم-->
+
   <div class="username-frame">
-  <img src="dragon-frame.png" class="dragon-frame-img" alt="Username Frame" />
-  <div id="username-inside">Loading...</div>
-</div>
-                                <!--ميكانيك الضغط على الصورة حتى يعيد تشغيل عداد التعديد-->
+    <img src="dragon-frame.png" class="dragon-frame-img" alt="Username Frame" />
+    <div id="username-inside">Loading...</div>
+  </div>
+
   <div class="character-container">
     <img src="character.png" class="character" alt="Player Character" onclick="restartMiningTimer()" />
     <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
     <div class="timer" id="countdown">3:00:00</div>
   </div>
-                              <!--ميكانيك الازرار-->
+
   <div class="bottom-buttons">
     <button class="btn">Me</button>
     <button class="btn" onclick="window.location.href='shop.html'">Shop</button>
@@ -232,108 +229,101 @@
     <button class="btn">Invite</button>
   </div>
 
-  
   <script>
-const miningRatePerSecond = 0.0000001157;
-let interval;
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+    };
 
-// تحميل البيانات
-let coinCount = parseFloat(localStorage.getItem("coinCount")) || 0.0;
-let balance = parseFloat(localStorage.getItem("balance")) || 0.0;
-let countdown = parseInt(localStorage.getItem("countdown")) || 10800;
-let lastPlayed = parseInt(localStorage.getItem("lastPlayed")) || Date.now();
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const tg = window.Telegram.WebApp;
+    tg.ready();
 
-// حساب الوقت المنقضي من آخر جلسة
-const now = Date.now();
-const secondsPassed = Math.floor((now - lastPlayed) / 1000);
+    const userId = tg.initDataUnsafe?.user?.id;
 
-if (secondsPassed > 0 && countdown > 0) {
-  const effectiveSeconds = Math.min(countdown, secondsPassed);
-  const coinsEarned = miningRatePerSecond * effectiveSeconds;
+    const usernameBox = document.getElementById("username-inside");
+    const balanceDisplay = document.getElementById("balance-amount");
+    const coinDisplay = document.getElementById("coin-count");
+    const countdownDisplay = document.getElementById("countdown");
 
-  coinCount += coinsEarned;
-  balance += coinsEarned;
-  countdown -= effectiveSeconds;
+    let balance = 0;
+    let coinCount = 0;
+    let countdown = 10800;
+    const miningRatePerSecond = 0.0000001157;
+    let interval;
 
-  if (countdown < 0) countdown = 0;
+    function formatTime(seconds) {
+      const h = Math.floor(seconds / 3600).toString().padStart(1, '0');
+      const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+      const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
 
-  localStorage.setItem("coinCount", coinCount);
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("countdown", countdown);
-}
+    function updateDisplay() {
+      coinDisplay.textContent = coinCount.toFixed(10);
+      balanceDisplay.textContent = balance.toFixed(10);
+      countdownDisplay.textContent = formatTime(countdown);
+    }
 
-// تحديث رصيد العملات
-function updateCoin() {
-  if (countdown <= 0) return;
-  coinCount += miningRatePerSecond;
-  balance += miningRatePerSecond;
-  document.getElementById("coin-count").textContent = coinCount.toFixed(10);
-  document.getElementById("balance-amount").textContent = balance.toFixed(10);
-  localStorage.setItem("coinCount", coinCount);
-  localStorage.setItem("balance", balance);
-}
+    function startMining() {
+      clearInterval(interval);
+      interval = setInterval(() => {
+        if (countdown <= 0) return;
 
-// تحديث العداد الزمني
-function updateTimer() {
-  if (countdown <= 0) return;
-  countdown--;
-  const h = Math.floor(countdown / 3600).toString().padStart(1, '0');
-  const m = Math.floor((countdown % 3600) / 60).toString().padStart(2, '0');
-  const s = Math.floor(countdown % 60).toString().padStart(2, '0');
-  document.getElementById("countdown").textContent = `${h}:${m}:${s}`;
-  localStorage.setItem("countdown", countdown);
-  if (countdown <= 0) clearInterval(interval);
-}
+        coinCount += miningRatePerSecond;
+        balance += miningRatePerSecond;
+        countdown--;
 
-// بدء التعدين
-function startMining() {
-  interval = setInterval(() => {
-    updateCoin();
-    updateTimer();
-  }, 1000);
-}
+        updateDisplay();
 
-// إعادة تعيين العداد
-function restartMiningTimer() {
-  countdown = 10800;
-  localStorage.setItem("countdown", countdown);
-  clearInterval(interval);
-  startMining();
-}
+        db.ref("users/" + userId).update({
+          balance,
+          coinCount,
+          countdown
+        });
 
-// تحميل الصفحة
-window.addEventListener("load", () => {
-  document.getElementById("coin-count").textContent = coinCount.toFixed(10);
-  document.getElementById("balance-amount").textContent = balance.toFixed(10);
+        if (countdown <= 0) {
+          clearInterval(interval);
+        }
+      }, 1000);
+    }
 
-  const usernameBox = document.getElementById("username-inside");
-  const savedUsername = localStorage.getItem("username");
+    function restartMiningTimer() {
+      countdown = 10800;
+      db.ref("users/" + userId).update({ countdown });
+      startMining();
+    }
 
-  // عرض اليوزر من التخزين المحلي
-  if (savedUsername) {
-    usernameBox.textContent = savedUsername;
-  } else {
-    usernameBox.textContent = "Unknown Player";
-  }
+    window.addEventListener("load", () => {
+      if (!userId) {
+        alert("No user ID found.");
+        window.location.href = "welcome.html";
+        return;
+      }
 
-  // شغل التعدين إذا باقي وقت
-  if (countdown > 0) {
-    startMining();
-  } else {
-    document.getElementById("countdown").textContent = "0:00:00";
-  }
+      const userRef = db.ref("users/" + userId);
+      userRef.once("value").then((snapshot) => {
+        if (!snapshot.exists()) {
+          alert("No user data found. Redirecting to welcome page.");
+          window.location.href = "welcome.html";
+          return;
+        }
 
+        const userData = snapshot.val();
+        usernameBox.textContent = userData.username || "Unknown Player";
+        balance = parseFloat(userData.balance || 0);
+        coinCount = parseFloat(userData.coinCount || 0);
+        countdown = parseInt(userData.countdown || 10800);
 
-  // ⚠️ هذا الكود يمسح كل بيانات localStorage تلقائيًا عند فتح الصفحة
-  localStorage.clear();
-  alert("✅ بيانات التخزين تم مسحها. أعد الدخول الآن.");
-
-  // يمكنك بعدها إزالته بعد الاختبار
-
-});
-
-// قبل الخروج نحفظ الوقت
-window.addEventListener("beforeunload", () => {
-  localStorage.setItem("lastPlayed", Date.now());
-});
-</script>
+        updateDisplay();
+        if (countdown > 0) startMining();
+      });
+    });
+  </script>
+</body>
+</html>
