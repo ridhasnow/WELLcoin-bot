@@ -1,10 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to WELLcoin</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
@@ -119,16 +119,11 @@
       font-weight: bold;
       z-index: 1000;
     }
-    
   </style>
 </head>
-<body>
-
-  <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
+<body>  <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
     <source src="background.mp4" type="video/mp4" />
-  </video>
-
-  <div class="overlay">
+  </video>  <div class="overlay">
     <div class="top-text">
       <div class="animated-text">
         Welcome, You Are Now On The Edge Of A New Gaming Realm. Soon, Your Skills Will Become A Source Of Real Wealth.<br />
@@ -138,17 +133,11 @@
     <div class="bottom-btn">
       <button class="agree-btn" onclick="showPopup()">Im Ready</button>
     </div>
-  </div>
-
-  <div class="popup" id="usernamePopup">
+  </div>  <div class="popup" id="usernamePopup">
     <span class="close-btn" onclick="closePopup()">×</span>
-    <input type="text" id="usernameInput" placeholder="Enter your username" />
+    <input type="text" id="usernameInput" placeholder="Enter your username" readonly />
     <button onclick="saveUsername()">Save</button>
-  </div>
-  
-  <script>
-    
-    // ✅ إعداد Firebase
+  </div>  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -161,6 +150,13 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    const usernameField = document.getElementById("usernameInput");
+    const tgUsername = tg.initDataUnsafe?.user?.username || "Unknown";
+    usernameField.value = tgUsername;
 
     function showPopup() {
       const video = document.getElementById("bg-video");
@@ -175,16 +171,14 @@
     }
 
     function saveUsername() {
-      const username = document.getElementById("usernameInput").value.trim();
+      const username = usernameField.value.trim();
       if (username.length < 3) {
         alert("Please enter a valid username.");
         return;
       }
 
-      localStorage.setItem("username", username);
+      const userId = tg.initDataUnsafe?.user?.id || Date.now();
 
-      // ✅ تخزين في Firebase
-      const userId = Date.now(); // مؤقت، لاحقًا Telegram ID
       db.ref("users/" + userId).set({
         username: username,
         joinedAt: new Date().toISOString()
@@ -192,14 +186,5 @@
 
       window.location.href = "index.html";
     }
-
-    window.addEventListener("load", () => {
-      const existing = localStorage.getItem("username");
-      if (existing) {
-        window.location.href = "index.html";
-      }
-      
-    });
-  </script>
-</body>
+  </script></body>
 </html>
