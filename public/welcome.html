@@ -113,10 +113,9 @@
 <body>
 
   <!-- ✅ عنصر الفيديو -->
-  <video class="bg-video" autoplay muted playsinline loop>
-    <source src="background.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
+  <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
+  <source src="background.mp4" type="video/mp4" />
+</video>
 
   <!-- ✅ الواجهة فوق الفيديو -->
   <div class="overlay">
@@ -136,8 +135,13 @@
 
   <script>
     function showPopup() {
-      document.getElementById("usernamePopup").style.display = "flex";
-    }
+  const video = document.getElementById("bg-video");
+  video.muted = false;
+  video.currentTime = 0;
+  video.play();
+
+  document.getElementById("usernamePopup").style.display = "flex";
+}
 
     function saveUsername() {
       const username = document.getElementById("usernameInput").value.trim();
