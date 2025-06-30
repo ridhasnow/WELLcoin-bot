@@ -13,14 +13,12 @@
 
     body, html {
       height: 100%;
-      font-family: 'Cinzel', serif;
       overflow: hidden;
+      font-family: 'Cinzel', serif;
       background: black;
-      position: relative;
-      color: white;
     }
 
-    video.bg-video {
+    video#bg-video {
       position: fixed;
       top: 0;
       left: 0;
@@ -36,13 +34,14 @@
       left: 0;
       width: 100%;
       height: 100%;
+      z-index: 2;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
       padding: 40px 20px 60px;
       text-align: center;
-      z-index: 2;
+      color: white;
     }
 
     .animated-text {
@@ -112,12 +111,13 @@
 </head>
 <body>
 
-  <!-- ✅ الفيديو -->
-  <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
+  <!-- ✅ الفيديو بالخلفية -->
+  <video id="bg-video" autoplay muted playsinline loop>
     <source src="background.mp4" type="video/mp4" />
+    Your browser does not support the video tag.
   </video>
 
-  <!-- ✅ المحتوى فوق الفيديو بدون overlay -->
+  <!-- ✅ المحتوى فوق الفيديو -->
   <div class="content">
     <div class="animated-text">
       You’ve just entered a world full of challenges and adventure.<br />
@@ -127,7 +127,7 @@
     <button class="agree-btn" onclick="showPopup()">I AGREE</button>
   </div>
 
-  <!-- ✅ نافذة اسم المستخدم -->
+  <!-- ✅ نافذة الاسم -->
   <div class="popup" id="usernamePopup">
     <input type="text" id="usernameInput" placeholder="Enter your username" />
     <button onclick="saveUsername()">Save</button>
@@ -139,7 +139,6 @@
       video.muted = false;
       video.currentTime = 0;
       video.play();
-
       document.getElementById("usernamePopup").style.display = "flex";
     }
 
@@ -153,7 +152,6 @@
       window.location.href = "index.html";
     }
 
-    // تخطي صفحة الترحيب إذا الاسم محفوظ
     window.addEventListener("load", () => {
       const existing = localStorage.getItem("username");
       if (existing) {
