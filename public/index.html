@@ -315,6 +315,7 @@
         }
 
         const userData = snapshot.val();
+        console.log("بيانات اللاعب:", userData);
         usernameBox.textContent = userData.username || "Unknown Player";
         balance = parseFloat(userData.balance || 0);
         coinCount = parseFloat(userData.coinCount || 0);
