@@ -23,6 +23,7 @@ if (fs.existsSync(playersFilePath)) {
 }
 
 // أمر start - يرسل زر Play Now فقط
+// أمر start - يرسل زر Play Now فقط
 bot.start((ctx) => {
   const userId = ctx.from.id.toString();
   const username = ctx.from.username || "Unknown";
@@ -37,8 +38,7 @@ bot.start((ctx) => {
     fs.writeFileSync(playersFilePath, JSON.stringify(players, null, 2));
   }
 
-  // زر فتح اللعبة
-  bot.start((ctx) => {
+  // ✅ زر فتح اللعبة
   ctx.reply("Click the button below to play:", {
     reply_markup: {
       inline_keyboard: [
