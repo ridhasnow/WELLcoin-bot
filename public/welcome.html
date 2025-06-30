@@ -186,16 +186,21 @@
     }
 
     function handleSaveOrReturn() {
-      db.ref("users/" + userId).set({
-        username: tgUsername,
-        balance: 0,
-        coinCount: 0,
-        countdown: 10800,
-        lastPlayed: Date.now(),
-        joinedAt: new Date().toISOString()
-      });
-      window.location.href = "index.html";
-    }
+  db.ref("users/" + userId).set({
+    username: tgUsername,
+    balance: 0,
+    coinCount: 0,
+    countdown: 10800,
+    lastPlayed: Date.now(),
+    joinedAt: new Date().toISOString()
+  }).then(() => {
+    console.log("✅ User data saved successfully.");
+    window.location.href = "index.html";
+  }).catch((error) => {
+    alert("❌ Failed to save user data: " + error.message);
+    console.error("❌ Firebase error:", error);
+  });
+}
 
     window.addEventListener("load", checkIfUserExists);
   </script></body>
