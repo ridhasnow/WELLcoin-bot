@@ -10,39 +10,70 @@
       padding: 0;
       box-sizing: border-box;
     }
-
     body, html {
       height: 100%;
-      overflow: hidden;
-      background: black;
       font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+      position: relative;
+      color: white;
     }
 
-    video {
-      position: fixed;
+    video.bg-video {
+      position: fixed; /* أفضل من absolute لتفادي مشاكل z-index */
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
       object-fit: cover;
-      z-index: -1;
+      z-index: -1; /* خلف كل شيء */
     }
 
-    .ready-btn {
+    .overlay {
       position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 14px 36px;
-      font-size: 18px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent; /* شفاف تمامًا */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      z-index: 2;
+    }
+
+    .animated-text {
+      font-size: 22px;
+      max-width: 500px;
+      margin-bottom: 40px;
+      line-height: 1.5;
+      color: #ffd700;
+      text-shadow: 0 0 10px black;
+      animation: fadeIn 4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .agree-btn {
+      padding: 12px 30px;
+      font-size: 16px;
       font-weight: bold;
       color: #fff;
       background: #007bff;
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
-      box-shadow: 0 0 15px #007bff;
-      z-index: 2;
+      box-shadow: 0 0 10px #007bff;
+      transition: background 0.3s;
+    }
+
+    .agree-btn:hover {
+      background: #0056b3;
     }
 
     .popup {
@@ -57,7 +88,7 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      z-index: 3;
+      z-index: 999;
     }
 
     .popup input {
@@ -81,15 +112,22 @@
 </head>
 <body>
 
-  <!-- ✅ فيديو الخلفية -->
-  <video id="bg-video" autoplay muted playsinline loop>
-    <source src="background.mp4" type="video/mp4" />
-  </video>
+  <!-- ✅ عنصر الفيديو -->
+  <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
+  <source src="background.mp4" type="video/mp4" />
+</video>
 
-  <!-- ✅ زر الدخول -->
-  <button class="ready-btn" onclick="showPopup()">I'm Ready</button>
+  <!-- ✅ الواجهة فوق الفيديو -->
+  <div class="overlay">
+    <div class="animated-text">
+      You’ve just entered a world full of challenges and adventure.<br />
+      Earn real coins by playing WELLcoin mini-games.<br />
+      Are you ready?
+    </div>
+    <button class="agree-btn" onclick="showPopup()">I AGREE</button>
+  </div>
 
-  <!-- ✅ نافذة إدخال الاسم -->
+  <!-- ✅ نافذة الاسم -->
   <div class="popup" id="usernamePopup">
     <input type="text" id="usernameInput" placeholder="Enter your username" />
     <button onclick="saveUsername()">Save</button>
@@ -97,15 +135,13 @@
 
   <script>
     function showPopup() {
-      // نفعل الصوت
-      const video = document.getElementById("bg-video");
-      video.muted = false;
-      video.currentTime = 0;
-      video.play();
+  const video = document.getElementById("bg-video");
+  video.muted = false;
+  video.currentTime = 0;
+  video.play();
 
-      // نظهر نافذة الاسم
-      document.getElementById("usernamePopup").style.display = "flex";
-    }
+  document.getElementById("usernamePopup").style.display = "flex";
+}
 
     function saveUsername() {
       const username = document.getElementById("usernameInput").value.trim();
@@ -117,9 +153,10 @@
       window.location.href = "index.html";
     }
 
-    // إذا الاسم محفوظ، ننتقل مباشرة للعبة
+    // إذا اللاعب عنده اسم محفوظ، لا نعرض صفحة الترحيب
     window.addEventListener("load", () => {
-      if (localStorage.getItem("username")) {
+      const existing = localStorage.getItem("username");
+      if (existing) {
         window.location.href = "index.html";
       }
     });
