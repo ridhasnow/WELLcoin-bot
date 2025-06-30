@@ -135,14 +135,13 @@
 
   <script>
     function showPopup() {
-      const video = document.getElementById("bg-video");
-      video.muted = false;
-      video.currentTime = 0;
-      video.play();
+  const video = document.getElementById("bg-video");
+  video.muted = false;
+  video.currentTime = 0;
+  video.play();
 
-      document.getElementById("usernamePopup").style.display = "flex";
-    }
-
+  document.getElementById("usernamePopup").style.display = "flex";
+}
     function saveUsername() {
       const username = document.getElementById("usernameInput").value.trim();
       if (username.length < 3) {
