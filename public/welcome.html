@@ -186,6 +186,8 @@
     }
 
     function handleSaveOrReturn() {
+  console.log("🔵 محاولة حفظ البيانات...");
+
   db.ref("users/" + userId).set({
     username: tgUsername,
     balance: 0,
@@ -193,14 +195,17 @@
     countdown: 10800,
     lastPlayed: Date.now(),
     joinedAt: new Date().toISOString()
-  }).then(() => {
-    console.log("✅ User data saved successfully.");
+  })
+  .then(() => {
+    console.log("✅ تم حفظ البيانات في Firebase بنجاح!");
     window.location.href = "index.html";
-  }).catch((error) => {
-    alert("❌ Failed to save user data: " + error.message);
-    console.error("❌ Firebase error:", error);
+  })
+  .catch((error) => {
+    console.error("❌ فشل في حفظ البيانات:", error);
+    alert("حدث خطأ أثناء الحفظ. تحقق من الاتصال أو من إعدادات Firebase.");
   });
 }
+
 
     window.addEventListener("load", checkIfUserExists);
   </script></body>
