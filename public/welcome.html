@@ -2,38 +2,39 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Welcome to WELLcoin</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body, html {
+    html, body {
+      margin: 0;
+      padding: 0;
       height: 100%;
-      font-family: 'Segoe UI', sans-serif;
       overflow: hidden;
-      position: relative;
+      font-family: 'Segoe UI', sans-serif;
       background: black;
-      color: white;
     }
 
-    video#bg-video {
+    video {
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       object-fit: cover;
       z-index: -1;
     }
 
-    .button-container {
-      position: fixed;
-      bottom: 50px;
+    .overlay {
+      position: absolute;
+      bottom: 40px;
       width: 100%;
       display: flex;
       justify-content: center;
       z-index: 2;
     }
 
-    .ready-btn {
-      padding: 14px 30px;
+    .agree-btn {
+      padding: 14px 36px;
       font-size: 18px;
       font-weight: bold;
       color: white;
@@ -42,16 +43,16 @@
       border-radius: 12px;
       cursor: pointer;
       box-shadow: 0 0 15px #007bff;
-      transition: background 0.3s;
     }
 
-    .ready-btn:hover {
+    .agree-btn:hover {
       background: #0056b3;
     }
 
     .popup {
       position: fixed;
-      top: 50%; left: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
       background: #111;
       padding: 30px;
@@ -68,8 +69,9 @@
       border-radius: 6px;
       border: none;
       margin-bottom: 20px;
-      width: 200px;
+      width: 220px;
       text-align: center;
+      font-size: 16px;
     }
 
     .popup button {
@@ -79,19 +81,20 @@
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
 
-  <!-- ✅ الفيديو -->
-  <video id="bg-video" autoplay muted playsinline>
+  <!-- ✅ فيديو الخلفية -->
+  <video id="bg-video" autoplay muted playsinline loop>
     <source src="background.mp4" type="video/mp4" />
   </video>
 
-  <!-- ✅ الزر -->
-  <div class="button-container">
-    <button class="ready-btn" onclick="handleStart()">I’m Ready</button>
+  <!-- ✅ زر التشغيل -->
+  <div class="overlay">
+    <button class="agree-btn" onclick="showPopup()">I’m Ready</button>
   </div>
 
   <!-- ✅ نافذة إدخال الاسم -->
@@ -101,9 +104,10 @@
   </div>
 
   <script>
-    function handleStart() {
+    function showPopup() {
       const video = document.getElementById("bg-video");
       video.muted = false;
+      video.currentTime = 0;
       video.play();
 
       document.getElementById("usernamePopup").style.display = "flex";
@@ -119,7 +123,7 @@
       window.location.href = "index.html";
     }
 
-    // ✅ لو الاسم محفوظ، ما نعرض الفيديو
+    // تخطي صفحة الترحيب إذا الاسم محفوظ
     window.addEventListener("load", () => {
       const existing = localStorage.getItem("username");
       if (existing) {
