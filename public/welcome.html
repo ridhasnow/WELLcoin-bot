@@ -1,12 +1,128 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Test Video</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to WELLcoin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: black;
+      color: white;
+    }
+
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    .ready-btn {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #007bff;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #111;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px gold;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .popup input {
+      padding: 10px;
+      border-radius: 6px;
+      border: none;
+      margin-bottom: 20px;
+      width: 200px;
+      text-align: center;
+    }
+
+    .popup button {
+      background: gold;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body style="margin:0; overflow:hidden; background:black;">
-  <video autoplay muted loop playsinline style="width:100vw; height:100vh; object-fit:cover">
-    <source src="background.mp4" type="video/mp4">
-    Your browser does not support the video tag.
+<body>
+
+  <!-- ✅ فيديو الخلفية -->
+  <video id="bg-video" autoplay muted playsinline loop>
+    <source src="background.mp4" type="video/mp4" />
   </video>
+
+  <!-- ✅ زر I'm Ready -->
+  <button class="ready-btn" onclick="showPopup()">I’m Ready</button>
+
+  <!-- ✅ نافذة الاسم -->
+  <div class="popup" id="usernamePopup">
+    <input type="text" id="usernameInput" placeholder="Enter your username" />
+    <button onclick="saveUsername()">Save</button>
+  </div>
+
+  <script>
+    function showPopup() {
+      const video = document.getElementById("bg-video");
+      video.muted = false;
+      video.currentTime = 0;
+      video.play();
+
+      document.getElementById("usernamePopup").style.display = "flex";
+    }
+
+    function saveUsername() {
+      const username = document.getElementById("usernameInput").value.trim();
+      if (username.length < 3) {
+        alert("Please enter a valid username.");
+        return;
+      }
+      localStorage.setItem("username", username);
+      window.location.href = "index.html";
+    }
+
+    // تخطي صفحة الترحيب لو الاسم محفوظ
+    window.addEventListener("load", () => {
+      const existing = localStorage.getItem("username");
+      if (existing) {
+        window.location.href = "index.html";
+      }
+    });
+  </script>
 </body>
 </html>
