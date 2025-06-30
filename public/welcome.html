@@ -10,13 +10,14 @@
       padding: 0;
       box-sizing: border-box;
     }
+
     body, html {
       height: 100%;
       font-family: 'Cinzel', serif;
       overflow: hidden;
       position: relative;
       color: white;
-      background: black; /* fallback */
+      background: black;
     }
 
     video.bg-video {
@@ -40,9 +41,10 @@
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      padding: 40px 20px 60px;
       text-align: center;
+      padding: 40px 20px 60px;
       z-index: 2;
+      pointer-events: none; /* للسماح بالفيديو بالتفاعل */
     }
 
     .animated-text {
@@ -52,6 +54,7 @@
       color: #ffd700;
       text-shadow: 0 0 10px black;
       animation: fadeIn 4s ease-in-out;
+      pointer-events: auto; /* لتفعيل التفاعل مع النص */
     }
 
     @keyframes fadeIn {
@@ -70,6 +73,7 @@
       cursor: pointer;
       box-shadow: 0 0 10px #007bff;
       transition: background 0.3s;
+      pointer-events: auto; /* لتفعيل التفاعل مع الزر */
     }
 
     .agree-btn:hover {
@@ -112,12 +116,12 @@
 </head>
 <body>
 
-  <!-- ✅ الفيديو بالخلفية -->
+  <!-- 🎬 الفيديو -->
   <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
-  <source src="background.mp4" type="video/mp4" />
-</video>
+    <source src="background.mp4" type="video/mp4" />
+  </video>
 
-  <!-- ✅ التغطية -->
+  <!-- 💬 الواجهة -->
   <div class="overlay">
     <div class="animated-text">
       You’ve just entered a world full of challenges and adventure.<br />
@@ -127,7 +131,7 @@
     <button class="agree-btn" onclick="showPopup()">I AGREE</button>
   </div>
 
-  <!-- ✅ نافذة اسم المستخدم -->
+  <!-- 👤 إدخال اسم المستخدم -->
   <div class="popup" id="usernamePopup">
     <input type="text" id="usernameInput" placeholder="Enter your username" />
     <button onclick="saveUsername()">Save</button>
@@ -135,12 +139,13 @@
 
   <script>
     function showPopup() {
-  const video = document.getElementById("bg-video");
-  video.muted = false;          // ✅ فك الميوت
-  video.currentTime = 0;        // ✅ إعادة الفيديو للبداية
-  video.play();                 // ✅ تشغيل الفيديو يدويًا بعد الضغط
-  document.getElementById("usernamePopup").style.display = "flex";
-}
+      const video = document.getElementById("bg-video");
+      video.muted = false;        // فك كتم الصوت
+      video.currentTime = 0;      // إعادة الفيديو للبداية
+      video.play();               // تشغيل الفيديو
+      document.getElementById("usernamePopup").style.display = "flex";
+    }
+
     function saveUsername() {
       const username = document.getElementById("usernameInput").value.trim();
       if (username.length < 3) {
@@ -151,7 +156,7 @@
       window.location.href = "index.html";
     }
 
-    // تخطي صفحة الترحيب إذا الاسم محفوظ
+    // تجاوز صفحة الترحيب لو الاسم محفوظ
     window.addEventListener("load", () => {
       const existing = localStorage.getItem("username");
       if (existing) {
