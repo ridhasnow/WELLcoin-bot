@@ -126,6 +126,17 @@
       font-weight: bold;
       cursor: pointer;
     }
+
+    .close-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 22px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  z-index: 1000;
+}
   </style>
 </head>
 <body>
@@ -151,9 +162,10 @@
 
   <!-- ✅ نافذة الاسم -->
   <div class="popup" id="usernamePopup">
-    <input type="text" id="usernameInput" placeholder="Enter your username" />
-    <button onclick="saveUsername()">Save</button>
-  </div>
+  <span class="close-btn" onclick="closePopup()">×</span>
+  <input type="text" id="usernameInput" placeholder="Enter your username" />
+  <button onclick="saveUsername()">Save</button>
+</div>
 
   <script>
     function showPopup() {
@@ -164,7 +176,9 @@
 
   document.getElementById("usernamePopup").style.display = "flex";
 }
-
+function closePopup() {
+  document.getElementById("usernamePopup").style.display = "none";
+}
     function saveUsername() {
       const username = document.getElementById("usernameInput").value.trim();
       if (username.length < 3) {
