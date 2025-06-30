@@ -71,6 +71,24 @@
       box-shadow: 0 0 10px #007bff;
       transition: background 0.3s;
     }
+    
+    .top-text {
+  position: absolute;
+  top: 30px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 2;
+}
+
+.bottom-btn {
+  position: absolute;
+  bottom: 40px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 2;
+}
 
     .agree-btn:hover {
       background: #0056b3;
@@ -119,13 +137,17 @@
 
   <!-- ✅ الواجهة فوق الفيديو -->
   <div class="overlay">
+  <div class="top-text">
     <div class="animated-text">
       You’ve just entered a world full of challenges and adventure.<br />
       Earn real coins by playing WELLcoin mini-games.<br />
       Are you ready?
     </div>
+  </div>
+  <div class="bottom-btn">
     <button class="agree-btn" onclick="showPopup()">I AGREE</button>
   </div>
+</div>
 
   <!-- ✅ نافذة الاسم -->
   <div class="popup" id="usernamePopup">
