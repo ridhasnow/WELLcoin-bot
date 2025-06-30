@@ -121,7 +121,8 @@
     }
   </style>
 </head>
-<body>  <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
+<body>
+  <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
     <source src="background.mp4" type="video/mp4" />
   </video>  <div class="overlay">
     <div class="top-text">
@@ -131,12 +132,12 @@
       </div>
     </div>
     <div class="bottom-btn">
-      <button class="agree-btn" onclick="showPopup()">Im Ready</button>
+      <button class="agree-btn" onclick="showPopup()">I'm Ready</button>
     </div>
   </div>  <div class="popup" id="usernamePopup">
     <span class="close-btn" onclick="closePopup()">×</span>
     <input type="text" id="usernameInput" placeholder="Enter your username" readonly />
-    <button onclick="saveUsername()">Save</button>
+    <button id="saveBtn" onclick="handleSaveOrReturn()">Save</button>
   </div>  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
@@ -155,8 +156,22 @@
     tg.ready();
 
     const usernameField = document.getElementById("usernameInput");
-    const tgUsername = tg.initDataUnsafe?.user?.username || "Unknown";
+    const tgUser = tg.initDataUnsafe?.user;
+    const tgUsername = tgUser?.username || "Unknown";
+    const userId = tgUser?.id || Date.now();
     usernameField.value = tgUsername;
+
+    async function checkIfUserExists() {
+      const snapshot = await db.ref("users/" + userId).get();
+      const saveBtn = document.getElementById("saveBtn");
+      if (snapshot.exists()) {
+        saveBtn.textContent = "I'm Back";
+        saveBtn.onclick = () => window.location.href = "index.html";
+      } else {
+        saveBtn.textContent = "Save";
+        saveBtn.onclick = handleSaveOrReturn;
+      }
+    }
 
     function showPopup() {
       const video = document.getElementById("bg-video");
@@ -170,21 +185,18 @@
       document.getElementById("usernamePopup").style.display = "none";
     }
 
-    function saveUsername() {
-      const username = usernameField.value.trim();
-      if (username.length < 3) {
-        alert("Please enter a valid username.");
-        return;
-      }
-
-      const userId = tg.initDataUnsafe?.user?.id || Date.now();
-
+    function handleSaveOrReturn() {
       db.ref("users/" + userId).set({
-        username: username,
+        username: tgUsername,
+        balance: 0,
+        coinCount: 0,
+        countdown: 10800,
+        lastPlayed: Date.now(),
         joinedAt: new Date().toISOString()
       });
-
       window.location.href = "index.html";
     }
+
+    window.addEventListener("load", checkIfUserExists);
   </script></body>
 </html>
