@@ -2,16 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to WELLcoin</title>
   <style>
-    html, body {
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
       height: 100%;
       overflow: hidden;
-      font-family: 'Segoe UI', sans-serif;
       background: black;
+      font-family: 'Segoe UI', sans-serif;
     }
 
     video {
@@ -24,29 +28,21 @@
       z-index: -1;
     }
 
-    .overlay {
+    .ready-btn {
       position: absolute;
       bottom: 40px;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      z-index: 2;
-    }
-
-    .agree-btn {
+      left: 50%;
+      transform: translateX(-50%);
       padding: 14px 36px;
       font-size: 18px;
       font-weight: bold;
-      color: white;
+      color: #fff;
       background: #007bff;
       border: none;
       border-radius: 12px;
       cursor: pointer;
       box-shadow: 0 0 15px #007bff;
-    }
-
-    .agree-btn:hover {
-      background: #0056b3;
+      z-index: 2;
     }
 
     .popup {
@@ -61,7 +57,7 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      z-index: 999;
+      z-index: 3;
     }
 
     .popup input {
@@ -69,9 +65,8 @@
       border-radius: 6px;
       border: none;
       margin-bottom: 20px;
-      width: 220px;
+      width: 200px;
       text-align: center;
-      font-size: 16px;
     }
 
     .popup button {
@@ -81,7 +76,6 @@
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
-      font-size: 16px;
     }
   </style>
 </head>
@@ -92,10 +86,8 @@
     <source src="background.mp4" type="video/mp4" />
   </video>
 
-  <!-- ✅ زر التشغيل -->
-  <div class="overlay">
-    <button class="agree-btn" onclick="showPopup()">I’m Ready</button>
-  </div>
+  <!-- ✅ زر الدخول -->
+  <button class="ready-btn" onclick="showPopup()">I'm Ready</button>
 
   <!-- ✅ نافذة إدخال الاسم -->
   <div class="popup" id="usernamePopup">
@@ -105,11 +97,13 @@
 
   <script>
     function showPopup() {
+      // نفعل الصوت
       const video = document.getElementById("bg-video");
       video.muted = false;
       video.currentTime = 0;
       video.play();
 
+      // نظهر نافذة الاسم
       document.getElementById("usernamePopup").style.display = "flex";
     }
 
@@ -123,10 +117,9 @@
       window.location.href = "index.html";
     }
 
-    // تخطي صفحة الترحيب إذا الاسم محفوظ
+    // إذا الاسم محفوظ، ننتقل مباشرة للعبة
     window.addEventListener("load", () => {
-      const existing = localStorage.getItem("username");
-      if (existing) {
+      if (localStorage.getItem("username")) {
         window.location.href = "index.html";
       }
     });
