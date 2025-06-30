@@ -12,7 +12,7 @@
     }
     body, html {
       height: 100%;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Cinzel', serif;
       overflow: hidden;
       position: relative;
       color: white;
@@ -29,20 +29,20 @@
     }
 
     .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: transparent; /* شفاف تمامًا */
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-      z-index: 2;
-    }
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto; /* خليها تاخذ فقط ارتفاع المحتوى */
+  background: transparent; /* شفاف تمامًا */
+  display: flex;
+  justify-content: center; /* توسيط أفقي */
+  align-items: flex-start; /* النص يبقى فوق */
+  text-align: center;
+  padding: 40px 20px 20px; /* مساحة من فوق */
+  z-index: 2;
+  pointer-events: none; /* يخلي الفيديو قابل للضغط خلفه */
+}
 
     .animated-text {
       font-size: 22px;
