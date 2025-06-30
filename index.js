@@ -38,13 +38,14 @@ bot.start((ctx) => {
   }
 
   // زر فتح اللعبة
+  bot.start((ctx) => {
   ctx.reply("Click the button below to play:", {
-  reply_markup: {
-    inline_keyboard: [
-      [{ text: "▶️ Play Now", web_app: { url: "https://wellcoin-bot.onrender.com/main.html" } }]
-    ]
-  }
-});
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "▶️ Play Now", web_app: { url: "https://wellcoin-bot.onrender.com/welcome.html" } }]
+      ]
+    }
+  });
 });
 
 // ❌ حذفنا الـ callback_query لأنه ماعاد نحتاجه مع Web App فقط
