@@ -13,8 +13,8 @@
 
     body, html {
       height: 100%;
+      font-family: 'Segoe UI', sans-serif;
       overflow: hidden;
-      font-family: 'Cinzel', serif;
       background: black;
     }
 
@@ -28,51 +28,27 @@
       z-index: -1;
     }
 
-    .content {
+    .ready-btn {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      padding: 40px 20px 60px;
-      text-align: center;
-      color: white;
-    }
-
-    .animated-text {
-      font-size: 22px;
-      max-width: 500px;
-      line-height: 1.5;
-      color: #ffd700;
-      text-shadow: 0 0 10px black;
-      animation: fadeIn 4s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    .agree-btn {
-      padding: 12px 30px;
-      font-size: 16px;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 36px;
+      font-size: 18px;
       font-weight: bold;
-      color: #fff;
+      color: white;
       background: #007bff;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #007bff;
       cursor: pointer;
-      box-shadow: 0 0 10px #007bff;
-      transition: background 0.3s;
+      z-index: 2;
+      transition: background 0.3s, transform 0.2s;
     }
 
-    .agree-btn:hover {
+    .ready-btn:hover {
       background: #0056b3;
+      transform: translateX(-50%) scale(1.05);
     }
 
     .popup {
@@ -91,43 +67,39 @@
     }
 
     .popup input {
-      padding: 10px;
+      padding: 12px;
       border-radius: 6px;
       border: none;
       margin-bottom: 20px;
-      width: 200px;
+      width: 220px;
       text-align: center;
+      font-size: 16px;
     }
 
     .popup button {
       background: gold;
       border: none;
-      padding: 10px 20px;
+      padding: 10px 25px;
       border-radius: 8px;
       font-weight: bold;
+      font-size: 16px;
       cursor: pointer;
+      box-shadow: 0 0 10px gold;
     }
   </style>
 </head>
 <body>
 
-  <!-- ✅ الفيديو بالخلفية -->
-  <video id="bg-video" autoplay muted playsinline loop>
+  <!-- ✅ الفيديو -->
+  <video id="bg-video" autoplay playsinline loop muted>
     <source src="background.mp4" type="video/mp4" />
     Your browser does not support the video tag.
   </video>
 
-  <!-- ✅ المحتوى فوق الفيديو -->
-  <div class="content">
-    <div class="animated-text">
-      You’ve just entered a world full of challenges and adventure.<br />
-      Earn real coins by playing WELLcoin mini-games.<br />
-      Are you ready?
-    </div>
-    <button class="agree-btn" onclick="showPopup()">I AGREE</button>
-  </div>
+  <!-- ✅ الزر -->
+  <button class="ready-btn" onclick="showPopup()">I'M READY</button>
 
-  <!-- ✅ نافذة الاسم -->
+  <!-- ✅ نافذة إدخال الاسم -->
   <div class="popup" id="usernamePopup">
     <input type="text" id="usernameInput" placeholder="Enter your username" />
     <button onclick="saveUsername()">Save</button>
@@ -152,6 +124,7 @@
       window.location.href = "index.html";
     }
 
+    // لو الاسم محفوظ، نروح مباشرة للعبة
     window.addEventListener("load", () => {
       const existing = localStorage.getItem("username");
       if (existing) {
@@ -159,5 +132,6 @@
       }
     });
   </script>
+
 </body>
 </html>
