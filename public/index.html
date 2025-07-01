@@ -29,17 +29,15 @@
 
 /* ✅ زر الرانكد بشكل عائم */
 #ranked {
-  position: relative;
-  top: 57px; /* تحت الشريط مباشرة */
-  right: 12px;
+  position: fixed;        /* 🔓 يخلي الزر حر ومستقل */
+  top: 80px;              /* ⬇️ نزّله شوية لتحت */
+  right: 14px;            /* ⬅️ على اليمين تمامًا */
   width: 32px;
-  height: 37px;
-  z-index: 6;
+  height: 32px;
+  z-index: 9999;          /* ⬆️ فوق كل العناصر */
   cursor: pointer;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
-  transition: 0.2s ease;
+  background: none;
+  border: none;
 }
 
 #ranked:hover {
