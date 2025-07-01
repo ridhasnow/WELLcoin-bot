@@ -129,7 +129,43 @@
     }
   </style>
 </head>
+  <!-- Telegram WebApp -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<!-- Firebase Libraries -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+  // 🔧 Firebase إعداد
+  const firebaseConfig = {
+    apiKey: "AIzaSyCpb7_zDJ1UlH3OkfhfGI1V5FTS40xH82A",
+    authDomain: "wellcoin-game.firebaseapp.com",
+    projectId: "wellcoin-game",
+    storageBucket: "wellcoin-game.appspot.com",
+    messagingSenderId: "586431048382",
+    appId: "1:586431048382:web:b8cb6a9ef17d06e261c437",
+    databaseURL: "https://wellcoin-game-default-rtdb.europe-west1.firebasedatabase.app"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // 📡 Telegram initDataUnsafe - جلب معرف المستخدم
+  let userId;
+  window.onload = () => {
+    const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (telegramUser && telegramUser.id) {
+      userId = telegramUser.id.toString();
+      console.log("✅ Telegram User ID:", userId);
+    } else {
+      console.error("❌ Telegram user not found.");
+    }
+  };
+  
+</script>
+  
 <body>
+  
                    <!--زر الرجوع الى الوراء -->
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
                   <!--عنوان الصفحةاللي فيها الميسيون-->
@@ -163,7 +199,9 @@
   </div>  <div id="social-popup-again" class="social-popup-again popup-small">
     ✅ Thanks for visiting our page again!
   </div> 
+  
   <script>
+    
          //الميكانيك الخاص مهمة المكافأة اليومية 
 const CLAIM_KEY = "dailyClaimTimestamp";
 const BALANCE_KEY = "wellcoinBalance";
