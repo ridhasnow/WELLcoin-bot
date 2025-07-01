@@ -185,6 +185,11 @@
 </div>
   <div id="missions-container"></div>
 
+  <!-- Invite Friends Missions -->
+<div class="mission" id="invite5-container"></div>
+<div class="mission" id="invite20-container"></div>
+<div class="mission" id="invite100-container"></div>
+  
   <!-- Popups -->
   <div id="invite-popup" class="invite-popup">
     <div class="invite-link" id="invite-link-text"></div>
@@ -298,7 +303,7 @@
     }
 
     initDailyMission();
-    
+    renderInviteMissions();
       async function handleSocial(id, link) {
   const user = await getUserData();
   const done = user?.missions?.[id] || false;
@@ -344,7 +349,89 @@
 
   document.getElementById("social-popup").style.display = "none";
 }
+// رابط دعوة تيليجرام باستخدام userId
+const inviteLink = `https://t.me/WELLcoinBot?start=${userId}`;
+const inviteMissions = [
+  { id: "invite5", label: "Invite 5 friends", target: 5, reward: 0.5, img: "invi1.png" },
+  { id: "invite20", label: "Invite 20 friends", target: 20, reward: 2, img: "invit2.png" },
+  { id: "invite100", label: "Invite 100 friends", target: 100, reward: 10, img: "invit3.png" },
+];
 
+// عرض مهام الدعوات
+async function renderInviteMissions() {
+  const user = await getUserData();
+  inviteMissions.forEach(({ id, label, target, reward, img }) => {
+    const invited = user.missions?.[`${id}-invited`] || 0;
+    const claimed = user.missions?.[`${id}-claimed`] || false;
+    const canClaim = invited >= target;
+
+    const html = `
+      <h2><img src="${img}" class="mission-icon" />${label}</h2>
+      <p>Invite ${target} friends and earn ${reward}$</p>
+      <progress value="${invited}" max="${target}" style="width:100%;height:14px;margin-top:10px;"></progress>
+      <div style="margin-top:6px;">${invited}/${target}</div>
+      <button onclick="goInvite()" style="margin-right:8px;">Go Invite</button>
+      <button onclick="copyInviteLink()">Copy</button>
+      <button id="${id}-claim" onclick="claimInviteMission('${id}', ${reward})" style="margin-left:8px; ${canClaim && !claimed ? '' : 'display:none;'}">${claimed ? 'Claimed ✅' : 'Claim'}</button>
+    `;
+
+    document.getElementById(`${id}-container`).innerHTML = html;
+  });
+}
+
+// نسخ رابط الدعوة
+function copyInviteLink() {
+  navigator.clipboard.writeText(inviteLink).then(() => {
+    document.getElementById("copy-popup").style.display = "block";
+  });
+}
+
+// فتح نافذة الرابط
+function goInvite() {
+  document.getElementById("invite-link-text").textContent = inviteLink;
+  document.getElementById("invite-popup").style.display = "block";
+}
+
+function closeInvitePopup() {
+  document.getElementById("invite-popup").style.display = "none";
+}
+
+function closeRewardPopup() {
+  document.getElementById("reward-popup").style.display = "none";
+}
+
+// عند الضغط Claim
+async function claimInviteMission(id, reward) {
+  const user = await getUserData();
+  const invited = user.missions?.[`${id}-invited`] || 0;
+  const claimed = user.missions?.[`${id}-claimed`] || false;
+  const target = inviteMissions.find(m => m.id === id).target;
+
+  if (!claimed && invited >= target) {
+    const newUsdt = (parseFloat(user.usdt || 0) + reward).toFixed(2);
+    await updateUserData({
+      usdt: newUsdt,
+      missions: {
+        ...user.missions,
+        [`${id}-claimed`]: true
+      }
+    });
+
+    showRewardPopup(reward);
+    const claimBtn = document.getElementById(`${id}-claim`);
+    if (claimBtn) {
+      claimBtn.disabled = true;
+      claimBtn.textContent = "Claimed ✅";
+      claimBtn.style.display = "none";
+    }
+  }
+}
+
+// نافذة التهنئة
+function showRewardPopup(rewardText) {
+  document.getElementById("reward-title").textContent = `🎉 Congratulations you earned ${rewardText}$`;
+  document.getElementById("reward-popup").style.display = "block";
+}
     function goInvite() {
       document.getElementById("invite-link-text").textContent = inviteLink;
       document.getElementById("invite-popup").style.display = "block";
