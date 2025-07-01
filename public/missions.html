@@ -248,7 +248,7 @@
 
   // 🟢 دالة جلب بيانات المستخدم من Firebase
   async function getUserData() {
-    const telegramUser = Telegram.WebApp.initDataUnsafe.user;
+    const telegramUser = Telegram.WebApp.initDataUnsafe.user || { id: "2055377153" };
     userId = telegramUser?.id?.toString() || "unknown";
 
     const snapshot = await db.ref(`users/${userId}`).once("value");
