@@ -226,8 +226,6 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     
-    const userId = "2055377153"; // ضع ID تبعك لتجربة الصفحة من المتصفح
-    console.log("✅ Telegram User ID:", userId);
     
     const app = firebase.initializeApp({
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
@@ -469,8 +467,8 @@ function showRewardPopup(rewardText) {
 }
 
 // 👇 نضع هذا بعد تعريف الدالة
-initializeInviteMissions().then(renderInviteMissions);
-
-// 👇 وهنا نضيف السطرين المهمين
-window.renderInviteMissions = renderInviteMissions;
-window.userId = userId;
+initializeInviteMissions().then(() => {
+  renderInviteMissions();
+  window.renderInviteMissions = renderInviteMissions;
+  window.userId = userId;
+});
