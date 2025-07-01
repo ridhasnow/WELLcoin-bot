@@ -192,7 +192,25 @@
     console.error("❌ Error updating user data:", error);
   }
 }
-  
+  async function initializeInviteMissions() {
+  const user = await getUserData();
+  if (
+    !user.missions ||
+    user.missions["invite5-invited"] === undefined
+  ) {
+    await updateUserData({
+      missions: {
+        ...user.missions,
+        "invite5-invited": 0,
+        "invite5-claimed": false,
+        "invite20-invited": 0,
+        "invite20-claimed": false,
+        "invite100-invited": 0,
+        "invite100-claimed": false
+      }
+    });
+  }
+}
 </script>
   
 <body>
