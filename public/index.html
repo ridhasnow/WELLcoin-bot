@@ -240,7 +240,7 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const db = firebase.database("https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app");
     const tg = window.Telegram.WebApp;
     tg.ready();
 
