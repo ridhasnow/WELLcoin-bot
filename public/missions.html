@@ -179,6 +179,19 @@
       return {};
     }
   }
+  async function updateUserData(data) {
+  if (!userId) {
+    console.error("❌ userId is not ready.");
+    return;
+  }
+
+  try {
+    await db.ref(`users/${userId}`).update(data);
+    console.log("✅ User data updated:", data);
+  } catch (error) {
+    console.error("❌ Error updating user data:", error);
+  }
+}
   
 </script>
   
