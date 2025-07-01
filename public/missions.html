@@ -303,7 +303,7 @@
     }
 
     initDailyMission();
-    renderInviteMissions();
+  
     
       async function handleSocial(id, link) {
   const user = await getUserData();
@@ -439,3 +439,4 @@ function showRewardPopup(rewardText) {
     function closeCopyPopup() {
       document.getElementById("copy-popup").style.display = "none";
     }
+    renderInviteMissions();
