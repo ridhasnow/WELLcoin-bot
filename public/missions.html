@@ -439,7 +439,6 @@ function showRewardPopup(rewardText) {
     function closeCopyPopup() {
       document.getElementById("copy-popup").style.display = "none";
     }
-    initializeInviteMissions().then(renderInviteMissions);
     async function initializeInviteMissions() {
   const user = await getUserData();
   if (!user.missions || user.missions["invite5-invited"] === undefined) {
@@ -456,3 +455,10 @@ function showRewardPopup(rewardText) {
     });
   }
 }
+
+// 👇 نضع هذا بعد تعريف الدالة
+initializeInviteMissions().then(renderInviteMissions);
+
+// 👇 وهنا نضيف السطرين المهمين
+window.renderInviteMissions = renderInviteMissions;
+window.userId = userId;
