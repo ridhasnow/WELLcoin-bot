@@ -386,23 +386,28 @@ function claimInvite(id, reward) {
     document.getElementById(`${id}-claim`).textContent = "Claimed ✅";
   }
 }
+async function renderInviteMissions() {
+  const user = await getUserData();
+  const missions = user.missions || {};
 
-inviteMissions.forEach(({ id, label, target, reward, img }) => {
-  const invited = parseInt(localStorage.getItem(`${id}-invited`) || "0");
-  const claimed = localStorage.getItem(`${id}-claimed`);
-  const canClaim = invited >= target;
-  const div = document.createElement("div");
-  div.className = "mission";
-  div.innerHTML = `
-    <h2><img src="${img}" class="mission-icon" />${label}</h2>
-    <p>Invite ${target} friends and earn ${reward}$</p>
-    <progress value="${invited}" max="${target}" style="width:100%;height:14px;margin-top:10px;"></progress>
-    <div style="margin-top:6px;">${invited}/${target}</div>
-    <button onclick="goInvite()" style="margin-right:8px;">Go Invite</button>
-    <button id="${id}-copy" onclick="copyInviteLink()">Copy</button>
-    <button id="${id}-claim" onclick="claimInvite('${id}', ${reward})" style="margin-left:8px; ${canClaim ? '' : 'display:none;'}">${claimed ? 'Claimed ✅' : 'Claim'}</button>
-  `;
-  container.appendChild(div);
-});
+  inviteMissions.forEach(({ id, label, target, reward, img }) => {
+    const invited = missions[`${id}-invited`] || 0;
+    const claimed = missions[`${id}-claimed`] || false;
+    const canClaim = invited >= target;
+
+    const div = document.createElement("div");
+    div.className = "mission";
+    div.innerHTML = `
+      <h2><img src="${img}" class="mission-icon" />${label}</h2>
+      <p>Invite ${target} friends and earn ${reward}$</p>
+      <progress value="${invited}" max="${target}" style="width:100%;height:14px;margin-top:10px;"></progress>
+      <div style="margin-top:6px;">${invited}/${target}</div>
+      <button onclick="goInvite()" style="margin-right:8px;">Go Invite</button>
+      <button onclick="copyInviteLink()">Copy</button>
+      <button id="${id}-claim" onclick="claimInvite('${id}', ${reward})" style="margin-left:8px;" ${canClaim && !claimed ? '' : 'disabled'}>${claimed ? 'Claimed ✅' : 'Claim'}</button>
+    `;
+    container.appendChild(div);
+  });
+}
 </script></body>
 </html>
