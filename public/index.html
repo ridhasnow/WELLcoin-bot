@@ -170,13 +170,16 @@
     }
 
     .dragon-frame-img {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      pointer-events: none;
-      z-index: 1;
-    }
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 1;
+
+  /* ✨ الإضاءة الذهبية */
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 10px rgba(255, 255, 200, 0.3));
+}
 
     #username-inside {
   position: absolute;
