@@ -225,8 +225,10 @@
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
-    const userId = tg.initDataUnsafe?.user?.id;
-console.log("✅ Telegram User ID:", userId);
+    
+    const userId = tg.initDataUnsafe?.user?.id || "123456789"; // ← مؤقت للاختبار من المتصفح فقط
+
+    console.log("✅ Telegram User ID:", userId);
     
     const app = firebase.initializeApp({
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
