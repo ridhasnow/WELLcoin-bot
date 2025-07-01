@@ -137,6 +137,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
+  
   // 🔧 Firebase إعداد
   const firebaseConfig = {
     apiKey: "AIzaSyCpb7_zDJ1UlH3OkfhfGI1V5FTS40xH82A",
@@ -161,6 +162,23 @@
       console.error("❌ Telegram user not found.");
     }
   };
+  
+  async function getUserData() {
+    if (!userId) {
+      console.error("❌ userId is not ready.");
+      return {};
+    }
+
+    try {
+      const snapshot = await db.ref(`users/${userId}`).once("value");
+      const data = snapshot.val();
+      console.log("📦 User Data:", data);
+      return data || {};
+    } catch (error) {
+      console.error("❌ Error fetching user data:", error);
+      return {};
+    }
+  }
   
 </script>
   
