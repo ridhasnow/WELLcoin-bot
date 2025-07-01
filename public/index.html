@@ -309,32 +309,35 @@ const db = firebase.database(app);
     }
 
     window.addEventListener("load", () => {
-      if (!userId) {
-        alert("No user ID found.");
-        window.location.href = "welcome.html";
-        return;
-      }
+  if (!userId) {
+    alert("No user ID found.");
+    window.location.href = "welcome.html";
+    return;
+  }
 
-      const userRef = db.ref("users/" + userId);
-      userRef.once("value").then((snapshot) => {
-        if (!snapshot.exists()) {
-          alert("No user data found. Redirecting to welcome page.");
-          window.location.href = "welcome.html";
-          return;
-        }
+  const userRef = db.ref("users/" + userId);
+  userRef.once("value").then((snapshot) => {
+    if (!snapshot.exists()) {
+      alert("No user data found. Redirecting to welcome page.");
+      window.location.href = "welcome.html";
+      return;
+    }
 
-        const userData = snapshot.val();
-        console.log("بيانات اللاعب:", userData);
-        usernameBox.textContent = userData.username || "Unknown Player";
-        balance = parseFloat(userData.balance || 0);
-        coinCount = parseFloat(userData.coinCount || 0);
-        countdown = parseInt(userData.countdown || 10800);
+    const userData = snapshot.val();
+    console.log("بيانات اللاعب:", userData);
+    usernameBox.textContent = userData.username || "Unknown Player";
+    balance = parseFloat(userData.balance || 0);
+    coinCount = parseFloat(userData.coinCount || 0);
+    countdown = parseInt(userData.countdown || 10800);
 
-        updateDisplay();
-        if (countdown > 0) startMining();
-        
-        document.querySelector(".character").addEventListener("click", restartMiningTimer);
-      });
+    updateDisplay();
+
+    if (countdown > 0 && !interval) startMining();
+  });
+
+  // ✅ بعد تحميل كل شيء
+  document.querySelector(".character").addEventListener("click", restartMiningTimer);
+});
     });
   </script>
 </body>
