@@ -25,20 +25,23 @@
       align-items: center;
       padding: 10px;
       position: relative;
-      z-index: 2;
+      z-index: 5;
     }
 
     #ranked {
-      width: 27px;
-      height: 27px;
-      margin-right: 22px;
-      cursor: pointer;
-      padding: 14px;
-      z-index: 9;
-      background-color: transparent;
-      border: none;
-      box-shadow: none;
-    }
+  position: absolute; /* ✨ مهم */
+  width: 27px;
+  height: 27px;
+  top: 5px;
+  left: 78%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  padding: 14px;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  z-index: 10; /* ✨ فوق كل شيء */
+}
 
     .balance-box {
       position: absolute;
