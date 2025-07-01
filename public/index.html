@@ -217,7 +217,7 @@
   </div>
 
   <div class="character-container">
-    <img src="character.png" class="character" alt="Player Character />
+    <img src="character.png" class="character" alt="Player Character" />
     <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
     <div class="timer" id="countdown">3:00:00</div>
   </div>
@@ -230,15 +230,6 @@
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-      authDomain: "wellcoinbotgame.firebaseapp.com",
-      projectId: "wellcoinbotgame",
-      storageBucket: "wellcoinbotgame.appspot.com",
-      messagingSenderId: "108640533638",
-      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-    };
-
     const app = firebase.initializeApp({
   apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
   authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -337,7 +328,7 @@ const db = firebase.database(app);
 
   // ✅ بعد تحميل كل شيء
   document.querySelector(".character").addEventListener("click", restartMiningTimer);
-});
+
     });
   </script>
 </body>
