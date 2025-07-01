@@ -244,8 +244,20 @@
       return snap.exists() ? snap.val() : null;
     }
 
-    async function updateUserData(data) {
-      await db.ref(`users/${userId}`).update(data);
+
+  // 🟡 نبدأ بتعريف المتغير
+  let userId;
+
+  // 🟢 دالة جلب بيانات المستخدم من Firebase
+  async function getUserData() {
+    const telegramUser = Telegram.WebApp.initDataUnsafe.user;
+    userId = telegramUser?.id?.toString() || "unknown";
+
+    const snapshot = await db.ref(`users/${userId}`).once("value");
+    return snapshot.val() || {};
+  }
+
+  // ⬅️ تابع باقي الكود هنا: initializeInviteMissions، renderInviteMissions، وهكذا...
     }
 
     async function claimDaily() {
