@@ -304,6 +304,7 @@
 
     initDailyMission();
     renderInviteMissions();
+    
       async function handleSocial(id, link) {
   const user = await getUserData();
   const done = user?.missions?.[id] || false;
@@ -422,7 +423,8 @@ async function claimInviteMission(id, reward) {
     if (claimBtn) {
       claimBtn.disabled = true;
       claimBtn.textContent = "Claimed ✅";
-      claimBtn.style.display = "none";
+      claimBtn.disabled = true;
+claimBtn.textContent = "Claimed ✅";
     }
   }
 }
@@ -432,20 +434,7 @@ function showRewardPopup(rewardText) {
   document.getElementById("reward-title").textContent = `🎉 Congratulations you earned ${rewardText}$`;
   document.getElementById("reward-popup").style.display = "block";
 }
-    function goInvite() {
-      document.getElementById("invite-link-text").textContent = inviteLink;
-      document.getElementById("invite-popup").style.display = "block";
-    }
 
-    function closeInvitePopup() {
-      document.getElementById("invite-popup").style.display = "none";
-    }
-
-    function copyInviteLink() {
-      navigator.clipboard.writeText(inviteLink).then(() => {
-        document.getElementById("copy-popup").style.display = "block";
-      });
-    }
 
     function closeCopyPopup() {
       document.getElementById("copy-popup").style.display = "none";
