@@ -226,8 +226,8 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     
-    const userId = tg.initDataUnsafe?.user?.id || "123456789"; // ← مؤقت للاختبار من المتصفح فقط
-
+    const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get("userId") || tg.initDataUnsafe?.user?.id;
     console.log("✅ Telegram User ID:", userId);
     
     const app = firebase.initializeApp({
