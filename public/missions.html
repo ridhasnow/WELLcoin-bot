@@ -321,23 +321,29 @@
 }
 
     async function closeSocialPopup() {
-      const id = document.getElementById("social-popup").getAttribute("data-id");
-      const btn = document.getElementById(`${id}-btn`);
-      const user = await getUserData();
+  const id = document.getElementById("social-popup").getAttribute("data-id");
+  const btn = document.getElementById(`${id}-btn`);
+  const user = await getUserData();
 
-      if (!user?.missions?.[id]) {
-        const newBalance = (parseFloat(user.balance || 0) + 1).toFixed(10);
-        await updateUserData({
-          balance: newBalance,
-          missions: {
-            ...user.missions,
-            [id]: true
-          }
-        });
-        if (btn) btn.textContent = "Claimed";
+  if (!user?.missions?.[id]) {
+    const newBalance = (parseFloat(user.balance || 0) + 1).toFixed(10);
+    await updateUserData({
+      balance: newBalance,
+      missions: {
+        ...user.missions,
+        [id]: true
       }
-      document.getElementById("social-popup").style.display = "none";
+    });
+
+    // ✅ هنا نضيف السطر المهم
+    if (btn) {
+      btn.textContent = "Claimed";
+      btn.disabled = true; // ← هذا السطر ضروري!
     }
+  }
+
+  document.getElementById("social-popup").style.display = "none";
+}
 
     function goInvite() {
       document.getElementById("invite-link-text").textContent = inviteLink;
