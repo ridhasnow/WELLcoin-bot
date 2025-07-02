@@ -2,25 +2,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Test Missions</title>
+  <title>Missions</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     body {
-      background-color: black;
+      background: black;
       color: gold;
       font-family: sans-serif;
       padding: 20px;
     }
     .mission {
       border: 2px solid gold;
-      padding: 20px;
+      padding: 16px;
       border-radius: 12px;
-      margin-top: 20px;
-      background-color: #111;
+      margin: 16px 0;
+      background: #111;
     }
-    .btn {
+    button {
       padding: 10px 20px;
       background: gold;
       color: black;
@@ -28,18 +28,17 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      margin-top: 10px;
     }
-    .btn:disabled {
+    button:disabled {
       background: gray;
-      color: white;
       cursor: not-allowed;
     }
   </style>
 </head>
 <body>
-  <h1>Test Mission</h1>
-  <div id="mission-container"></div>  <script>
+  <h1>🎯 Missions</h1>
+  <div id="missions"></div>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -48,61 +47,110 @@
       storageBucket: "wellcoinbotgame.appspot.com",
       messagingSenderId: "108640533638",
       appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-    };
+    };const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database(app);
+const tg = window.Telegram.WebApp;
+tg.ready();
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
-    const tg = window.Telegram.WebApp;
-    tg.ready();
+const userId = tg.initDataUnsafe?.user?.id;
+const missionsDiv = document.getElementById("missions");
 
-    const userId = tg.initDataUnsafe?.user?.id;
-    const missionId = "testMission";
-    const missionReward = 0.01;
+async function getUserData() {
+  const snap = await db.ref("users/" + userId).once("value");
+  return snap.val() || {};
+}
 
-    async function getUserData() {
-      const snapshot = await db.ref("users/" + userId).once("value");
-      return snapshot.val() || {};
-    }
+async function updateUserData(data) {
+  await db.ref("users/" + userId).update(data);
+}
 
-    async function updateUserData(data) {
-      await db.ref("users/" + userId).update(data);
-    }
+function renderMission(title, desc, id, reward, isClaimed, onClick) {
+  const div = document.createElement("div");
+  div.className = "mission";
+  div.innerHTML = `
+    <h3>${title}</h3>
+    <p>${desc}</p>
+    <button id="btn-${id}" ${isClaimed ? "disabled" : ""}>
+      ${isClaimed ? "Claimed" : `Claim ${reward} WLC`}
+    </button>
+  `;
+  missionsDiv.appendChild(div);
+  document.getElementById("btn-" + id).onclick = onClick;
+}
 
-    async function renderMission() {
-      if (!userId) {
-        alert("No user ID found. Open from Telegram app.");
-        return;
-      }
+async function renderMissions() {
+  if (!userId) return alert("User ID missing");
 
-      const user = await getUserData();
-      const claimed = user.missions?.[missionId]?.claimed || false;
+  const user = await getUserData();
+  const userMissions = user.missions || {};
+  const claimed = (id) => userMissions[id]?.claimed || false;
 
-      const container = document.getElementById("mission-container");
-      const missionDiv = document.createElement("div");
-      missionDiv.className = "mission";
-      missionDiv.innerHTML = `
-        <h2>Test Mission</h2>
-        <p>Click the button to claim ${missionReward} WLC.</p>
-        <button id="claim-btn" class="btn" ${claimed ? "disabled" : ""}>${claimed ? "Claimed" : "Claim Reward"}</button>
-      `;
-      container.appendChild(missionDiv);
+  const reward = 0.5;
+  const socials = [
+    { id: "youtube", title: "Join us on YouTube", url: "https://youtube.com", reward },
+    { id: "telegram", title: "Join us on Telegram", url: "https://t.me/WELLcoinofficial", reward },
+    { id: "instagram", title: "Follow us on Instagram", url: "https://instagram.com", reward },
+    { id: "facebook", title: "Like our Facebook page", url: "https://facebook.com", reward },
+    { id: "tiktok", title: "Follow us on TikTok", url: "https://tiktok.com", reward },
+    { id: "x", title: "Follow us on X (Twitter)", url: "https://x.com", reward }
+  ];
 
-      document.getElementById("claim-btn").addEventListener("click", async () => {
-        const updatedBalance = (parseFloat(user.balance || 0) + missionReward).toFixed(10);
-
-        await updateUserData({
-          balance: updatedBalance,
-          missions: {
-            ...(user.missions || {}),
-            [missionId]: { claimed: true }
-          }
-        });
-
-        alert("✅ Reward claimed and saved!");
-        location.reload();
+  socials.forEach(({ id, title, url, reward }) => {
+    renderMission(title, `Click to visit and claim ${reward} WLC.`, id, reward, claimed(id), async () => {
+      window.open(url, "_blank");
+      const confirm = window.confirm("Did you follow/subscribe?");
+      if (!confirm) return;
+      const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
+      await updateUserData({
+        balance: newBalance,
+        missions: { ...userMissions, [id]: { claimed: true } }
       });
-    }
+      alert("✅ Reward claimed!");
+      location.reload();
+    });
+  });
 
-    window.addEventListener("load", renderMission);
-  </script></body>
+  // Daily Reward
+  const dailyId = "daily";
+  const lastClaim = userMissions[dailyId]?.lastClaim || 0;
+  const now = Date.now();
+  const elapsed = now - lastClaim;
+  const canClaim = elapsed > 86400000;
+
+  renderMission("Daily Reward", "Come back every 24h for a free 1 WLC!", dailyId, 1, !canClaim, async () => {
+    const newBalance = (parseFloat(user.balance || 0) + 1).toFixed(10);
+    await updateUserData({
+      balance: newBalance,
+      missions: { ...userMissions, [dailyId]: { lastClaim: now } }
+    });
+    alert("✅ Daily reward claimed!");
+    location.reload();
+  });
+
+  // Invite Friends
+  const invites = [
+    { id: "invite5", label: "Invite 5 Friends", target: 5, reward: 0.5 },
+    { id: "invite20", label: "Invite 20 Friends", target: 20, reward: 2 },
+    { id: "invite100", label: "Invite 100 Friends", target: 100, reward: 10 }
+  ];
+  const refCount = user.referrals || 0;
+  invites.forEach(({ id, label, target, reward }) => {
+    const done = refCount >= target;
+    renderMission(label, `Current: ${refCount}/${target} - Reward: ${reward} USDT`, id, reward, claimed(id), async () => {
+      if (!done) return alert("You haven't invited enough friends yet.");
+      const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
+      await updateUserData({
+        balance: newBalance,
+        missions: { ...userMissions, [id]: { claimed: true } }
+      });
+      alert("✅ Invite mission claimed!");
+      location.reload();
+    });
+  });
+}
+
+window.onload = renderMissions;
+
+  </script>
+</body>
 </html>
