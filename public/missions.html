@@ -1,86 +1,108 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>WELLcoin Test Mission</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test Missions</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    body { background: black; color: white; font-family: sans-serif; padding: 40px; }
-    .mission { background: #111; padding: 20px; border: 1px solid gold; border-radius: 12px; }
-    button { padding: 10px 20px; border: none; border-radius: 6px; background: gold; color: black; font-weight: bold; cursor: pointer; }
-    button:disabled { background: gray; cursor: not-allowed; }
+    body {
+      background-color: black;
+      color: gold;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    .mission {
+      border: 2px solid gold;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+      background-color: #111;
+    }
+    .btn {
+      padding: 10px 20px;
+      background: gold;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn:disabled {
+      background: gray;
+      color: white;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
-  <h2>🔥 Test Mission</h2>
-  <div class="mission">
-    <p>Click once to claim 0.01 WLC</p>
-    <button id="claim-btn" onclick="claimTest()">Claim</button>
-  </div>
-
-  <script>
+  <h1>Test Mission</h1>
+  <div id="mission-container"></div>  <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyCpb7_zDJ1UlH3OkfhfGI1V5FTS40xH82A",
-      authDomain: "wellcoin-game.firebaseapp.com",
-      projectId: "wellcoin-game",
-      storageBucket: "wellcoin-game.appspot.com",
-      messagingSenderId: "586431048382",
-      appId: "1:586431048382:web:b8cb6a9ef17d06e261c437",
-      databaseURL: "https://wellcoin-game-default-rtdb.europe-west1.firebasedatabase.app"
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
 
-    let userId = null;
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    const userId = tg.initDataUnsafe?.user?.id;
+    const missionId = "testMission";
+    const missionReward = 0.01;
 
     async function getUserData() {
-      const snap = await db.ref(`users/${userId}`).once("value");
-      return snap.val() || {};
+      const snapshot = await db.ref("users/" + userId).once("value");
+      return snapshot.val() || {};
     }
 
     async function updateUserData(data) {
-      await db.ref(`users/${userId}`).update(data);
+      await db.ref("users/" + userId).update(data);
     }
 
-    async function updateUserBalance(amount) {
-      const user = await getUserData();
-      const balance = parseFloat(user.balance || 0) + amount;
-      await updateUserData({ balance });
-    }
-
-    async function claimTest() {
-      const user = await getUserData();
-      const alreadyClaimed = user.missions?.testClaimed;
-
-      if (alreadyClaimed) {
-        alert("Already claimed ✅");
+    async function renderMission() {
+      if (!userId) {
+        alert("No user ID found. Open from Telegram app.");
         return;
       }
 
-      await updateUserData({
-        missions: {
-          ...(user.missions || {}),
-          testClaimed: true
-        }
-      });
+      const user = await getUserData();
+      const claimed = user.missions?.[missionId]?.claimed || false;
 
-      await updateUserBalance(0.01);
-      const btn = document.getElementById("claim-btn");
-      btn.disabled = true;
-      btn.textContent = "Claimed ✅";
-      alert("🎉 Claimed successfully!");
+      const container = document.getElementById("mission-container");
+      const missionDiv = document.createElement("div");
+      missionDiv.className = "mission";
+      missionDiv.innerHTML = `
+        <h2>Test Mission</h2>
+        <p>Click the button to claim ${missionReward} WLC.</p>
+        <button id="claim-btn" class="btn" ${claimed ? "disabled" : ""}>${claimed ? "Claimed" : "Claim Reward"}</button>
+      `;
+      container.appendChild(missionDiv);
+
+      document.getElementById("claim-btn").addEventListener("click", async () => {
+        const updatedBalance = (parseFloat(user.balance || 0) + missionReward).toFixed(10);
+
+        await updateUserData({
+          balance: updatedBalance,
+          missions: {
+            ...(user.missions || {}),
+            [missionId]: { claimed: true }
+          }
+        });
+
+        alert("✅ Reward claimed and saved!");
+        location.reload();
+      });
     }
 
-    window.onload = () => {
-      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      if (tgUser && tgUser.id) {
-        userId = tgUser.id.toString();
-      } else {
-        alert("❌ Failed to get Telegram user.");
-      }
-    };
-  </script>
-</body>
+    window.addEventListener("load", renderMission);
+  </script></body>
 </html>
