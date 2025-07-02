@@ -429,7 +429,7 @@ async function renderInviteMissions() {
     { id: "invite20", label: "Invite 20 friends", target: 20, reward: 2, img: "invit2.png" },
     { id: "invite100", label: "Invite 100 friends", target: 100, reward: 10, img: "invit3.png" },
   ];
-}
+
   const container = document.getElementById("missions-container");
 
   missions.forEach(({ id, label, target, reward, img }) => {
@@ -454,6 +454,6 @@ async function renderInviteMissions() {
     container.appendChild(div);
   });
 }
-  
+  renderInviteMissions();
 </script></body>
 </html>
