@@ -218,14 +218,6 @@
   <div id="missions"></div>
 
   
-  <div class="mission">
-  <div class="mission-glow"></div>
-  <img src="youtube-icon.png" class="icon" />
-  <h3>Join us on YouTube</h3>
-  <p>Subscribe and earn 0.5 WLC</p>
-  <button onclick="showYoutubePopup()">Join Now</button>
-</div>
-  
 <div class="mission" id="telegram-mission">
   <img src="telegram-icon.png" style="width:60px; float:left; margin-right:15px;">
   <h3>Join us on Telegram</h3>
@@ -317,7 +309,8 @@
     missions.appendChild(div);
   }
 
-  renderMission("Join us on YouTube", "Subscribe and earn 1 WLC", "youtube", 1, claimed("youtube"), () => {
+  
+renderMission("Join us on YouTube", "Subscribe and earn 1 WLC", "youtube", 1, claimed("youtube"), () => {
   handleSocial("youtube", "https://youtube.com/...", 1);
 });
 
