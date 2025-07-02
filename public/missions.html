@@ -310,8 +310,6 @@ setInterval(updateTimer, 1000);
     await updateUserBalance(CLAIM_AMOUNT);
     updateTimer();
   }
-    
-  updateTimer(); // ✅ نفس الفكرة - يحدث المؤقت
 }
 
             // ميكانيك الخاص بمهمات السوشيال ميديا
@@ -373,14 +371,6 @@ async function closeSocialPopup() {
   document.getElementById("social-popup").style.display = "none";
 }
 
-             // ميكانيك مهمات استدعاء الاصدقاء
-const telegramId = localStorage.getItem("telegramId") || "123456";
-const inviteLink = `https://wellcoin.com/invite?ref=${telegramId}`;
-const inviteMissions = [
-  { id: "invite5", label: "Invite 5 friends", target: 5, reward: 0.5, img: "invit1.png" },
-  { id: "invite20", label: "Invite 20 friends", target: 20, reward: 2, img: "invit2.png" },
-  { id: "invite100", label: "Invite 100 friends", target: 100, reward: 10, img: "invit3.png" },
-];
 
 function goInvite() {
   document.getElementById("invite-link-text").textContent = inviteLink;
@@ -423,9 +413,9 @@ async function claimInvite(id, reward) {
 }
 async function renderInviteMissions() {
   const user = await getUserData();
-
+  const inviteLink = `https://t.me/WELLcoinBot?start=ref=${userId}`;
   const missions = [
-    { id: "invite5", label: "Invite 5 friends", target: 5, reward: 0.5, img: "invi1.png" },
+    { id: "invite5", label: "Invite 5 friends", target: 5, reward: 0.5, img: "invit1.png" },
     { id: "invite20", label: "Invite 20 friends", target: 20, reward: 2, img: "invit2.png" },
     { id: "invite100", label: "Invite 100 friends", target: 100, reward: 10, img: "invit3.png" },
   ];
