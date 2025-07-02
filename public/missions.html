@@ -252,18 +252,23 @@
   <script>
     
          //الميكانيك الخاص مهمة المكافأة اليومية 
-const CLAIM_KEY = "dailyClaimTimestamp";
-const BALANCE_KEY = "wellcoinBalance";
+//الميكانيك الخاص مهمة المكافأة اليومية 
+let missionsData = {};
 const CLAIM_AMOUNT = 0.00001;
 const CLAIM_INTERVAL = 24 * 60 * 60 * 1000;
 const btn = document.getElementById("claim-btn");
 const timerDiv = document.getElementById("timer");
 
-function updateTimer() {
-  const lastClaim = localStorage.getItem(CLAIM_KEY);
+
+async function updateTimer() {
+  const user = await getUserData();
+  const lastClaim = user?.missions?.dailyClaimTimestamp;
+
   if (!lastClaim) return;
+
   const diff = Date.now() - parseInt(lastClaim);
   const remaining = CLAIM_INTERVAL - diff;
+
   if (remaining > 0) {
     btn.disabled = true;
     btn.textContent = "Claimed ✅";
@@ -277,6 +282,10 @@ function updateTimer() {
     timerDiv.textContent = "";
   }
 }
+
+updateTimer();
+setInterval(updateTimer, 1000);
+
 
 async function claimReward() {
   const user = await getUserData();
