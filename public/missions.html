@@ -196,16 +196,20 @@
       });
     }
 
-    window.onload = async () => {
-      const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      if (telegramUser && telegramUser.id) {
-        userId = telegramUser.id.toString();
-        inviteLink = `https://t.me/WELLcoinBot?start=ref=${userId}`;
-        await initializeInviteMissions();
-        await renderInviteMissions();
-        updateTimer();
-        setInterval(updateTimer, 1000);
-      }
-    };
+    window.addEventListener("load", async () => {
+  const checkUser = setInterval(async () => {
+    const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (telegramUser && telegramUser.id) {
+      clearInterval(checkUser);
+      userId = telegramUser.id.toString();
+      inviteLink = `https://t.me/WELLcoinBot?start=ref=${userId}`;
+
+      await initializeInviteMissions();
+      await renderInviteMissions();
+      await updateTimer();
+      setInterval(updateTimer, 1000);
+    }
+  }, 200);
+});
   </script></body>
 </html>
