@@ -342,18 +342,21 @@
   }
 
   window.onload = async () => {
-    const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    if (telegramUser && telegramUser.id) {
-      userId = telegramUser.id.toString();
-      inviteLink = `https://t.me/WELLcoinBot?start=ref=${userId}`;
-      await initializeInviteMissions();
-      renderInviteMissions();
-      updateTimer();
-      setInterval(updateTimer, 1000);
-    } else {
-      console.error("❌ Telegram user not found.");
-    }
-  };
+  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (telegramUser && telegramUser.id) {
+    userId = telegramUser.id.toString();
+    inviteLink = `https://t.me/WELLcoinBot?start=ref=${userId}`;
+    
+    const user = await getUserData(); // 🟢 أضف هذا السطر
+
+    await initializeInviteMissions();
+    await renderInviteMissions(); // 🟢 تأكد أنها await لأنها async
+    updateTimer();
+    setInterval(updateTimer, 1000);
+  } else {
+    console.error("❌ Telegram user not found.");
+  }
+};
 </script>
 
 <body>
