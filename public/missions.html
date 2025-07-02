@@ -336,17 +336,19 @@ missions.forEach(({ id, label, icon, link }) => {
   container.appendChild(div);
 });
 
-function handleSocial(id, link) {
-  const key = `mission-${id}`;
+async function handleSocial(id, link) {
+  const user = await getUserData();
   const btn = document.getElementById(`${id}-btn`);
+
   window.open(link, "_blank");
+
   setTimeout(() => {
-    if (!localStorage.getItem(key)) {
+    if (!user.missions?.[`${id}-claimed`]) {
       document.getElementById("social-popup").style.display = "block";
       document.getElementById("social-popup").setAttribute("data-id", id);
     } else {
       document.getElementById("social-popup-again").style.display = "block";
-      btn.textContent = "Claimed"; // تحديث يدوي بعد الضغط مباشرة
+      if (btn) btn.textContent = "Claimed";
       setTimeout(() => {
         document.getElementById("social-popup-again").style.display = "none";
       }, 3000);
@@ -354,17 +356,20 @@ function handleSocial(id, link) {
   }, 1000);
 }
 
-function closeSocialPopup() {
+async function closeSocialPopup() {
   const id = document.getElementById("social-popup").getAttribute("data-id");
-  const key = `mission-${id}`;
   const btn = document.getElementById(`${id}-btn`);
-  if (!localStorage.getItem(key)) {
-    localStorage.setItem(key, "true");
-    let balance = parseFloat(localStorage.getItem("balance")) || 0;
-    balance += 1;
-    localStorage.setItem("balance", balance.toFixed(10));
-    if (btn) btn.textContent = "Claimed";
+
+  const user = await getUserData();
+  const missions = user.missions || {};
+
+  if (!missions[id]) {
+    missions[id] = true;
+    await updateUserData({ missions });
+    await updateUserBalance(1); // ✅ إضافة 1 WLC إلى الرصيد
+    if (btn) btn.textContent = "Claimed ✅";
   }
+
   document.getElementById("social-popup").style.display = "none";
 }
 
@@ -372,7 +377,7 @@ function closeSocialPopup() {
 const telegramId = localStorage.getItem("telegramId") || "123456";
 const inviteLink = `https://wellcoin.com/invite?ref=${telegramId}`;
 const inviteMissions = [
-  { id: "invite5", label: "Invite 5 friends", target: 5, reward: 0.5, img: "invi1.png" },
+  { id: "invite5", label: "Invite 5 friends", target: 5, reward: 0.5, img: "invit1.png" },
   { id: "invite20", label: "Invite 20 friends", target: 20, reward: 2, img: "invit2.png" },
   { id: "invite100", label: "Invite 100 friends", target: 100, reward: 10, img: "invit3.png" },
 ];
@@ -415,7 +420,7 @@ async function claimInvite(id, reward) {
       btn.textContent = "Claimed ✅";
     }
   }
-  
+}
 async function renderInviteMissions() {
   const user = await getUserData();
 
@@ -424,7 +429,7 @@ async function renderInviteMissions() {
     { id: "invite20", label: "Invite 20 friends", target: 20, reward: 2, img: "invit2.png" },
     { id: "invite100", label: "Invite 100 friends", target: 100, reward: 10, img: "invit3.png" },
   ];
-
+}
   const container = document.getElementById("missions-container");
 
   missions.forEach(({ id, label, target, reward, img }) => {
