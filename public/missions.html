@@ -45,17 +45,28 @@
     }
 
     async function claimReward() {
-      const now = Date.now();
-      const user = await getUserData();
-      await updateUserData({
-        missions: {
-          ...user.missions,
-          dailyClaimTimestamp: now
-        }
-      });
-      await updateUserBalance(0.00001);
-      updateTimer();
+  const now = Date.now();
+  const user = await getUserData();
+
+  await updateUserData({
+    missions: {
+      ...user.missions,
+      dailyClaimTimestamp: now
     }
+  });
+
+  await updateUserBalance(0.00001);
+
+  // ✅ تحديث الزر
+  const btn = document.getElementById("claim-btn");
+  btn.disabled = true;
+  btn.textContent = "Claimed ✅";
+
+  // ✅ إظهار إشعار فوري
+  alert("✅ Claimed! Reward added to your balance.");
+
+  updateTimer();
+}
 
     async function updateTimer() {
       const user = await getUserData();
