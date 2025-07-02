@@ -1,156 +1,442 @@
-<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Missions</title>
+  <title>WELLcoin Missions</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     body {
-      background: black;
+      background-color: #000;
       color: gold;
-      font-family: sans-serif;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 0;
+      margin: 0;
+    }
+    header {
+      background-color: #1a1a1a;
       padding: 20px;
+      text-align: center;
     }
-    .mission {
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: white;
+      text-shadow: 0 0 8px gold;
+    }
+    .back-button {
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      background-color: transparent;
       border: 2px solid gold;
-      padding: 16px;
-      border-radius: 12px;
-      margin: 16px 0;
-      background: #111;
-    }
-    button {
-      padding: 10px 20px;
-      background: gold;
-      color: black;
+      color: gold;
+      padding: 8px 14px;
+      border-radius: 10px;
       font-weight: bold;
-      border: none;
-      border-radius: 6px;
       cursor: pointer;
     }
+
+    #missions {
+      padding: 20px;
+    }
+
+    .mission {
+      background-color: #191919;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mission h3 {
+      margin-top: 0;
+      color: white;
+      font-size: 18px;
+      text-shadow: 0 0 6px #ffaa00;
+    }
+
+    .mission p {
+      margin-bottom: 12px;
+      color: #ccc;
+    }
+
+    .mission .icon {
+      width: 50px;
+      height: 50px;
+      float: left;
+      margin-right: 12px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 14px;
+      background: #333;
+      border-radius: 8px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(to right, red, orange, yellow, green);
+      width: 0%;
+      transition: width 0.5s;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #00cc66;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
     button:disabled {
       background: gray;
       cursor: not-allowed;
     }
+
+    .glow-border {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 12px;
+      pointer-events: none;
+      box-shadow: 0 0 20px 3px gold;
+      animation: rotateGlow 3s linear infinite;
+    }
+
+    @keyframes rotateGlow {
+      0% { box-shadow: 0 0 20px 3px gold; }
+      25% { box-shadow: 5px 0 25px 3px gold; }
+      50% { box-shadow: 0 5px 25px 3px gold; }
+      75% { box-shadow: -5px 0 25px 3px gold; }
+      100% { box-shadow: 0 -5px 20px 3px gold; }
+    }
+
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #222;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      z-index: 9999;
+      color: white;
+      text-align: center;
+      display: none;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .popup p {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .popup button {
+      margin-top: 10px;
+      background: #0077ff;
+    }
+    .mission {
+  position: relative;
+  background: #1a1a1a;
+  color: white;
+  border-radius: 12px;
+  margin: 20px 0;
+  padding: 16px 16px 16px 80px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+
+.mission img.icon {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 40px;
+  height: 40px;
+}
+
+.mission-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  box-shadow: 0 0 8px 4px rgba(255, 215, 0, 0.3);
+  animation: glowMove 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes glowMove {
+  0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+  100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+}
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #222;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px gold;
+  z-index: 9999;
+  width: 80%;
+  max-width: 300px;
+  display: none;
+}
+
+.popup button {
+  margin-top: 10px;
+  background: gold;
+  color: black;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+}
   </style>
 </head>
 <body>
-  <h1>🎯 Missions</h1>
+  <header>
+    <button class="back-button" onclick="history.back()">← Back</button>
+    <h1>You Can Do It</h1>
+  </header>
+
   <div id="missions"></div>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-      authDomain: "wellcoinbotgame.firebaseapp.com",
-      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "wellcoinbotgame",
-      storageBucket: "wellcoinbotgame.appspot.com",
-      messagingSenderId: "108640533638",
-      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-    };const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database(app);
-const tg = window.Telegram.WebApp;
-tg.ready();
 
-const userId = tg.initDataUnsafe?.user?.id;
-const missionsDiv = document.getElementById("missions");
+  <!-- Popup: Social Join Confirmation -->
+  <div id="popup-social" class="popup">
+    <p>You Click Finish?</p>
+    <p style="font-size: 14px;">If you unsubscribe, the reward will be deducted. Don’t cheat, we’re on the same team.</p>
+    <button onclick="confirmSocial()">Yes, I Do</button>
+  </div>
 
-async function getUserData() {
-  const snap = await db.ref("users/" + userId).once("value");
-  return snap.val() || {};
-}
+  <!-- Popup: Referral Link -->
+  <div id="popup-referral" class="popup">
+    <p>Your Referral Link:</p>
+    <input type="text" id="referral-link" style="width:100%; padding:10px; font-size:16px; border-radius:8px;" readonly />
+    <button onclick="copyReferral()">Copy</button>
+  </div>
 
-async function updateUserData(data) {
-  await db.ref("users/" + userId).update(data);
-}
+  <!-- Popup: Success Reward -->
+  <div id="popup-success" class="popup">
+    <p id="success-msg" style="color:lime; font-weight:bold;"></p>
+    <button onclick="closePopup('popup-success')">Thank You</button>
+  </div>
+  <div class="mission">
+  <div class="mission-glow"></div>
+  <img src="youtube-icon.png" class="icon" />
+  <h3>Join us on YouTube</h3>
+  <p>Subscribe and earn 0.5 WLC</p>
+  <button onclick="showYoutubePopup()">Join Now</button>
+</div>
 
-function renderMission(title, desc, id, reward, isClaimed, onClick) {
-  const div = document.createElement("div");
-  div.className = "mission";
-  div.innerHTML = `
-    <h3>${title}</h3>
-    <p>${desc}</p>
-    <button id="btn-${id}" ${isClaimed ? "disabled" : ""}>
-      ${isClaimed ? "Claimed" : `Claim ${reward} WLC`}
-    </button>
-  `;
-  missionsDiv.appendChild(div);
-  document.getElementById("btn-" + id).onclick = onClick;
-}
+<!-- Popup -->
+<div id="youtubePopup" class="popup">
+  <p>Did you click finish?</p>
+  <p style="font-size: 12px; color: #ccc;">If you unsubscribe, reward will be removed. We're one team.</p>
+  <button onclick="claimYoutube()">Yes I Do</button>
+</div>
+</body>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+    authDomain: "wellcoinbotgame.firebaseapp.com",
+    databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "wellcoinbotgame",
+    storageBucket: "wellcoinbotgame.appspot.com",
+    messagingSenderId: "108640533638",
+    appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+  };
 
-async function renderMissions() {
-  if (!userId) return alert("User ID missing");
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.database(app);
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  const userId = tg.initDataUnsafe?.user?.id;
 
-  const user = await getUserData();
-  const userMissions = user.missions || {};
-  const claimed = (id) => userMissions[id]?.claimed || false;
-
-  const reward = 0.5;
+  const missionsDiv = document.getElementById("missions");
   const socials = [
-    { id: "youtube", title: "Join us on YouTube", url: "https://youtube.com", reward },
-    { id: "telegram", title: "Join us on Telegram", url: "https://t.me/WELLcoinofficial", reward },
-    { id: "instagram", title: "Follow us on Instagram", url: "https://instagram.com", reward },
-    { id: "facebook", title: "Like our Facebook page", url: "https://facebook.com", reward },
-    { id: "tiktok", title: "Follow us on TikTok", url: "https://tiktok.com", reward },
-    { id: "x", title: "Follow us on X (Twitter)", url: "https://x.com", reward }
+    { id: "youtube", title: "Follow us on YouTube", url: "https://youtube.com", reward: 0.5 },
+    { id: "telegram", title: "Join our Telegram", url: "https://t.me/WELLcoinofficial", reward: 0.5 },
+    { id: "instagram", title: "Follow us on Instagram", url: "https://instagram.com", reward: 0.5 },
+    { id: "facebook", title: "Follow us on Facebook", url: "https://facebook.com", reward: 0.5 },
+    { id: "tiktok", title: "Follow us on TikTok", url: "https://tiktok.com", reward: 0.5 },
+    { id: "x", title: "Follow us on X", url: "https://x.com", reward: 0.5 }
   ];
 
-  socials.forEach(({ id, title, url, reward }) => {
-    renderMission(title, `Click to visit and claim ${reward} WLC.`, id, reward, claimed(id), async () => {
-      window.open(url, "_blank");
-      const confirm = window.confirm("Did you follow/subscribe?");
-      if (!confirm) return;
-      const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
-      await updateUserData({
-        balance: newBalance,
-        missions: { ...userMissions, [id]: { claimed: true } }
-      });
-      alert("✅ Reward claimed!");
-      location.reload();
-    });
-  });
-
-  // Daily Reward
-  const dailyId = "daily";
-  const lastClaim = userMissions[dailyId]?.lastClaim || 0;
-  const now = Date.now();
-  const elapsed = now - lastClaim;
-  const canClaim = elapsed > 86400000;
-
-  renderMission("Daily Reward", "Come back every 24h for a free 1 WLC!", dailyId, 1, !canClaim, async () => {
-    const newBalance = (parseFloat(user.balance || 0) + 1).toFixed(10);
-    await updateUserData({
-      balance: newBalance,
-      missions: { ...userMissions, [dailyId]: { lastClaim: now } }
-    });
-    alert("✅ Daily reward claimed!");
-    location.reload();
-  });
-
-  // Invite Friends
   const invites = [
     { id: "invite5", label: "Invite 5 Friends", target: 5, reward: 0.5 },
     { id: "invite20", label: "Invite 20 Friends", target: 20, reward: 2 },
     { id: "invite100", label: "Invite 100 Friends", target: 100, reward: 10 }
   ];
-  const refCount = user.referrals || 0;
-  invites.forEach(({ id, label, target, reward }) => {
-    const done = refCount >= target;
-    renderMission(label, `Current: ${refCount}/${target} - Reward: ${reward} USDT`, id, reward, claimed(id), async () => {
-      if (!done) return alert("You haven't invited enough friends yet.");
-      const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
-      await updateUserData({
-        balance: newBalance,
-        missions: { ...userMissions, [id]: { claimed: true } }
-      });
-      alert("✅ Invite mission claimed!");
-      location.reload();
+
+  async function getUserData() {
+    const snap = await db.ref("users/" + userId).once("value");
+    return snap.val() || {};
+  }
+
+  async function updateUserData(data) {
+    await db.ref("users/" + userId).update(data);
+  }
+
+  function renderProgress(current, target) {
+    const percent = Math.min((current / target) * 100, 100);
+    return `<div style='background:#333; border-radius:6px; height:10px; overflow:hidden; margin:6px 0;'>
+      <div style='width:${percent}%; height:100%; background:linear-gradient(to right, red, orange, green);'></div>
+    </div>`;
+  }
+
+  async function renderMissions() {
+    const user = await getUserData();
+    const claimed = (id) => user.missions?.[id]?.claimed || false;
+    const missions = document.getElementById("missions");
+
+    socials.forEach(({ id, title, url, reward }) => {
+      const isClaimed = claimed(id);
+      const div = document.createElement("div");
+      div.className = "mission";
+      div.innerHTML = `
+        <h3>${title}</h3>
+        <p>Reward: ${reward} WLC</p>
+        <button onclick="handleSocial('${id}', '${url}', ${reward})" ${isClaimed ? "disabled" : ""}>
+          ${isClaimed ? "Visit" : "Join Now"}
+        </button>`;
+      missions.appendChild(div);
     });
-  });
+
+    invites.forEach(({ id, label, target, reward }) => {
+      const invited = user.referrals || 0;
+      const isClaimed = claimed(id);
+      const completed = invited >= target;
+      const div = document.createElement("div");
+      div.className = "mission";
+      div.innerHTML = `
+        <h3>${label}</h3>
+        ${renderProgress(invited, target)}
+        <p>${invited}/${target} - Reward: ${reward} USDT</p>
+        <button onclick="handleInvite('${id}', ${reward}, ${completed})" ${isClaimed ? "disabled" : ""}>
+          ${isClaimed ? "Claimed" : completed ? "Claim" : "Start Invite"}
+        </button>`;
+      missions.appendChild(div);
+    });
+
+    // Daily reward
+    const now = Date.now();
+    const daily = user.missions?.daily || {};
+    const lastClaim = daily.lastClaim || 0;
+    const canClaim = now - lastClaim > 86400000;
+    const div = document.createElement("div");
+    div.className = "mission";
+    div.innerHTML = `
+      <h3>Daily Reward</h3>
+      <p>Reward: 1 WLC</p>
+      <button onclick="claimDaily()" ${canClaim ? "" : "disabled"}>
+        ${canClaim ? "Claim" : "Claimed"}
+      </button>`;
+    missions.appendChild(div);
+  }
+
+  async function handleSocial(id, url, reward) {
+    window.open(url, '_blank');
+    document.getElementById("popup-social").style.display = "block";
+    document.getElementById("popup-social").dataset.id = id;
+    document.getElementById("popup-social").dataset.reward = reward;
+  }
+
+  async function confirmSocial() {
+    const popup = document.getElementById("popup-social");
+    const id = popup.dataset.id;
+    const reward = parseFloat(popup.dataset.reward);
+    const user = await getUserData();
+    const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
+    await updateUserData({
+      balance: newBalance,
+      missions: { ...user.missions, [id]: { claimed: true } }
+    });
+    popup.style.display = "none";
+    document.getElementById("success-msg").innerText = `+${reward} WLC`;
+    document.getElementById("popup-success").style.display = "block";
+  }
+
+  async function handleInvite(id, reward, completed) {
+    if (!completed) {
+      const link = `https://t.me/WELLcoin_bot?start=${userId}`;
+      document.getElementById("referral-link").value = link;
+      document.getElementById("popup-referral").style.display = "block";
+      return;
+    }
+    const user = await getUserData();
+    const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
+    await updateUserData({
+      balance: newBalance,
+      missions: { ...user.missions, [id]: { claimed: true } }
+    });
+    document.getElementById("success-msg").innerText = `+${reward} USDT`;
+    document.getElementById("popup-success").style.display = "block";
+  }
+
+  async function claimDaily() {
+    const user = await getUserData();
+    const newBalance = (parseFloat(user.balance || 0) + 1).toFixed(10);
+    await updateUserData({
+      balance: newBalance,
+      missions: { ...user.missions, daily: { lastClaim: Date.now() } }
+    });
+    document.getElementById("success-msg").innerText = "+1 WLC";
+    document.getElementById("popup-success").style.display = "block";
+  }
+
+  function copyReferral() {
+    const copyText = document.getElementById("referral-link");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    closePopup("popup-referral");
+  }
+
+  function closePopup(id) {
+    document.getElementById(id).style.display = "none";
+    location.reload();
+  }
+
+  
+function showYoutubePopup() {
+  window.open("https://youtube.com", "_blank");
+  setTimeout(() => {
+    document.getElementById("youtubePopup").style.display = "block";
+  }, 1000);
 }
 
-window.onload = renderMissions;
+async function claimYoutube() {
+  const user = await getUserData();
+  if (user.missions?.youtube?.claimed) {
+    alert("You already claimed this reward.");
+    return;
+  }
 
-  </script>
-</body>
-</html>
+  const newBalance = (parseFloat(user.balance || 0) + 0.5).toFixed(10);
+  await updateUserData({
+    balance: newBalance,
+    missions: {
+      ...user.missions,
+      youtube: { claimed: true }
+    }
+  });
+  alert("✅ You earned 0.5 WLC!");
+  location.reload();
+}
+  window.onload = renderMissions;
+</script>
