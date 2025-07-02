@@ -294,14 +294,6 @@
   tg.ready();
   const userId = tg.initDataUnsafe?.user?.id;
 
-  const missionsDiv = document.getElementById("missions");
-  const socials = [
-  
-    { id: "instagram", title: "Follow us on Instagram", url: "https://instagram.com", reward: 0.5 },
-    { id: "facebook", title: "Follow us on Facebook", url: "https://facebook.com", reward: 0.5 },
-    { id: "tiktok", title: "Follow us on TikTok", url: "https://tiktok.com", reward: 0.5 },
-    { id: "x", title: "Follow us on X", url: "https://x.com", reward: 0.5 }
-  ];
 
   const invites = [
     { id: "invite5", label: "Invite 5 Friends", target: 5, reward: 0.5 },
@@ -325,26 +317,7 @@
     </div>`;
   }
 
-  async function renderMissions() {
-    const user = await getUserData();
-    const claimed = (id) => user.missions?.[id]?.claimed || false;
-    const missions = document.getElementById("missions");
-
-    socials.forEach(({ id, title, url, reward }) => {
-  renderMission(title, `Click to visit and claim ${reward} WLC.`, id, reward, claimed(id), async () => {
-    window.open(url, "_blank");
-    showSocialPopup(async () => {
-      const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
-      await updateUserData({
-        balance: newBalance,
-        missions: { ...userMissions, [id]: { claimed: true } }
-      });
-      alert("✅ Reward claimed!");
-      location.reload();
-    });
-  });
-});
-
+  
     invites.forEach(({ id, label, target, reward }) => {
       const invited = user.referrals || 0;
       const isClaimed = claimed(id);
