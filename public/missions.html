@@ -72,144 +72,250 @@
       filter: drop-shadow(0 0 2px gold);
       border-radius: 6px;
     }
+    .claim-popup, .invite-popup, .popup, .social-popup, .social-popup-again {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #000;
+      color: #00ff88;
+      padding: 16px 32px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 14px;
+      border: 2px solid #ffd700;
+      box-shadow: 0 0 20px gold;
+      z-index: 9999;
+      display: none;
+      text-align: center;
+    }
+    .popup-message {
+      font-size: 13px;
+      margin-top: 8px;
+      line-height: 1.6;
+      font-weight: 500;
+      color: white;
+    }
+    .popup-agree-btn, .popup button, .invite-popup button {
+      margin-top: 12px;
+      padding: 10px 20px;
+      background-color: #0099ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 0 8px #0099ff;
+      cursor: pointer;
+    }
+    .popup-small {
+      font-size: 14px;
+      color: #0f0;
+    }
+    .timer-text {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #aaa;
+    }
+    .invite-link {
+      background-color: #111;
+      color: white;
+      padding: 10px;
+      font-size: 13px;
+      border-radius: 8px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      box-shadow: 0 0 10px white;
+    }
   </style>
 </head>
 <body>
+                   <!--زر الرجوع الى الوراء -->
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
+                  <!--عنوان الصفحةاللي فيها الميسيون-->
   <h1 style="text-align:center;">Available Missions</h1>  <div class="mission">
+                  <!--المهمة الاولى مهمة المكافأة اليومية-->
     <h2><img src="daily-icon.png" class="mission-icon" />Daily Rewards</h2>
     <p>Come back every 24h and earn 0.00001 WLC</p>
     <button id="claim-btn" onclick="claimReward()">Claim</button>
     <div id="timer" class="timer-text"></div>
-  </div>  <div id="missions-container"></div>  <script src="https://telegram.org/js/telegram-web-app.js"></script>  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCpb7_zDJ1UlH3OkfhfGI1V5FTS40xH82A",
-      authDomain: "wellcoin-game.firebaseapp.com",
-      projectId: "wellcoin-game",
-      storageBucket: "wellcoin-game.appspot.com",
-      messagingSenderId: "586431048382",
-      appId: "1:586431048382:web:b8cb6a9ef17d06e261c437",
-      databaseURL: "https://wellcoin-game-default-rtdb.europe-west1.firebasedatabase.app"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+              <!--كود اللي عبارة على حاوية لمجميع مهمات السوشيال ميديا و استدعاء اصدقاء-->
+      </div>  <div id="missions-container"></div>
+              <!--نافذة منبثقة تظهر كود الدعوة عند الضغط go invit -->
+  <div id="invite-popup" class="invite-popup">
+    <div class="invite-link" id="invite-link-text"></div>
+    <button onclick="copyInviteLink()">Copy</button><br/>
+    <button onclick="closeInvitePopup()">Close</button>
+              <!-- نافذة منبثقة تظهر عند الضغط على claim باش ياخذ مكافاته-->
+  </div>  <div id="reward-popup" class="popup">
+    <h3 id="reward-title"></h3>
+    <p>⚠️ Any fake referrals or cheating will freeze your account balance.</p>
+    <button onclick="closeRewardPopup()">I understand</button>
+              <!-- نافذة منبثقة تضهر لمهام السوشيال ميديا عند الاشتراك الناجح-->
+  </div>  <div id="social-popup" class="social-popup">
+    <div id="popup-title">+1 WLC</div>
+    <div class="popup-message">
+      ⚠️ If you unsubscribe, the reward will be deducted after checking your tasks.<br>
+      Don’t cheat, we’re on the same team.
+    </div>
+    <button class="popup-agree-btn" onclick="closeSocialPopup()">I agree</button>
+             <!-- نافذة منبثقة تظهر الذا اللاعب ضغط مرة اخرى على join now في مهام السوشيال -->
+  </div>  <div id="social-popup-again" class="social-popup-again popup-small">
+    ✅ Thanks for visiting our page again!
+  </div> 
+  <script>
+         //الميكانيك الخاص مهمة المكافأة اليومية 
+const CLAIM_KEY = "dailyClaimTimestamp";
+const BALANCE_KEY = "wellcoinBalance";
+const CLAIM_AMOUNT = 0.00001;
+const CLAIM_INTERVAL = 24 * 60 * 60 * 1000;
+const btn = document.getElementById("claim-btn");
+const timerDiv = document.getElementById("timer");
 
-    let userId;
-    let inviteLink = "";
+function updateTimer() {
+  const lastClaim = localStorage.getItem(CLAIM_KEY);
+  if (!lastClaim) return;
+  const diff = Date.now() - parseInt(lastClaim);
+  const remaining = CLAIM_INTERVAL - diff;
+  if (remaining > 0) {
+    btn.disabled = true;
+    btn.textContent = "Claimed ✅";
+    const h = Math.floor(remaining / 3600000).toString().padStart(2, '0');
+    const m = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
+    const s = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
+    timerDiv.textContent = `Next claim in ${h}:${m}:${s}`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = "Claim";
+    timerDiv.textContent = "";
+  }
+}
 
-    async function getUserData() {
-      if (!userId) return {};
-      const snapshot = await db.ref(`users/${userId}`).once("value");
-      return snapshot.val() || {};
-    }
+function claimReward() {
+  localStorage.setItem(CLAIM_KEY, Date.now());
+  let balance = parseFloat(localStorage.getItem(BALANCE_KEY)) || 0;
+  balance += CLAIM_AMOUNT;
+  localStorage.setItem(BALANCE_KEY, balance.toFixed(10));
+  updateTimer();
+}
 
-    async function updateUserData(data) {
-      if (!userId) return;
-      await db.ref(`users/${userId}`).update(data);
-    }
+updateTimer();
+setInterval(updateTimer, 1000);
 
-    async function updateUserBalance(amount) {
-      const user = await getUserData();
-      const balance = parseFloat(user.balance || 0) + amount;
-      await updateUserData({ balance });
-    }
+            // ميكانيك الخاص بمهمات السوشيال ميديا
+const missions = [
+  { id: "youtube", label: "Join us on YouTube", icon: "youtube-icon.png", link: "https://youtube.com/@wellcoin-y6b" },
+  { id: "telegram", label: "Join us on Telegram", icon: "telegram-icon.png", link: "https://t.me/WELLcoinofficial" },
+  { id: "instagram", label: "Join us on Instagram", icon: "instagram-icon.png", link: "https://www.instagram.com/wellcoin1" },
+  { id: "facebook", label: "Join us on Facebook", icon: "facebook-icon.png", link: "https://www.facebook.com/share/1Bx5F39MB5/?mibextid=qi2Omg" },
+  { id: "tiktok", label: "Join us on TikTok", icon: "tiktok-icon.png", link: "https://www.tiktok.com/@wellcoin6" },
+  { id: "x", label: "Join us on X", icon: "twitter-icon.png", link: "https://x.com/WELLcoin2024" }
+];
 
-    async function updateTimer() {
-      const user = await getUserData();
-      const lastClaim = user?.missions?.dailyClaimTimestamp;
-      if (!lastClaim) return;
-      const remaining = 86400000 - (Date.now() - lastClaim);
-      const btn = document.getElementById("claim-btn");
-      const timerDiv = document.getElementById("timer");
-
-      if (remaining > 0) {
-        btn.disabled = true;
-        btn.textContent = "Claimed ✅";
-        const h = String(Math.floor(remaining / 3600000)).padStart(2, '0');
-        const m = String(Math.floor((remaining % 3600000) / 60000)).padStart(2, '0');
-        const s = String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0');
-        timerDiv.textContent = `Next claim in ${h}:${m}:${s}`;
-      } else {
-        btn.disabled = false;
-        btn.textContent = "Claim";
-        timerDiv.textContent = "";
-      }
-    }
-
-    async function claimReward() {
-      const now = Date.now();
-      const user = await getUserData();
-      await updateUserData({
-        missions: {
-          ...user.missions,
-          dailyClaimTimestamp: now
-        }
-      });
-      await updateUserBalance(0.00001);
-      updateTimer();
-    }
-
-    async function initializeInviteMissions() {
-      const user = await getUserData();
-      if (!user.missions || user.missions["invite5-invited"] === undefined) {
-        await updateUserData({
-          missions: {
-            ...user.missions,
-            "invite5-invited": 0,
-            "invite5-claimed": false,
-            "invite20-invited": 0,
-            "invite20-claimed": false,
-            "invite100-invited": 0,
-            "invite100-claimed": false
-          }
-        });
-      }
-    }
-
-    async function renderInviteMissions() {
-      const user = await getUserData();
-      const missions = [
-        { id: "invite5", label: "Invite 5 friends", target: 5, reward: 0.5, img: "invit1.png" },
-        { id: "invite20", label: "Invite 20 friends", target: 20, reward: 2, img: "invit2.png" },
-        { id: "invite100", label: "Invite 100 friends", target: 100, reward: 10, img: "invit3.png" }
-      ];
-      const container = document.getElementById("missions-container");
-      missions.forEach(({ id, label, target, reward, img }) => {
-        const invited = user.missions?.[`${id}-invited`] || 0;
-        const claimed = user.missions?.[`${id}-claimed`] || false;
-        const canClaim = invited >= target && !claimed;
-        const div = document.createElement("div");
-        div.className = "mission";
-        div.innerHTML = `
-          <h2><img src="${img}" class="mission-icon" />${label}</h2>
-          <p>Invite ${target} friends and earn ${reward}$</p>
-          <progress value="${invited}" max="${target}" style="width:100%;height:14px;margin-top:10px;"></progress>
-          <div style="margin-top:6px;">${invited}/${target}</div>
-          <button onclick="alert('Go Invite')" style="margin-right:8px;">Go Invite</button>
-          <button onclick="alert('Copy link')">Copy</button>
-          <button id="${id}-claim" onclick="alert('Claim reward')"
-            style="margin-left:8px; ${canClaim ? '' : 'display:none;'}">
-            ${claimed ? 'Claimed ✅' : 'Claim'}
-          </button>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    window.addEventListener("load", async () => {
-  const checkUser = setInterval(async () => {
-    const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    if (telegramUser && telegramUser.id) {
-      clearInterval(checkUser);
-      userId = telegramUser.id.toString();
-      inviteLink = `https://t.me/WELLcoinBot?start=ref=${userId}`;
-
-      await initializeInviteMissions();
-      await renderInviteMissions();
-      await updateTimer();
-      setInterval(updateTimer, 1000);
-    }
-  }, 200);
+const container = document.getElementById("missions-container");
+missions.forEach(({ id, label, icon, link }) => {
+  const div = document.createElement("div");
+  div.className = "mission";
+  div.innerHTML = `
+    <h2><img src="${icon}" class="mission-icon" />${label}</h2>
+    <p>Get 1 WLC for joining us</p>
+    <button id="${id}-btn" onclick="handleSocial('${id}', '${link}')">Join Now</button>
+  `;
+  container.appendChild(div);
 });
-  </script></body>
+
+function handleSocial(id, link) {
+  const key = `mission-${id}`;
+  const btn = document.getElementById(`${id}-btn`);
+  window.open(link, "_blank");
+  setTimeout(() => {
+    if (!localStorage.getItem(key)) {
+      document.getElementById("social-popup").style.display = "block";
+      document.getElementById("social-popup").setAttribute("data-id", id);
+    } else {
+      document.getElementById("social-popup-again").style.display = "block";
+      btn.textContent = "Claimed"; // تحديث يدوي بعد الضغط مباشرة
+      setTimeout(() => {
+        document.getElementById("social-popup-again").style.display = "none";
+      }, 3000);
+    }
+  }, 1000);
+}
+
+function closeSocialPopup() {
+  const id = document.getElementById("social-popup").getAttribute("data-id");
+  const key = `mission-${id}`;
+  const btn = document.getElementById(`${id}-btn`);
+  if (!localStorage.getItem(key)) {
+    localStorage.setItem(key, "true");
+    let balance = parseFloat(localStorage.getItem("balance")) || 0;
+    balance += 1;
+    localStorage.setItem("balance", balance.toFixed(10));
+    if (btn) btn.textContent = "Claimed";
+  }
+  document.getElementById("social-popup").style.display = "none";
+}
+
+             // ميكانيك مهمات استدعاء الاصدقاء
+const telegramId = localStorage.getItem("telegramId") || "123456";
+const inviteLink = `https://wellcoin.com/invite?ref=${telegramId}`;
+const inviteMissions = [
+  { id: "invite5", label: "Invite 5 friends", target: 5, reward: 0.5, img: "invi1.png" },
+  { id: "invite20", label: "Invite 20 friends", target: 20, reward: 2, img: "invit2.png" },
+  { id: "invite100", label: "Invite 100 friends", target: 100, reward: 10, img: "invit3.png" },
+];
+
+function goInvite() {
+  document.getElementById("invite-link-text").textContent = inviteLink;
+  document.getElementById("invite-popup").style.display = "block";
+}
+
+function closeInvitePopup() {
+  document.getElementById("invite-popup").style.display = "none";
+}
+
+function copyInviteLink() {
+  navigator.clipboard.writeText(inviteLink).then(() => {
+    alert("Referral link copied!");
+  });
+}
+
+function showRewardPopup(rewardText) {
+  document.getElementById("reward-title").textContent = `🎉 Congratulations you earned ${rewardText}$`;
+  document.getElementById("reward-popup").style.display = "block";
+}
+
+function closeRewardPopup() {
+  document.getElementById("reward-popup").style.display = "none";
+}
+
+function claimInvite(id, reward) {
+  const claimedKey = `${id}-claimed`;
+  if (!localStorage.getItem(claimedKey)) {
+    localStorage.setItem(claimedKey, "true");
+    localStorage.setItem(`${id}-usdt`, reward);
+    showRewardPopup(reward);
+    document.getElementById(`${id}-claim`).disabled = true;
+    document.getElementById(`${id}-claim`).textContent = "Claimed ✅";
+  }
+}
+
+inviteMissions.forEach(({ id, label, target, reward, img }) => {
+  const invited = parseInt(localStorage.getItem(`${id}-invited`) || "0");
+  const claimed = localStorage.getItem(`${id}-claimed`);
+  const canClaim = invited >= target;
+  const div = document.createElement("div");
+  div.className = "mission";
+  div.innerHTML = `
+    <h2><img src="${img}" class="mission-icon" />${label}</h2>
+    <p>Invite ${target} friends and earn ${reward}$</p>
+    <progress value="${invited}" max="${target}" style="width:100%;height:14px;margin-top:10px;"></progress>
+    <div style="margin-top:6px;">${invited}/${target}</div>
+    <button onclick="goInvite()" style="margin-right:8px;">Go Invite</button>
+    <button id="${id}-copy" onclick="copyInviteLink()">Copy</button>
+    <button id="${id}-claim" onclick="claimInvite('${id}', ${reward})" style="margin-left:8px; ${canClaim ? '' : 'display:none;'}">${claimed ? 'Claimed ✅' : 'Claim'}</button>
+  `;
+  container.appendChild(div);
+});
+</script></body>
 </html>
