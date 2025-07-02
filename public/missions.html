@@ -192,6 +192,16 @@
     console.error("❌ Error updating user data:", error);
   }
 }
+  
+  async function updateUserBalance(amount) {
+    const user = await getUserData();
+    const currentBalance = parseFloat(user.balance) || 0;
+    const newBalance = currentBalance + amount;
+
+    await updateUserData({ balance: newBalance });
+    console.log(`💰 New Balance: ${newBalance}`);
+  }
+
   async function initializeInviteMissions() {
   const user = await getUserData();
   if (
@@ -287,21 +297,20 @@ updateTimer();
 setInterval(updateTimer, 1000);
 
 
-async function claimReward() {
-  const user = await getUserData();
-  const now = Date.now();
 
-  await updateUserData({
-    missions: {
-      ...user.missions,
-      dailyClaimTimestamp: now
-    }
-  });
+  async function claimReward() {
+    const now = Date.now();
+    await updateUserData({
+      missions: {
+        ...(await getUserData()).missions,
+        dailyClaimTimestamp: now
+      }
+    });
 
-  const currentBalance = parseFloat(user.balance || 0);
-  const newBalance = (currentBalance + CLAIM_AMOUNT).toFixed(10);
-  await updateUserData({ balance: newBalance });
-
+    await updateUserBalance(CLAIM_AMOUNT);
+    updateTimer();
+  }
+    
   updateTimer(); // ✅ نفس الفكرة - يحدث المؤقت
 }
 
