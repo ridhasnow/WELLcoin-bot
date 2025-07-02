@@ -1,128 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>WELLcoin Mission Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      background: black;
-      color: gold;
-      font-family: sans-serif;
-      padding: 30px;
-      text-align: center;
-    }
-    button {
-      background: gold;
-      color: black;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    #timer {
-      margin-top: 12px;
-      color: #aaa;
-      font-size: 14px;
-    }
-  </style>
+  <title>Test Mission</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
+<body style="background:black;color:white;padding:30px">
 
-<!-- Telegram WebApp -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <h1>🚀 Test Daily Mission</h1>
+  <button onclick="claimReward()" id="claim-btn">Claim</button>
+  <div id="timer" style="margin-top:10px;color:gold;"></div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCpb7_zDJ1UlH3OkfhfGI1V5FTS40xH82A",
+      authDomain: "wellcoin-game.firebaseapp.com",
+      projectId: "wellcoin-game",
+      storageBucket: "wellcoin-game.appspot.com",
+      messagingSenderId: "586431048382",
+      appId: "1:586431048382:web:b8cb6a9ef17d06e261c437",
+      databaseURL: "https://wellcoin-game-default-rtdb.europe-west1.firebasedatabase.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-<script>
-  // Firebase Config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCpb7_zDJ1UlH3OkfhfGI1V5FTS40xH82A",
-    authDomain: "wellcoin-game.firebaseapp.com",
-    projectId: "wellcoin-game",
-    storageBucket: "wellcoin-game.appspot.com",
-    messagingSenderId: "586431048382",
-    appId: "1:586431048382:web:b8cb6a9ef17d06e261c437",
-    databaseURL: "https://wellcoin-game-default-rtdb.europe-west1.firebasedatabase.app"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+    let userId;
 
-  let userId;
-
-  // جلب بيانات المستخدم
-  async function getUserData() {
-    const snapshot = await db.ref(`users/${userId}`).once("value");
-    return snapshot.val() || {};
-  }
-
-  // تحديث البيانات
-  async function updateUserData(data) {
-    await db.ref(`users/${userId}`).update(data);
-  }
-
-  // تحديث الرصيد
-  async function updateUserBalance(amount) {
-    const user = await getUserData();
-    const newBalance = parseFloat(user.balance || 0) + amount;
-    await updateUserData({ balance: newBalance });
-  }
-
-  // تحديث المؤقت
-  async function updateTimer() {
-    const user = await getUserData();
-    const lastClaim = user?.missions?.dailyClaimTimestamp;
-    const now = Date.now();
-    const remaining = 86400000 - (now - (lastClaim || 0));
-    const timer = document.getElementById("timer");
-    const btn = document.getElementById("claim-btn");
-
-    if (remaining > 0) {
-      btn.disabled = true;
-      const h = String(Math.floor(remaining / 3600000)).padStart(2, "0");
-      const m = String(Math.floor((remaining % 3600000) / 60000)).padStart(2, "0");
-      const s = String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0");
-      timer.textContent = `Next claim in ${h}:${m}:${s}`;
-    } else {
-      btn.disabled = false;
-      timer.textContent = "";
+    async function getUserData() {
+      if (!userId) return {};
+      const snapshot = await db.ref(`users/${userId}`).once("value");
+      return snapshot.val() || {};
     }
-  }
 
-  // تنفيذ المكافأة
-  async function claimReward() {
-    const now = Date.now();
-    const user = await getUserData();
-    await updateUserData({
-      missions: {
-        ...user.missions,
-        dailyClaimTimestamp: now
-      }
-    });
-    await updateUserBalance(0.00001);
-    updateTimer();
-  }
+    async function updateUserData(data) {
+      if (!userId) return;
+      await db.ref(`users/${userId}`).update(data);
+    }
 
-  // تشغيل كل شيء
-  window.onload = async () => {
-    const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    if (telegramUser && telegramUser.id) {
-      userId = telegramUser.id.toString();
+    async function updateUserBalance(amount) {
+      const user = await getUserData();
+      const balance = parseFloat(user.balance || 0) + amount;
+      await updateUserData({ balance });
+    }
+
+    async function claimReward() {
+      const now = Date.now();
+      const user = await getUserData();
+      await updateUserData({
+        missions: {
+          ...user.missions,
+          dailyClaimTimestamp: now
+        }
+      });
+      await updateUserBalance(0.00001);
       updateTimer();
-      setInterval(updateTimer, 1000);
-    } else {
-      alert("Telegram user not found!");
     }
-  };
-</script>
 
-<body>
-  <h1>Test Mission</h1>
-  <p>Claim once every 24h and get +0.00001 WELLcoin</p>
-  <button id="claim-btn" onclick="claimReward()">Claim</button>
-  <div id="timer"></div>
+    async function updateTimer() {
+      const user = await getUserData();
+      const lastClaim = user?.missions?.dailyClaimTimestamp;
+      const btn = document.getElementById("claim-btn");
+      const timerDiv = document.getElementById("timer");
+
+      if (!lastClaim) {
+        btn.disabled = false;
+        timerDiv.textContent = "Claim ready!";
+        return;
+      }
+
+      const remaining = 86400000 - (Date.now() - lastClaim);
+      if (remaining > 0) {
+        btn.disabled = true;
+        const h = String(Math.floor(remaining / 3600000)).padStart(2, '0');
+        const m = String(Math.floor((remaining % 3600000) / 60000)).padStart(2, '0');
+        const s = String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0');
+        timerDiv.textContent = `Next claim in ${h}:${m}:${s}`;
+      } else {
+        btn.disabled = false;
+        timerDiv.textContent = "Claim ready!";
+      }
+    }
+
+    window.onload = async () => {
+      const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if (telegramUser?.id) {
+        userId = telegramUser.id.toString();
+        await updateTimer();
+        setInterval(updateTimer, 1000);
+      } else {
+        alert("❌ Telegram user not found");
+      }
+    };
+  </script>
 </body>
 </html>
