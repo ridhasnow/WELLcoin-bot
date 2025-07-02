@@ -1,16 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Test Mission</title>
+  <meta charset="UTF-8">
+  <title>WELLcoin Test Mission</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { background: black; color: white; font-family: sans-serif; padding: 40px; }
+    .mission { background: #111; padding: 20px; border: 1px solid gold; border-radius: 12px; }
+    button { padding: 10px 20px; border: none; border-radius: 6px; background: gold; color: black; font-weight: bold; cursor: pointer; }
+    button:disabled { background: gray; cursor: not-allowed; }
+  </style>
 </head>
-<body style="background:black;color:white;padding:30px">
-
-  <h1>🚀 Test Daily Mission</h1>
-  <button onclick="claimReward()" id="claim-btn">Claim</button>
-  <div id="timer" style="margin-top:10px;color:gold;"></div>
+<body>
+  <h2>🔥 Test Mission</h2>
+  <div class="mission">
+    <p>Click once to claim 0.01 WLC</p>
+    <button id="claim-btn" onclick="claimTest()">Claim</button>
+  </div>
 
   <script>
     const firebaseConfig = {
@@ -25,16 +33,14 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let userId;
+    let userId = null;
 
     async function getUserData() {
-      if (!userId) return {};
-      const snapshot = await db.ref(`users/${userId}`).once("value");
-      return snapshot.val() || {};
+      const snap = await db.ref(`users/${userId}`).once("value");
+      return snap.val() || {};
     }
 
     async function updateUserData(data) {
-      if (!userId) return;
       await db.ref(`users/${userId}`).update(data);
     }
 
@@ -44,63 +50,35 @@
       await updateUserData({ balance });
     }
 
-    async function claimReward() {
-  const now = Date.now();
-  const user = await getUserData();
-
-  await updateUserData({
-    missions: {
-      ...user.missions,
-      dailyClaimTimestamp: now
-    }
-  });
-
-  await updateUserBalance(0.00001);
-
-  // ✅ تحديث الزر
-  const btn = document.getElementById("claim-btn");
-  btn.disabled = true;
-  btn.textContent = "Claimed ✅";
-
-  // ✅ إظهار إشعار فوري
-  alert("✅ Claimed! Reward added to your balance.");
-
-  updateTimer();
-}
-
-    async function updateTimer() {
+    async function claimTest() {
       const user = await getUserData();
-      const lastClaim = user?.missions?.dailyClaimTimestamp;
-      const btn = document.getElementById("claim-btn");
-      const timerDiv = document.getElementById("timer");
+      const alreadyClaimed = user.missions?.testClaimed;
 
-      if (!lastClaim) {
-        btn.disabled = false;
-        timerDiv.textContent = "Claim ready!";
+      if (alreadyClaimed) {
+        alert("Already claimed ✅");
         return;
       }
 
-      const remaining = 86400000 - (Date.now() - lastClaim);
-      if (remaining > 0) {
-        btn.disabled = true;
-        const h = String(Math.floor(remaining / 3600000)).padStart(2, '0');
-        const m = String(Math.floor((remaining % 3600000) / 60000)).padStart(2, '0');
-        const s = String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0');
-        timerDiv.textContent = `Next claim in ${h}:${m}:${s}`;
-      } else {
-        btn.disabled = false;
-        timerDiv.textContent = "Claim ready!";
-      }
+      await updateUserData({
+        missions: {
+          ...(user.missions || {}),
+          testClaimed: true
+        }
+      });
+
+      await updateUserBalance(0.01);
+      const btn = document.getElementById("claim-btn");
+      btn.disabled = true;
+      btn.textContent = "Claimed ✅";
+      alert("🎉 Claimed successfully!");
     }
 
-    window.onload = async () => {
-      const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      if (telegramUser?.id) {
-        userId = telegramUser.id.toString();
-        await updateTimer();
-        setInterval(updateTimer, 1000);
+    window.onload = () => {
+      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if (tgUser && tgUser.id) {
+        userId = tgUser.id.toString();
       } else {
-        alert("❌ Telegram user not found");
+        alert("❌ Failed to get Telegram user.");
       }
     };
   </script>
