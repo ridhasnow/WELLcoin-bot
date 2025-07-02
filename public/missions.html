@@ -267,7 +267,15 @@
     <button id="telegram-confirm" style="margin-top:10px; background:limegreen; color:white; font-weight:bold; padding:8px 20px; border:none; border-radius:6px;">Yes I Do</button>
   </div>
 </div>
-  
+               <!--البوب آب السوشيال ميديا ككل-->
+  <div id="social-popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000000e0; backdrop-filter: blur(3px); z-index:1000; display:flex; align-items:center; justify-content:center;">
+  <div style="background:#111; padding:20px; border-radius:12px; max-width:90%; color:white; text-align:center; position:relative;">
+    <div style="position:absolute; top:10px; right:15px; font-size:18px; cursor:pointer; color:white;" onclick="closeSocialPopup()">✖</div>
+    <h2 id="popup-title" style="color:gold; margin-bottom:12px;">You Click Finish?</h2>
+    <p style="font-size:14px; margin-bottom:15px;">⚠️ If you unsubscribe, the reward will be deducted. Don’t cheat, we’re on the same team.</p>
+    <button id="popup-confirm-btn" style="background:#00ff88; color:black; border:none; border-radius:6px; padding:10px 20px; font-weight:bold;">Yes I Do</button>
+  </div>
+</div>
 </body>
 <script>
   const firebaseConfig = {
@@ -323,17 +331,19 @@
     const missions = document.getElementById("missions");
 
     socials.forEach(({ id, title, url, reward }) => {
-      const isClaimed = claimed(id);
-      const div = document.createElement("div");
-      div.className = "mission";
-      div.innerHTML = `
-        <h3>${title}</h3>
-        <p>Reward: ${reward} WLC</p>
-        <button onclick="handleSocial('${id}', '${url}', ${reward})" ${isClaimed ? "disabled" : ""}>
-          ${isClaimed ? "Visit" : "Join Now"}
-        </button>`;
-      missions.appendChild(div);
+  renderMission(title, `Click to visit and claim ${reward} WLC.`, id, reward, claimed(id), async () => {
+    window.open(url, "_blank");
+    showSocialPopup(async () => {
+      const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
+      await updateUserData({
+        balance: newBalance,
+        missions: { ...userMissions, [id]: { claimed: true } }
+      });
+      alert("✅ Reward claimed!");
+      location.reload();
     });
+  });
+});
 
     invites.forEach(({ id, label, target, reward }) => {
       const invited = user.referrals || 0;
@@ -487,7 +497,18 @@ getUserData().then(user => {
     };
   }
 });
+           // خاصة بالبوآب سوشيال ميديا
+  function showSocialPopup(callback) {
+  document.getElementById("social-popup").style.display = "flex";
+  document.getElementById("popup-confirm-btn").onclick = async () => {
+    await callback();
+    closeSocialPopup();
+  };
+}
 
+function closeSocialPopup() {
+  document.getElementById("social-popup").style.display = "none";
+}
 telegramClose.onclick = () => {
   telegramPopup.style.display = "none";
 };
