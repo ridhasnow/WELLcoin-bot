@@ -242,12 +242,25 @@
   <p>Subscribe and earn 0.5 WLC</p>
   <button onclick="showYoutubePopup()">Join Now</button>
 </div>
-
+<div class="mission" id="telegram-mission">
+  <img src="telegram.png" style="width:60px; float:left; margin-right:15px;">
+  <h3>Join us on Telegram</h3>
+  <p>Click the button and join our Telegram community.</p>
+  <button class="btn" id="telegram-btn">Join Now</button>
+</div>
 <!-- Popup -->
 <div id="youtubePopup" class="popup">
-  <p>Did you click finish?</p>
+  <p>Did You Finish?</p>
   <p style="font-size: 12px; color: #ccc;">If you unsubscribe, reward will be removed. We're one team.</p>
   <button onclick="claimYoutube()">Yes I Do</button>
+</div>
+  <div id="telegram-popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000000d9; z-index:999; display:flex; align-items:center; justify-content:center;">
+  <div style="position:relative; background:#1a1a1a; color:white; padding:20px; border-radius:12px; text-align:center; max-width:300px; box-shadow:0 0 20px gold;">
+    <div id="telegram-close" style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:20px;">❌</div>
+    <h3 style="color:gold;">You Finish?</h3>
+    <p style="font-size:14px; margin:10px 0;">⚠️ If you unsubscribe, the reward will be deducted.<br>Don’t cheat, we’re on the same team.</p>
+    <button id="telegram-confirm" style="margin-top:10px; background:limegreen; color:white; font-weight:bold; padding:8px 20px; border:none; border-radius:6px;">Yes I Do</button>
+  </div>
 </div>
 </body>
 <script>
@@ -269,7 +282,7 @@
 
   const missionsDiv = document.getElementById("missions");
   const socials = [
-    { id: "youtube", title: "Follow us on YouTube", url: "https://youtube.com", reward: 0.5 },
+  
     { id: "telegram", title: "Join our Telegram", url: "https://t.me/WELLcoinofficial", reward: 0.5 },
     { id: "instagram", title: "Follow us on Instagram", url: "https://instagram.com", reward: 0.5 },
     { id: "facebook", title: "Follow us on Facebook", url: "https://facebook.com", reward: 0.5 },
@@ -427,7 +440,7 @@ async function claimYoutube() {
     return;
   }
 
-  const newBalance = (parseFloat(user.balance || 0) + 0.5).toFixed(10);
+  const newBalance = (parseFloat(user.balance || 0) + 1).toFixed(10);
   await updateUserData({
     balance: newBalance,
     missions: {
@@ -435,8 +448,43 @@ async function claimYoutube() {
       youtube: { claimed: true }
     }
   });
-  alert("✅ You earned 0.5 WLC!");
+  alert("✅ You earned 1 WLC!");
   location.reload();
 }
   window.onload = renderMissions;
+  const telegramBtn = document.getElementById("telegram-btn");
+const telegramPopup = document.getElementById("telegram-popup");
+const telegramConfirm = document.getElementById("telegram-confirm");
+const telegramClose = document.getElementById("telegram-close");
+
+getUserData().then(user => {
+  const isClaimed = user.missions?.telegram?.claimed;
+
+  if (isClaimed) {
+    telegramBtn.textContent = "Visit";
+    telegramBtn.onclick = () => window.open("https://t.me/WELLcoinofficial", "_blank");
+  } else {
+    telegramBtn.onclick = () => {
+      window.open("https://t.me/WELLcoinofficial", "_blank");
+      setTimeout(() => {
+        telegramPopup.style.display = "flex";
+      }, 1000);
+    };
+
+    telegramConfirm.onclick = async () => {
+      const newBalance = (parseFloat(user.balance || 0) + 1).toFixed(10);
+      await updateUserData({
+        balance: newBalance,
+        missions: { ...(user.missions || {}), telegram: { claimed: true } }
+      });
+      telegramPopup.style.display = "none";
+      telegramBtn.textContent = "Visit";
+      alert("✅ Reward claimed!");
+    };
+  }
+});
+
+telegramClose.onclick = () => {
+  telegramPopup.style.display = "none";
+};
 </script>
