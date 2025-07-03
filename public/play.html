@@ -157,8 +157,9 @@
         // Scale background to its native size
         bg.setDisplaySize(bg.width, bg.height);
 
-        // Add player in center of map to start
+        // ===== تصغير اللاعب بشكل واضح =====
         player = this.physics.add.sprite(bg.width/2, bg.height/2, 'player');
+        player.setScale(0.28); // <-- حجم صغير (غيّر الرقم إذا تريد أصغر أو أكبر)
         player.setDepth(2);
         player.setCollideWorldBounds(true);
 
@@ -182,9 +183,6 @@
         // Touch joystick logic
         setupJoystick();
 
-        // For debug: allow dragging player with mouse (dev only)
-        // player.setInteractive().on('pointerdown', pointer => {player.x = pointer.worldX; player.y = pointer.worldY;});
-
         // Initial balance
         setBalance(0.00000000);
       }
@@ -200,12 +198,12 @@
       }
 
       getInitialZoom() {
-        // Try to make city image cover more than screen, i.e. zoom in a bit
+        // زيادة الزوم بشكل واضح
         const cityWidth = bg.width;
         const cityHeight = bg.height;
         const ratioX = gameWidth / cityWidth;
         const ratioY = gameHeight / cityHeight;
-        return Math.max(ratioX, ratioY) * 1.35; // 1.35 for zoom-in
+        return Math.max(ratioX, ratioY) * 1.6; // <-- زوم أقوى (عدّل الرقم إذا تريد أقوى أو أقل)
       }
     }
 
@@ -307,7 +305,6 @@
       return db.ref("users/" + userId).once("value").then(snap => snap.val() || {});
     }
     function updateBalance(newVal) {
-      // Update only the mini-game balance (for now), and add to total balance
       db.ref("users/" + userId).once("value").then(snap => {
         let user = snap.val() || {};
         let mainBalance = parseFloat(user.balance || 0);
@@ -319,7 +316,6 @@
       });
     }
 
-    // Get user balance on load (optional, if you want to show mini-game balance)
     window.onload = function() {
       if (!userId) return;
       getUserData().then(user => {
@@ -328,13 +324,11 @@
       });
     }
 
-    // === Example: How to add coins and update balance ===
+    // Example: How to add coins and update balance
     // function collectCoin(amount) {
-    //   // Update local UI balance
     //   let cur = parseFloat(document.getElementById('balance-value').textContent) || 0;
     //   cur += amount;
     //   setBalance(cur);
-    //   // Also update in Firebase
     //   updateBalance(cur);
     // }
   </script>
