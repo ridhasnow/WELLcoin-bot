@@ -45,7 +45,6 @@
       font-weight: 600;
       letter-spacing: 0.7px;
       backdrop-filter: blur(2.5px);
-      transition: background 0.16s;
       user-select: none;
     }
     #balance-bar .wlc {
@@ -93,13 +92,132 @@
       box-shadow: 0 2px 10px 1px rgba(255,215,0,0.13);
       transition: left 0.04s, bottom 0.04s;
     }
+    /* ===== Banner styles ===== */
+    #start-banner {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 100vw;
+      height: 50vh;
+      transform: translate(-100vw, -50%);
+      background: rgba(60, 60, 60, 0.80);
+      box-shadow: 0 6px 48px 4px rgba(0,0,0,0.13);
+      border-radius: 26px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.55s cubic-bezier(.6,.12,.38,.96);
+      backdrop-filter: blur(4.5px);
+    }
+    #start-banner.active {
+      transform: translate(0, -50%);
+      transition: transform 0.55s cubic-bezier(.6,.12,.38,.96);
+    }
+    #start-banner .banner-title {
+      font-family: 'Press Start 2P', 'VT323', 'Consolas', 'monospace', 'Segoe UI', sans-serif;
+      font-size: 2.2rem;
+      color: #e44;
+      margin-bottom: 18px;
+      letter-spacing: 1.2px;
+      opacity: 0;
+      transform: translateX(250px);
+      transition: all 0.48s cubic-bezier(.6,.12,.38,.96);
+      font-weight: bold;
+      text-shadow: 0 2px 12px #000, 0 1px 0 #fff;
+      text-align: center;
+      width: 100vw;
+    }
+    #start-banner.active .banner-title {
+      opacity: 1;
+      transform: translateX(0);
+      transition-delay: 0.33s;
+    }
+    #start-banner .banner-btn {
+      margin-top: 16px;
+      font-size: 1.3rem;
+      padding: 12px 36px;
+      background: linear-gradient(90deg,#f33,#d00 70%,#f99);
+      color: #fff;
+      font-family: 'Press Start 2P', 'VT323', 'Consolas', 'monospace', 'Segoe UI', sans-serif;
+      border: 0;
+      border-radius: 13px;
+      box-shadow: 0 2px 15px 1px #a003, 0 1px 0 #fff8;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 1.7px;
+      outline: none;
+      transition: background 0.14s, transform 0.11s;
+    }
+    #start-banner .banner-btn:active {
+      background: #a00;
+      transform: scale(0.95);
+    }
+    /* ===== Countdown styles ===== */
+    #start-countdown {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%,-50%);
+      font-family: 'Press Start 2P', 'VT323', 'Consolas', 'monospace', 'Segoe UI', sans-serif;
+      font-size: 3.5rem;
+      color: #f22;
+      font-weight: bold;
+      text-shadow: 1px 2px 16px #fff,0 0 15px #f003;
+      z-index: 40;
+      display: none;
+      pointer-events: none;
+      user-select: none;
+    }
+    /* ===== Back button styles ===== */
+    #back-btn {
+      position: absolute;
+      top: 22px;
+      left: 16px;
+      width: 40px;
+      height: 40px;
+      background: rgba(30,30,30,0.77);
+      border-radius: 10px;
+      border: 2px solid #fff3;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.18s;
+      box-shadow: 0 2px 10px 0 #8883;
+    }
+    #back-btn:hover {
+      background: rgba(60,60,60,0.99);
+    }
+    #back-btn svg {
+      width: 27px;height: 27px;
+      fill: #fff;
+      filter: drop-shadow(0 1px 2px #0008);
+      pointer-events: none;
+    }
   </style>
+  <!-- خط retro مناسب للألعاب 2D -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet"/>
 </head>
 <body>
   <div id="balance-bar">
     <span id="balance-value">0.00000000</span>
     <span class="wlc">WLC</span>
   </div>
+  <!-- زر الرجوع -->
+  <div id="back-btn" onclick="window.location.href='index.html'">
+    <svg viewBox="0 0 24 24"><path d="M15.5 5l-7 7 7 7"/></svg>
+  </div>
+  <!-- لافتة البداية -->
+  <div id="start-banner">
+    <div class="banner-title">you can servive ?</div>
+    <button class="banner-btn">Yes I Can</button>
+  </div>
+  <!-- عداد البداية -->
+  <div id="start-countdown">5</div>
   <div id="game-container"></div>
   <!-- Joystick elements -->
   <div id="joystick-base"></div>
@@ -137,6 +255,12 @@
     let joyActive = false;
     let joyOrigin = { x: 0, y: 0 };
     let joyDelta = { x: 0, y: 0 };
+    let enemies = [];
+    let enemySpeed1 = 130; // سرعة enemy1 (أقل من اللاعب 220)
+    let enemySpeed2 = 165; // enemy2 (75% من سرعة اللاعب)
+    let enemyTimer = null;
+    let wave = 1;
+    let allowControl = false;
 
     // === Phaser scene ===
     class MainScene extends Phaser.Scene {
@@ -145,65 +269,84 @@
       }
 
       preload() {
-        // Load background and player
         this.load.image('city', 'assets/city1.png');
         this.load.image('player', 'assets/player1.png');
+        this.load.image('enemy1', 'assets/enemy1.png');
+        this.load.image('enemy2', 'assets/enemy2.png');
       }
 
       create() {
-        // Add background image (city)
         bg = this.add.image(0, 0, 'city').setOrigin(0, 0);
-
-        // Scale background to its native size
         bg.setDisplaySize(bg.width, bg.height);
 
-        // ===== تصغير اللاعب بشكل واضح =====
         player = this.physics.add.sprite(bg.width/2, bg.height/2, 'player');
-        player.setScale(0.11); // <-- حجم صغير (غيّر الرقم إذا تريد أصغر أو أكبر)
+        player.setScale(0.11);
         player.setDepth(2);
         player.setCollideWorldBounds(true);
 
-        // World bounds = size of city image
         this.physics.world.setBounds(0, 0, bg.width, bg.height);
         this.cameras.main.setBounds(0, 0, bg.width, bg.height);
-
-        // Camera follows player, keeps him in the center
         this.cameras.main.startFollow(player, true, 0.14, 0.14);
         this.cameras.main.setZoom(this.getInitialZoom());
         camera = this.cameras.main;
 
-        // Responsive zoom
         this.scale.on('resize', (gameSize) => {
           this.cameras.main.setZoom(this.getInitialZoom());
         });
 
-        // Hide default context menu
         this.input.manager.canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-        // Touch joystick logic
         setupJoystick();
 
-        // Initial balance
         setBalance(0.00000000);
+
+        // منع تحكم اللاعب حتى انتهاء اللافتة والعداد:
+        allowControl = false;
+
+        // =============== موجات الأعداء ==============
+        this.enemyGroup = this.physics.add.group();
+        enemies = [];
+
+        // تصادم اللاعب مع الأعداء
+        this.physics.add.overlap(
+          player,
+          this.enemyGroup,
+          () => { /* هنا ممكن تبرمج الموت أو النقصان أو أي شيء */ },
+          null,
+          this
+        );
       }
 
       update() {
-        // Joystick movement
+        // تحكم اللاعب فقط بعد انتهاء العداد!
         let vx = 0, vy = 0;
-        if (joyActive) {
-          vx = joyDelta.x * 220; // speed factor
+        if (allowControl && joyActive) {
+          vx = joyDelta.x * 220;
           vy = joyDelta.y * 220;
         }
         player.setVelocity(vx, vy);
+
+        // حركة الأعداء
+        for (let enemyObj of enemies) {
+          let enemy = enemyObj.sprite;
+          if (!enemy.active) continue;
+          let dx = player.x - enemy.x;
+          let dy = player.y - enemy.y;
+          let dist = Math.sqrt(dx*dx + dy*dy);
+          let speed = enemyObj.type === 1 ? enemySpeed1 : enemySpeed2;
+          if (dist > 2) {
+            enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+          } else {
+            enemy.setVelocity(0,0);
+          }
+        }
       }
 
       getInitialZoom() {
-        // زيادة الزوم بشكل واضح
         const cityWidth = bg.width;
         const cityHeight = bg.height;
         const ratioX = gameWidth / cityWidth;
         const ratioY = gameHeight / cityHeight;
-        return Math.max(ratioX, ratioY) * 1.6; // <-- زوم أقوى (عدّل الرقم إذا تريد أقوى أو أقل)
+        return Math.max(ratioX, ratioY) * 1.6;
       }
     }
 
@@ -222,7 +365,7 @@
       }
     });
 
-    // === Joystick code ===
+    // ============= Joystick code =============
     function setupJoystick() {
       const joystickBase = document.getElementById('joystick-base');
       const joystickStick = document.getElementById('joystick-stick');
@@ -300,6 +443,101 @@
       });
     }
 
+    // ============ Banner, Countdown, Enemies Logic =============
+    // Banner animation in/out
+    function showStartBanner() {
+      const banner = document.getElementById('start-banner');
+      banner.classList.add('active');
+    }
+    function hideStartBanner() {
+      const banner = document.getElementById('start-banner');
+      banner.classList.remove('active');
+    }
+
+    // Countdown
+    function showCountdown(sec, after) {
+      const cd = document.getElementById('start-countdown');
+      cd.textContent = sec;
+      cd.style.display = 'block';
+      let s = sec;
+      let interval = setInterval(() => {
+        s--;
+        if (s > 0) {
+          cd.textContent = s;
+        } else {
+          cd.textContent = "00";
+        }
+        if (s <= 0) {
+          clearInterval(interval);
+          setTimeout(() => {
+            cd.style.display = 'none';
+            if (typeof after === "function") after();
+          }, 700);
+        }
+      }, 1000);
+    }
+
+    // Enemy spawn
+    function randomEdgePosition(cityW, cityH) {
+      // Random position at the edge
+      // 0: top, 1: bottom, 2: left, 3: right
+      const edge = Math.floor(Math.random()*4);
+      switch(edge) {
+        case 0: return { x: Math.random()*cityW, y: 0 };
+        case 1: return { x: Math.random()*cityW, y: cityH };
+        case 2: return { x: 0, y: Math.random()*cityH };
+        case 3: return { x: cityW, y: Math.random()*cityH };
+      }
+    }
+
+    // Start enemy waves logic (Phaser scene global: game.scene.scenes[0])
+    function startEnemyWaves() {
+      const scene = game.scene.scenes[0];
+      let cityW = scene.bg.width;
+      let cityH = scene.bg.height;
+      let timePassed = 0;
+
+      // ==== Wave 1: كل 5 ثواني، 4 أعداء enemy1، لمدة 55 ثانية ====
+      wave = 1;
+      let wave1Timer = setInterval(() => {
+        for(let i=0;i<4;i++) {
+          let pos = randomEdgePosition(cityW, cityH);
+          let enemy = scene.enemyGroup.create(pos.x, pos.y, "enemy1");
+          enemy.setScale(0.10);
+          enemy.setDepth(1);
+          enemy.body.setCollideWorldBounds(true);
+          enemies.push({sprite: enemy, type: 1});
+        }
+      }, 5000);
+
+      let wave1Timeout = setTimeout(()=>{
+        clearInterval(wave1Timer);
+        // ==== Wave 2: كل 4 ثواني، 6 أعداء enemy2، + 4 أعداء enemy1 (10 كل مرة) ====
+        wave = 2;
+        let wave2Timer = setInterval(()=>{
+          // 4 أعداء قدامى
+          for(let i=0;i<4;i++) {
+            let pos = randomEdgePosition(cityW, cityH);
+            let enemy = scene.enemyGroup.create(pos.x, pos.y, "enemy1");
+            enemy.setScale(0.10);
+            enemy.setDepth(1);
+            enemy.body.setCollideWorldBounds(true);
+            enemies.push({sprite: enemy, type: 1});
+          }
+          // 6 أعداء جدد enemy2
+          for(let i=0;i<6;i++) {
+            let pos = randomEdgePosition(cityW, cityH);
+            let enemy = scene.enemyGroup.create(pos.x, pos.y, "enemy2");
+            enemy.setScale(0.10);
+            enemy.setDepth(1);
+            enemy.body.setCollideWorldBounds(true);
+            enemies.push({sprite: enemy, type: 2});
+          }
+        }, 4000);
+        // يمكنك لاحقًا توقيف wave2Timer أو تغيير المنظومة هنا حسب ما تريد
+      }, 55000);
+    }
+
     // === Firebase balance logic ===
     function getUserData() {
       return db.ref("users/" + userId).once("value").then(snap => snap.val() || {});
@@ -322,6 +560,22 @@
         let mg = parseFloat(user.minigame_balance || 0);
         setBalance(mg);
       });
+
+      // ====== UI بداية اللعبة ======
+      showStartBanner();
+
+      // زر "Yes I Can"
+      document.querySelector("#start-banner .banner-btn").onclick = function() {
+        hideStartBanner();
+        // بعد اختفاء اللافتة، أظهر العداد
+        setTimeout(()=>{
+          showCountdown(5, ()=>{
+            // بعد انتهاء العداد
+            allowControl = true;
+            startEnemyWaves();
+          });
+        }, 440); // نفس سرعة ترانزيشن اللافتة
+      };
     }
 
     // Example: How to add coins and update balance
