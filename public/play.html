@@ -185,7 +185,7 @@
 
         // اطلاق النار التلقائي
         if (allowFire && time > lastFireTime + 500) {
-          let nearest = null, minD = 999999, fireRadius=320;
+          let nearest = null, minD = 999999, fireRadius=120;
           for (let enemyObj of enemies) {
             let enemy = enemyObj.sprite;
             if (!enemy.active) continue;
@@ -200,7 +200,7 @@
 
     function fireBullet(px, py, tx, ty, scene) {
       let bullet = scene.bulletsGroup.create(px, py, 'kartoucha');
-      bullet.setScale(0.5).setDepth(10); bullet.body.setAllowGravity(false);
+      bullet.setScale(0.1).setDepth(10); bullet.body.setAllowGravity(false);
       let dx = tx-px, dy = ty-py, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
@@ -209,7 +209,7 @@
     function killEnemy(enemy, scene) {
       enemy.disableBody(true, true);
       let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
-      coin.setScale(0.21).setDepth(20);
+      coin.setScale(0.5).setDepth(20);
       animateCoinToBalance(coin);
       balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
     }
