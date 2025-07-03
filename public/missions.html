@@ -87,14 +87,7 @@
       font-size: 14px;
       color: #ddd;
     }
-     .progress-container {
-  width: 100%;
-  background: #444;
-  border-radius: 10px;
-  height: 12px;
-  margin-top: 8px;
-  overflow: hidden;
-}
+
     .progress-bar {
       height: 10px;
       border-radius: 10px;
@@ -212,10 +205,9 @@
           <h3>${title}</h3>
           <p>${desc}</p>
           ${progress !== null ? `
-            <div class="progress-container">
-  <div class="progress-bar" style="width:${progress}%"></div>
-</div>
-<p style="margin-top:4px; font-size:12px;">${refCount}/${target}</p>
+            <div class="progress-bar" style="width:${progress}%"></div>
+            <p style="margin-top:4px; font-size:12px;">${progress.toFixed(0)}%</p>
+          ` : ""}
         </div>
         <button id="btn-${id}" ${claimed ? "disabled" : ""}>
           ${claimed ? "Claimed" : buttonText}
