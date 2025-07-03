@@ -201,31 +201,37 @@
       await db.ref("users/" + userId).update(data);
     }
 
-    function renderMission({ id, title, desc, icon, reward, progress = null, claimed = false, buttonText = "", onClick }) {
-      const div = document.createElement("div");
-      div.className = "mission";
+    function renderMission({ id, title, desc, icon, reward, progress = null, progressLabel = "", claimed = false, buttonText = "", onClick }) {
+  const div = document.createElement("div");
+  div.className = "mission";
 
-      div.innerHTML = `
-        <div class="led-glow"></div>
-        <img src="${icon}" alt="${title}" />
-        <div class="mission-content">
-          <h3>${title}</h3>
-          <p>${desc}</p>
-          ${progress !== null ? `
-            <div class="progress-container">
-            <div class="progress-bar" style="width:${progress}%"></div>
-            </div>
-        <p style="margin-top:4px; font-size:12px;">${refCount}/${target}</p>
-        <button id="btn-${id}" ${claimed ? "disabled" : ""}>
-          ${claimed ? "Claimed" : buttonText}
-        </button>
-      `;
-      missionsDiv.appendChild(div);
-      document.getElementById(`btn-${id}`).onclick = onClick;
-    }
+  // نجهز HTML خاص بالتقدم فقط إذا كان progress مش null
+  let progressHTML = "";
+  if (progress !== null) {
+    progressHTML = `
+      <div class="progress-container">
+        <div class="progress-bar" style="width:${progress}%"></div>
+      </div>
+      <p style="margin-top:4px; font-size:12px;">${progressLabel}</p>
+    `;
+  }
 
-    async function renderMissions() {
-      if (!userId) return alert("User ID missing");
+  div.innerHTML = `
+    <div class="led-glow"></div>
+    <img src="${icon}" alt="${title}" />
+    <div class="mission-content">
+      <h3>${title}</h3>
+      <p>${desc}</p>
+      ${progressHTML}
+    </div>
+    <button id="btn-${id}" ${claimed ? "disabled" : ""}>
+      ${claimed ? "Claimed" : buttonText}
+    </button>
+  `;
+
+  missionsDiv.appendChild(div);
+  document.getElementById(`btn-${id}`).onclick = onClick;
+}
 
       const user = await getUserData();
       const userMissions = user.missions || {};
@@ -324,35 +330,60 @@
         const alreadyClaimed = claimed(id);
 
         renderMission({
-          id,
-          title: label,
-          desc: `Progress: ${refCount}/${target} – Reward: $${reward}`,
-          icon,
-          reward,
-          progress: Math.min((refCount / target) * 100, 100),
-          claimed: alreadyClaimed,
-          buttonText: alreadyClaimed ? "Claimed" : (done ? "Claim" : "Start Invite"),
-          onClick: async () => {
-            if (alreadyClaimed) return;
+  id,
+  title: label,
+  desc: `Reward: $${reward}`,
+  icon,
+  reward,
+  progress: Math.min((refCount / target) * 100, 100),
+  progressLabel: `${refCount}/${target}`,
+  claimed: alreadyClaimed,
+  buttonText: alreadyClaimed ? "Claimed" : (done ? "Claim" : "Start Invite"),
+  onClick: async () => {
+    if (alreadyClaimed) return;
 
-            if (!done) {
-              const popup = document.createElement("div");
-              popup.className = "popup";
-              const inviteLink = `https://t.me/WELLcoinofficial_bot?start=${userId}`;
-              popup.innerHTML = `
-                <p>Your Invite Link:</p>
-                <p style="word-break: break-word; color: black;">${inviteLink}</p>
-                <button id="copy-${id}">Copy</button>
-              `;
-              document.body.appendChild(popup);
-              popup.style.display = "block";
+    if (!done) {
+      const popup = document.createElement("div");
+      popup.className = "popup";
+      const inviteLink = `https://t.me/WELLcoinofficial_bot?start=${userId}`;
+      popup.innerHTML = `
+        <p>Your Invite Link:</p>
+        <p style="word-break: break-word; color: black;">${inviteLink}</p>
+        <button id="copy-${id}">Copy</button>
+      `;
+      document.body.appendChild(popup);
+      popup.style.display = "block";
 
-              document.getElementById(`copy-${id}`).onclick = () => {
-                navigator.clipboard.writeText(inviteLink).then(() => {
-                  alert("✅ Copied! Invite your friends now.");
-                  popup.remove();
-                });
-              };
+      document.getElementById(`copy-${id}`).onclick = () => {
+        navigator.clipboard.writeText(inviteLink).then(() => {
+          alert("✅ Copied! Invite your friends now.");
+          popup.remove();
+        });
+      };
+    } else {
+      const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
+      await updateUserData({
+        balance: newBalance,
+        missions: { ...userMissions, [id]: { claimed: true } }
+      });
+
+      const popup = document.createElement("div");
+      popup.className = "popup";
+      popup.innerHTML = `
+        <p>🎉 +$${reward} USDT</p>
+        <p style="font-size:13px; color:#444;">No cheating, rewards are tracked.</p>
+        <button id="done-${id}">Thank You</button>
+      `;
+      document.body.appendChild(popup);
+      popup.style.display = "block";
+
+      document.getElementById(`done-${id}`).onclick = () => {
+        popup.remove();
+        location.reload();
+      };
+    }
+  }
+});
             } else {
               const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
               await updateUserData({
