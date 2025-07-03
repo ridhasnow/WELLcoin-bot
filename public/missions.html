@@ -36,15 +36,16 @@
   position: absolute;
   top: 20px;
   left: 20px;
+  padding: 8px;
   background: transparent;
   border: none;
   cursor: pointer;
 }
 
-#back-btn::before {
-  content: '<';
-  font-size: 24px;
-  color: white;
+#back-btn img {
+  width: 24px;
+  height: 24px;
+  filter: invert(1);
 }
 
 #missions {
@@ -59,9 +60,39 @@
   background: #2a2a2a;
   border-radius: 12px;
   padding: 15px;
-  box-shadow: 0 0 25px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
   position: relative;
   overflow: hidden;
+}
+
+.led-glow {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+  animation: rotateGlow 3s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotateGlow {
+  0% {
+    box-shadow: 5px 0 10px rgba(255, 215, 0, 0.8);
+  }
+  25% {
+    box-shadow: 0 5px 10px rgba(255, 215, 0, 0.8);
+  }
+  50% {
+    box-shadow: -5px 0 10px rgba(255, 215, 0, 0.8);
+  }
+  75% {
+    box-shadow: 0 -5px 10px rgba(255, 215, 0, 0.8);
+  }
+  100% {
+    box-shadow: 5px 0 10px rgba(255, 215, 0, 0.8);
+  }
 }
 
 .mission img {
@@ -91,13 +122,14 @@
   width: 100%;
   background: #444;
   border-radius: 10px;
-  height: 10px;
+  height: 12px;
   margin-top: 8px;
   overflow: hidden;
 }
 
 .progress-bar {
-  height: 100%;
+  height: 12px;
+  border-radius: 10px;
   background: linear-gradient(90deg, red, orange, green);
 }
 
@@ -117,79 +149,161 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
+  z-index: 999;
+  text-align: center;
+  display: none;
+  max-width: 90%;
+}
+
+.popup p {
+  color: black;
+  margin-bottom: 15px;
+}
+
+.popup button {
+  background: dodgerblue;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.popup .close-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
   </style>
 </head>
 <body>
-  <button id="back-btn" onclick="history.back()"></button>
+  <button id="back-btn" onclick="history.back()">
+    <img src="back-arrow.png" alt="Back">
+  </button>
   <div class="header-box">
     <h1>You Can Do It</h1>
   </div>  <div id="missions"></div>
-    <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-      authDomain: "wellcoinbotgame.firebaseapp.com",
-      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "wellcoinbotgame",
-      storageBucket: "wellcoinbotgame.appspot.com",
-      messagingSenderId: "108640533638",
-      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-    };
+  <script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
-    const tg = window.Telegram.WebApp;
-    tg.ready();
+  const userId = tg.initDataUnsafe?.user?.id;
+  const missionsDiv = document.getElementById("missions");
 
-    const userId = tg.initDataUnsafe?.user?.id;
-    const missionsDiv = document.getElementById("missions");
+  async function getUserData() {
+    const snap = await db.ref("users/" + userId).once("value");
+    return snap.val() || {};
+  }
 
-    async function getUserData() {
-      const snap = await db.ref("users/" + userId).once("value");
-      return snap.val() || {};
-    }
+  async function updateUserData(data) {
+    await db.ref("users/" + userId).update(data);
+  }
 
-    async function updateUserData(data) {
-      await db.ref("users/" + userId).update(data);
-    }
+  function renderMission({ id, title, desc, icon, reward, progress = null, claimed = false, buttonText = "", onClick }) {
+    const div = document.createElement("div");
+    div.className = "mission";
 
-    function renderMission({ id, title, desc, icon, reward, progress = null, progressLabel = "", claimed = false, buttonText = "", onClick }) {
-      const div = document.createElement("div");
-      div.className = "mission";
-
-      let progressHTML = "";
-      if (progress !== null) {
-        progressHTML = `
-          <div class="progress-container">
-            <div class="progress-bar" style="width:${progress}%"></div>
-          </div>
-          <p style="margin-top:4px; font-size:12px;">${progressLabel}</p>
-        `;
-      }
-
-      div.innerHTML = `
-        <div class="led-glow"></div>
-        <img src="${icon}" alt="${title}" />
-        <div class="mission-content">
-          <h3>${title}</h3>
-          <p>${desc}</p>
-          ${progressHTML}
-        </div>
-        <button id="btn-${id}" ${claimed ? "disabled" : ""}>
-          ${claimed ? "Visit" : buttonText}
-        </button>
+    let progressHTML = "";
+    if (progress !== null) {
+      progressHTML = `
+        <div class="progress-bar" style="width:${progress}%"></div>
+        <p style="margin-top:4px; font-size:12px;">${progress.toFixed(0)}%</p>
       `;
-
-      missionsDiv.appendChild(div);
-      document.getElementById(`btn-${id}`).onclick = onClick;
     }
 
-    async function renderMissions() {
-      if (!userId) return alert("User ID missing");
+    div.innerHTML = `
+      <div class="led-glow"></div>
+      <img src="${icon}" alt="${title}" />
+      <div class="mission-content">
+        <h3>${title}</h3>
+        <p>${desc}</p>
+        ${progressHTML}
+      </div>
+      <button id="btn-${id}" ${claimed ? "disabled" : ""}>
+        ${claimed ? "Visit" : buttonText}
+      </button>
+    `;
 
-      const user = await getUserData();
-      const userMissions = user.missions || {};
-      const claimed = (id) => userMissions[id]?.claimed || false;
-      const socials = [
+    missionsDiv.appendChild(div);
+    document.getElementById(`btn-${id}`).onclick = onClick;
+  }
+
+  async function renderMissions() {
+    if (!userId) return alert("User ID missing");
+
+    const user = await getUserData();
+    const userMissions = user.missions || {};
+    const claimed = (id) => userMissions[id]?.claimed || false;
+
+    const socials = [
+      { id: "youtube", title: "Follow us on YouTube", icon: "youtube-icon.png", url: "https://youtube.com", reward: 1, type: "follow" },
+      { id: "telegram", title: "Join our Telegram", icon: "telegram-icon.png", url: "https://t.me/WELLcoinofficial", reward: 1, type: "join" },
+      { id: "instagram", title: "Follow us on Instagram", icon: "instagram-icon.png", url: "https://instagram.com", reward: 1, type: "follow" },
+      { id: "facebook", title: "Like our Facebook page", icon: "facebook-icon.png", url: "https://facebook.com", reward: 1, type: "follow" },
+      { id: "tiktok", title: "Follow us on TikTok", icon: "tiktok-icon.png", url: "https://tiktok.com", reward: 1, type: "follow" },
+      { id: "x", title: "Follow us on X (Twitter)", icon: "twitter-icon.png", url: "https://x.com", reward: 1, type: "follow" }
+    ];
+
+    for (const { id, title, icon, url, reward, type } of socials) {
+      const isClaimed = claimed(id);
+      renderMission({
+        id,
+        title,
+        desc: `Reward: ${reward} WLC`,
+        icon,
+        reward,
+        claimed: isClaimed,
+        buttonText: isClaimed ? "Visit" : (type === "join" ? "Join Now" : "Follow"),
+        onClick: async () => {
+          window.open(url, "_blank");
+          if (isClaimed) return;
+
+          setTimeout(() => {
+            const popup = document.createElement("div");
+            popup.className = "popup";
+            popup.innerHTML = `
+              <div style="text-align:right; font-weight:bold; cursor:pointer;" onclick="this.parentElement.remove()">&times;</div>
+              <p>You finish?</p>
+              <p style="font-size:13px; color:#444;">If you unsubscribe, the reward will be deducted later.</p>
+              <button id="yes-${id}">Yes I Do</button>
+            `;
+            document.body.appendChild(popup);
+            popup.style.display = "block";
+
+            document.getElementById(`yes-${id}`).onclick = async () => {
+              const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
+              await updateUserData({
+                balance: newBalance,
+                missions: { ...userMissions, [id]: { claimed: true } }
+              });
+              popup.remove();
+              alert(`✅ You earned ${reward} WLC!`);
+              location.reload();
+            };
+          }, 1000);
+        }
+      });
+    }
+  }
+
+  window.onload = renderMissions;
+</script>
+const socials = [
     { id: "youtube", title: "Follow us on YouTube", icon: "youtube-icon.png", url: "https://youtube.com", reward: 1, type: "follow" },
     { id: "telegram", title: "Join our Telegram", icon: "telegram-icon.png", url: "https://t.me/WELLcoinofficial", reward: 1, type: "join" },
     { id: "instagram", title: "Follow us on Instagram", icon: "instagram-icon.png", url: "https://instagram.com", reward: 1, type: "follow" },
@@ -199,66 +313,57 @@ button:disabled {
   ];
 
   for (const { id, title, icon, url, reward, type } of socials) {
+    const isClaimed = userMissions[id]?.claimed || false;
+
     renderMission({
       id,
       title,
       desc: `Reward: ${reward} WLC`,
       icon,
       reward,
-      claimed: claimed(id),
-      buttonText: claimed(id) ? "Visit" : (type === "join" ? "Join Now" : "Follow"),
+      claimed: isClaimed,
+      buttonText: isClaimed ? "Visit" : (type === "join" ? "Join Now" : "Follow"),
       onClick: async () => {
-        if (claimed(id)) {
-          window.open(url, "_blank");
-          return;
-        }
-
         window.open(url, "_blank");
+        if (isClaimed) return;
 
-        setTimeout(() => {
-          const popup = document.createElement("div");
-          popup.className = "popup";
-          popup.innerHTML = `
-            <span class="close" onclick="this.parentElement.remove()">&times;</span>
-            <p>You finish?</p>
-            <p style="font-size:13px; color:#444;">If you unsubscribe, the reward will be deducted later. No need for tricks, we’re a team ♥</p>
-            <button id="yes-${id}">Yes I Do</button>
-          `;
-          document.body.appendChild(popup);
-          popup.style.display = "block";
+        const popup = document.createElement("div");
+        popup.className = "popup";
+        popup.innerHTML = `
+          <div style="position:absolute;top:10px;right:10px;font-weight:bold;cursor:pointer;" onclick="this.parentNode.remove()">×</div>
+          <p>You finish?</p>
+          <p style="font-size:13px; color:#444;">If you unsubscribe, the reward will be deducted later. No tricks please ♥</p>
+          <button id="yes-${id}">Yes I Do</button>
+        `;
+        document.body.appendChild(popup);
+        popup.style.display = "block";
 
-          document.getElementById(`yes-${id}`).onclick = async () => {
-            const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
-            await updateUserData({
-              balance: newBalance,
-              missions: { ...userMissions, [id]: { claimed: true } }
-            });
-            popup.remove();
-            alert(`✅ You earned ${reward} WLC!`);
-            location.reload();
-          };
-        }, 1000);
+        document.getElementById(`yes-${id}`).onclick = async () => {
+          const newBalance = (parseFloat(user.balance || 0) + reward).toFixed(10);
+          await updateUserData({
+            balance: newBalance,
+            missions: { ...userMissions, [id]: { claimed: true } }
+          });
+          popup.remove();
+          alert(`✅ You earned ${reward} WLC!`);
+          location.reload();
+        };
       }
     });
   }
 
-const dailyId = "daily";
-  const lastClaim = userMissions[dailyId]?.lastClaim || 0;
-  const now = Date.now();
+const now = Date.now();
   const elapsed = now - lastClaim;
   const dailyAvailable = elapsed > 86400000;
   const remaining = 86400000 - elapsed;
   const iconDaily = "daily-icon.png";
 
-  const hours = Math.floor(remaining / 3600000).toString().padStart(2, '0');
-  const minutes = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
-  const seconds = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
-  const timeString = `${hours}:${minutes}:${seconds}`;
-
   renderMission({
     id: dailyId,
     title: "Daily Reward",
-    desc: dailyAvailable ? "Claim your 1 WLC!" : `Come back in ${timeString} to claim again.`,
+    desc: dailyAvailable
+      ? "Claim your 1 WLC!"
+      : `Time left: ${new Date(remaining).toISOString().substr(11, 8)}`,
     icon: iconDaily,
     reward: 1,
     claimed: !dailyAvailable,
@@ -274,6 +379,7 @@ const dailyId = "daily";
     }
   });
 
+  // Invite Friends Missions
   const invites = [
     { id: "invite5", icon: "invit1.png", label: "Invite 5 Friends", target: 5, reward: 0.5 },
     { id: "invite20", icon: "invit2.png", label: "Invite 20 Friends", target: 20, reward: 2 },
@@ -282,7 +388,7 @@ const dailyId = "daily";
 
   const refCount = user.referrals || 0;
 
-for (const { id, label, icon, target, reward } of invites) {
+  for (const { id, label, icon, target, reward } of invites) {
     const done = refCount >= target;
     const alreadyClaimed = claimed(id);
 
@@ -293,7 +399,6 @@ for (const { id, label, icon, target, reward } of invites) {
       icon,
       reward,
       progress: Math.min((refCount / target) * 100, 100),
-      progressLabel: `${refCount}/${target}`,
       claimed: alreadyClaimed,
       buttonText: alreadyClaimed ? "Claimed" : (done ? "Claim" : "Start Invite"),
       onClick: async () => {
@@ -304,7 +409,7 @@ for (const { id, label, icon, target, reward } of invites) {
           popup.className = "popup";
           const inviteLink = `https://t.me/WELLcoinofficial_bot?start=${userId}`;
           popup.innerHTML = `
-            <span class="close" onclick="this.parentElement.remove()">&times;</span>
+            <span style="position:absolute;top:8px;right:12px;font-weight:bold;cursor:pointer;" onclick="this.parentElement.remove()">×</span>
             <p>Your Invite Link:</p>
             <p style="word-break: break-word; color: black;">${inviteLink}</p>
             <button id="copy-${id}">Copy</button>
@@ -328,7 +433,7 @@ for (const { id, label, icon, target, reward } of invites) {
           const popup = document.createElement("div");
           popup.className = "popup";
           popup.innerHTML = `
-            <span class="close" onclick="this.parentElement.remove()">&times;</span>
+            <span style="position:absolute;top:8px;right:12px;font-weight:bold;cursor:pointer;" onclick="this.parentElement.remove()">×</span>
             <p>🎉 +$${reward} USDT</p>
             <p style="font-size:13px; color:#444;">No cheating, rewards are tracked.</p>
             <button id="done-${id}">Thank You</button>
