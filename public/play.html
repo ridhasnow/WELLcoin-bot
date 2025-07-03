@@ -72,8 +72,8 @@
       display: none;
     }
     #joystick-base {
-      width: 110px;
-      height: 110px;
+      width: 130px;
+      height: 130px;
       background: rgba(255,255,255,0.13);
       border: 2px solid rgba(255,215,0,0.4);
       border-radius: 50%;
@@ -239,9 +239,8 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     const userId = tg.initDataUnsafe?.user?.id;
-
-    // === Balance logic ===
     let totalBalance = 0;
+
     function setBalance(val) {
       document.getElementById('balance-value').textContent = Number(val).toFixed(8);
     }
@@ -250,29 +249,32 @@
     const gameWidth = window.innerWidth;
     const gameHeight = window.innerHeight;
 
-    let player, cursors, camera, bg;
+    let player, camera, bg;
     let joystickPointerId = null;
     let joyActive = false;
     let joyOrigin = { x: 0, y: 0 };
     let joyDelta = { x: 0, y: 0 };
     let enemies = [];
-    let enemySpeed1 = 130; // سرعة enemy1 (أقل من اللاعب 220)
-    let enemySpeed2 = 165; // enemy2 (75% من سرعة اللاعب)
-    let enemyTimer = null;
-    let wave = 1;
+    let enemySpeed1 = 130;
+    let enemySpeed2 = 165;
     let allowControl = false;
+    let allowFire = false;
+    let lastFireTime = 0;
+    let bulletsGroup, coinsGroup;
+    let coinAnimDuration = 800;
+    let balanceValue = 0;
 
     // === Phaser scene ===
     class MainScene extends Phaser.Scene {
-      constructor() {
-        super('MainScene');
-      }
+      constructor() { super('MainScene'); }
 
       preload() {
         this.load.image('city', 'assets/city1.png');
         this.load.image('player', 'assets/player1.png');
         this.load.image('enemy1', 'assets/enemy1.png');
         this.load.image('enemy2', 'assets/enemy2.png');
+        this.load.image('kartoucha', 'assets/kartoucha.png');
+        this.load.image('wlc', 'assets/wlc.png');
       }
 
       create() {
@@ -290,7 +292,7 @@
         this.cameras.main.setZoom(this.getInitialZoom());
         camera = this.cameras.main;
 
-        this.scale.on('resize', (gameSize) => {
+        this.scale.on('resize', () => {
           this.cameras.main.setZoom(this.getInitialZoom());
         });
 
@@ -298,25 +300,36 @@
         setupJoystick();
 
         setBalance(0.00000000);
-
-        // منع تحكم اللاعب حتى انتهاء اللافتة والعداد:
+        balanceValue = 0;
         allowControl = false;
+        allowFire = false;
 
-        // =============== موجات الأعداء ==============
+        // Enemy & bullet groups
         this.enemyGroup = this.physics.add.group();
+        this.bulletsGroup = this.physics.add.group();
+        this.coinsGroup = this.physics.add.group();
+        bulletsGroup = this.bulletsGroup;
+        coinsGroup = this.coinsGroup;
+
         enemies = [];
 
-        // تصادم اللاعب مع الأعداء
+        // تصادم الرصاص مع الأعداء
+        this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
+          bullet.destroy();
+          killEnemy(enemy, this);
+        });
+
+        // تصادم اللاعب مع الأعداء (ممكن تضيف كود للخسارة هنا)
         this.physics.add.overlap(
           player,
           this.enemyGroup,
-          () => { /* هنا ممكن تبرمج الموت أو النقصان أو أي شيء */ },
+          () => { /* برمج الخسارة لو تريد */ },
           null,
           this
         );
       }
 
-      update() {
+      update(time, delta) {
         // تحكم اللاعب فقط بعد انتهاء العداد!
         let vx = 0, vy = 0;
         if (allowControl && joyActive) {
@@ -339,6 +352,27 @@
             enemy.setVelocity(0,0);
           }
         }
+
+        // ===== نظام الرماية التلقائي =====
+        if (allowFire && time > lastFireTime + 500) {
+          let nearest = null, minD = 999999;
+          let fireRadius = 320; // قطر متوسط حول اللاعب
+          for (let enemyObj of enemies) {
+            let enemy = enemyObj.sprite;
+            if (!enemy.active) continue;
+            let dx = player.x - enemy.x;
+            let dy = player.y - enemy.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < fireRadius && dist < minD) {
+              minD = dist;
+              nearest = enemy;
+            }
+          }
+          if (nearest) {
+            fireBullet(player.x, player.y, nearest.x, nearest.y, this);
+            lastFireTime = time;
+          }
+        }
       }
 
       getInitialZoom() {
@@ -350,30 +384,66 @@
       }
     }
 
-    // === Game Initialization ===
-    const game = new Phaser.Game({
-      type: Phaser.AUTO,
-      width: gameWidth,
-      height: gameHeight,
-      backgroundColor: "#101016",
-      physics: { default: 'arcade', arcade: { debug: false } },
-      scene: MainScene,
-      parent: 'game-container',
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-      }
-    });
+    function fireBullet(px, py, tx, ty, scene) {
+      let bullet = scene.bulletsGroup.create(px, py, 'kartoucha');
+      bullet.setScale(0.5);
+      bullet.setDepth(10);
+      bullet.body.setAllowGravity(false);
+      let dx = tx - px;
+      let dy = ty - py;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      let speed = 520;
+      bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+      setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
+    }
 
-    // ============= Joystick code =============
+    function killEnemy(enemy, scene) {
+      enemy.disableBody(true, true);
+      // عملة صغيرة تسقط (wlc.png)
+      let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
+      coin.setScale(0.21);
+      coin.setDepth(20);
+      animateCoinToBalance(coin);
+      // زيادة الرصيد
+      balanceValue += 0.00000100;
+      setBalance(balanceValue);
+      updateBalance(balanceValue);
+    }
+
+    function animateCoinToBalance(coin) {
+      // الحصول على مكان عداد الرصيد في الشاشة
+      let balanceBar = document.getElementById('balance-bar');
+      let rect = balanceBar.getBoundingClientRect();
+      // حساب نسبة المكان بالنسبة للعبة
+      let targetX = rect.left + rect.width/2;
+      let targetY = rect.top + rect.height/2;
+      let win = window;
+      let sx = win.scrollX || 0, sy = win.scrollY || 0;
+      // تحويل إحداثيات الشاشة لإحداثيات عالم فيزكس Phaser
+      let gameRect = document.getElementById('game-container').getBoundingClientRect();
+      let fx = (targetX - gameRect.left) * (coin.scene.cameras.main.worldView.width / gameRect.width) + coin.scene.cameras.main.worldView.x;
+      let fy = (targetY - gameRect.top) * (coin.scene.cameras.main.worldView.height / gameRect.height) + coin.scene.cameras.main.worldView.y;
+      coin.scene.tweens.add({
+        targets: coin,
+        x: fx,
+        y: fy,
+        scale: 0.05,
+        alpha: 0.3,
+        duration: coinAnimDuration,
+        ease: 'Cubic.easeIn',
+        onComplete: () => { coin.destroy(); }
+      });
+    }
+
+    // ============ Joystick code (نصف الشاشة السفلي فقط) ============
     function setupJoystick() {
       const joystickBase = document.getElementById('joystick-base');
       const joystickStick = document.getElementById('joystick-stick');
       let baseX = 0, baseY = 0, stickX = 0, stickY = 0;
 
       function showJoystick(x, y) {
-        baseX = x - 55;
-        baseY = y - 55;
+        baseX = x - 65;
+        baseY = y - 65;
         stickX = x - 28;
         stickY = y - 28;
         joystickBase.style.left = baseX + 'px';
@@ -388,29 +458,28 @@
         joystickStick.style.display = 'none';
       }
       function moveJoystick(x, y) {
-        const dx = x - (baseX + 55);
-        const dy = y - (baseY + 55);
+        const dx = x - (baseX + 65);
+        const dy = y - (baseY + 65);
         const dist = Math.sqrt(dx*dx + dy*dy);
         let angle = Math.atan2(dy, dx);
-        let maxDist = 44;
+        let maxDist = 54;
         let useDist = Math.min(dist, maxDist);
         let sx = Math.cos(angle) * useDist;
         let sy = Math.sin(angle) * useDist;
-        joystickStick.style.left = (baseX + 27 + sx) + 'px';
-        joystickStick.style.top = (baseY + 27 + sy) + 'px';
-
-        // Normalize movement
+        joystickStick.style.left = (baseX + 38 + sx) + 'px';
+        joystickStick.style.top = (baseY + 38 + sy) + 'px';
         joyDelta.x = sx / maxDist;
         joyDelta.y = sy / maxDist;
       }
 
-      // Touch events only (no mouse)
+      // Touch events only (no mouse), restrict to lower half
       window.addEventListener('touchstart', function(e) {
-        if (!joyActive && e.touches.length === 1 && e.touches[0].clientX < window.innerWidth / 2) {
+        let touch = e.touches[0];
+        if (!joyActive && e.touches.length === 1 && touch.clientY > window.innerHeight / 2) {
           joyActive = true;
-          joystickPointerId = e.touches[0].identifier;
-          joyOrigin.x = e.touches[0].clientX;
-          joyOrigin.y = e.touches[0].clientY;
+          joystickPointerId = touch.identifier;
+          joyOrigin.x = touch.clientX;
+          joyOrigin.y = touch.clientY;
           joyDelta.x = 0; joyDelta.y = 0;
           showJoystick(joyOrigin.x, joyOrigin.y);
         }
@@ -444,7 +513,6 @@
     }
 
     // ============ Banner, Countdown, Enemies Logic =============
-    // Banner animation in/out
     function showStartBanner() {
       const banner = document.getElementById('start-banner');
       banner.classList.add('active');
@@ -454,7 +522,6 @@
       banner.classList.remove('active');
     }
 
-    // Countdown
     function showCountdown(sec, after) {
       const cd = document.getElementById('start-countdown');
       cd.textContent = sec;
@@ -471,16 +538,14 @@
           clearInterval(interval);
           setTimeout(() => {
             cd.style.display = 'none';
+            allowFire = true;
             if (typeof after === "function") after();
           }, 700);
         }
       }, 1000);
     }
 
-    // Enemy spawn
     function randomEdgePosition(cityW, cityH) {
-      // Random position at the edge
-      // 0: top, 1: bottom, 2: left, 3: right
       const edge = Math.floor(Math.random()*4);
       switch(edge) {
         case 0: return { x: Math.random()*cityW, y: 0 };
@@ -490,14 +555,10 @@
       }
     }
 
-    // Start enemy waves logic (Phaser scene global: game.scene.scenes[0])
     function startEnemyWaves() {
       const scene = game.scene.scenes[0];
       let cityW = scene.bg.width;
       let cityH = scene.bg.height;
-      let timePassed = 0;
-
-      // ==== Wave 1: كل 5 ثواني، 4 أعداء enemy1، لمدة 55 ثانية ====
       wave = 1;
       let wave1Timer = setInterval(() => {
         for(let i=0;i<4;i++) {
@@ -510,12 +571,10 @@
         }
       }, 5000);
 
-      let wave1Timeout = setTimeout(()=>{
+      setTimeout(()=>{
         clearInterval(wave1Timer);
-        // ==== Wave 2: كل 4 ثواني، 6 أعداء enemy2، + 4 أعداء enemy1 (10 كل مرة) ====
         wave = 2;
-        let wave2Timer = setInterval(()=>{
-          // 4 أعداء قدامى
+        setInterval(()=>{
           for(let i=0;i<4;i++) {
             let pos = randomEdgePosition(cityW, cityH);
             let enemy = scene.enemyGroup.create(pos.x, pos.y, "enemy1");
@@ -524,7 +583,6 @@
             enemy.body.setCollideWorldBounds(true);
             enemies.push({sprite: enemy, type: 1});
           }
-          // 6 أعداء جدد enemy2
           for(let i=0;i<6;i++) {
             let pos = randomEdgePosition(cityW, cityH);
             let enemy = scene.enemyGroup.create(pos.x, pos.y, "enemy2");
@@ -534,11 +592,9 @@
             enemies.push({sprite: enemy, type: 2});
           }
         }, 4000);
-        // يمكنك لاحقًا توقيف wave2Timer أو تغيير المنظومة هنا حسب ما تريد
       }, 55000);
     }
 
-    // === Firebase balance logic ===
     function getUserData() {
       return db.ref("users/" + userId).once("value").then(snap => snap.val() || {});
     }
@@ -559,32 +615,21 @@
       getUserData().then(user => {
         let mg = parseFloat(user.minigame_balance || 0);
         setBalance(mg);
+        balanceValue = mg;
       });
 
-      // ====== UI بداية اللعبة ======
       showStartBanner();
-
-      // زر "Yes I Can"
       document.querySelector("#start-banner .banner-btn").onclick = function() {
         hideStartBanner();
-        // بعد اختفاء اللافتة، أظهر العداد
         setTimeout(()=>{
           showCountdown(5, ()=>{
-            // بعد انتهاء العداد
             allowControl = true;
+            allowFire = true;
             startEnemyWaves();
           });
-        }, 440); // نفس سرعة ترانزيشن اللافتة
+        }, 440);
       };
     }
-
-    // Example: How to add coins and update balance
-    // function collectCoin(amount) {
-    //   let cur = parseFloat(document.getElementById('balance-value').textContent) || 0;
-    //   cur += amount;
-    //   setBalance(cur);
-    //   updateBalance(cur);
-    // }
   </script>
 </body>
 </html>
