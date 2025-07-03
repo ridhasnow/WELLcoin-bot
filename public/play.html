@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Play Game</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
+  <!-- Phaser.js -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.js"></script>
+  <!-- Telegram WebApp JS -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #101016;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
+    }
+    #balance-bar {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 210px;
+      max-width: 95vw;
+      height: 45px;
+      background: rgba(30, 32, 40, 0.58);
+      border-radius: 18px;
+      box-shadow: 0 2px 24px 2px rgba(255,215,0,0.18);
+      border: 1.6px solid rgba(255,215,0,0.57);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 11;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 18px;
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: 0.7px;
+      backdrop-filter: blur(2.5px);
+      transition: background 0.16s;
+      user-select: none;
+    }
+    #balance-bar .wlc {
+      font-size: 15px;
+      margin-left: 8px;
+      color: gold;
+      font-weight: bold;
+      letter-spacing: 1.2px;
+      filter: drop-shadow(0 0 5px #fff70073);
+    }
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      position: absolute;
+      left: 0; top: 0;
+      background: #101016;
+    }
+    /* Custom joystick style */
+    #joystick-base, #joystick-stick {
+      position: absolute;
+      z-index: 10;
+      pointer-events: none;
+      touch-action: none;
+      display: none;
+    }
+    #joystick-base {
+      width: 110px;
+      height: 110px;
+      background: rgba(255,255,255,0.13);
+      border: 2px solid rgba(255,215,0,0.4);
+      border-radius: 50%;
+      left: 60px;
+      bottom: 70px;
+      box-shadow: 0 2px 16px 1px rgba(255,215,0,0.09);
+    }
+    #joystick-stick {
+      width: 56px;
+      height: 56px;
+      background: rgba(255,215,0,0.19);
+      border: 2px solid rgba(255,215,0,0.55);
+      border-radius: 50%;
+      left: 87px;
+      bottom: 97px;
+      box-shadow: 0 2px 10px 1px rgba(255,215,0,0.13);
+      transition: left 0.04s, bottom 0.04s;
+    }
+  </style>
+</head>
+<body>
+  <div id="balance-bar">
+    <span id="balance-value">0.00000000</span>
+    <span class="wlc">WLC</span>
+  </div>
+  <div id="game-container"></div>
+  <!-- Joystick elements -->
+  <div id="joystick-base"></div>
+  <div id="joystick-stick"></div>
+  <script>
+    // === Firebase & Telegram ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
+
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    const userId = tg.initDataUnsafe?.user?.id;
+
+    // === Balance logic ===
+    let totalBalance = 0;
+    function setBalance(val) {
+      document.getElementById('balance-value').textContent = Number(val).toFixed(8);
+    }
+
+    // === Phaser Game Config ===
+    const gameWidth = window.innerWidth;
+    const gameHeight = window.innerHeight;
+
+    let player, cursors, camera, bg;
+    let joystickPointerId = null;
+    let joyActive = false;
+    let joyOrigin = { x: 0, y: 0 };
+    let joyDelta = { x: 0, y: 0 };
+
+    // === Phaser scene ===
+    class MainScene extends Phaser.Scene {
+      constructor() {
+        super('MainScene');
+      }
+
+      preload() {
+        // Load background and player
+        this.load.image('city', 'assets/city1.png');
+        this.load.image('player', 'assets/player1.png');
+      }
+
+      create() {
+        // Add background image (city)
+        bg = this.add.image(0, 0, 'city').setOrigin(0, 0);
+
+        // Scale background to its native size
+        bg.setDisplaySize(bg.width, bg.height);
+
+        // Add player in center of map to start
+        player = this.physics.add.sprite(bg.width/2, bg.height/2, 'player');
+        player.setDepth(2);
+        player.setCollideWorldBounds(true);
+
+        // World bounds = size of city image
+        this.physics.world.setBounds(0, 0, bg.width, bg.height);
+        this.cameras.main.setBounds(0, 0, bg.width, bg.height);
+
+        // Camera follows player, keeps him in the center
+        this.cameras.main.startFollow(player, true, 0.14, 0.14);
+        this.cameras.main.setZoom(this.getInitialZoom());
+        camera = this.cameras.main;
+
+        // Responsive zoom
+        this.scale.on('resize', (gameSize) => {
+          this.cameras.main.setZoom(this.getInitialZoom());
+        });
+
+        // Hide default context menu
+        this.input.manager.canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Touch joystick logic
+        setupJoystick();
+
+        // For debug: allow dragging player with mouse (dev only)
+        // player.setInteractive().on('pointerdown', pointer => {player.x = pointer.worldX; player.y = pointer.worldY;});
+
+        // Initial balance
+        setBalance(0.00000000);
+      }
+
+      update() {
+        // Joystick movement
+        let vx = 0, vy = 0;
+        if (joyActive) {
+          vx = joyDelta.x * 220; // speed factor
+          vy = joyDelta.y * 220;
+        }
+        player.setVelocity(vx, vy);
+      }
+
+      getInitialZoom() {
+        // Try to make city image cover more than screen, i.e. zoom in a bit
+        const cityWidth = bg.width;
+        const cityHeight = bg.height;
+        const ratioX = gameWidth / cityWidth;
+        const ratioY = gameHeight / cityHeight;
+        return Math.max(ratioX, ratioY) * 1.35; // 1.35 for zoom-in
+      }
+    }
+
+    // === Game Initialization ===
+    const game = new Phaser.Game({
+      type: Phaser.AUTO,
+      width: gameWidth,
+      height: gameHeight,
+      backgroundColor: "#101016",
+      physics: { default: 'arcade', arcade: { debug: false } },
+      scene: MainScene,
+      parent: 'game-container',
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+      }
+    });
+
+    // === Joystick code ===
+    function setupJoystick() {
+      const joystickBase = document.getElementById('joystick-base');
+      const joystickStick = document.getElementById('joystick-stick');
+      let baseX = 0, baseY = 0, stickX = 0, stickY = 0;
+
+      function showJoystick(x, y) {
+        baseX = x - 55;
+        baseY = y - 55;
+        stickX = x - 28;
+        stickY = y - 28;
+        joystickBase.style.left = baseX + 'px';
+        joystickBase.style.top = baseY + 'px';
+        joystickStick.style.left = stickX + 'px';
+        joystickStick.style.top = stickY + 'px';
+        joystickBase.style.display = 'block';
+        joystickStick.style.display = 'block';
+      }
+      function hideJoystick() {
+        joystickBase.style.display = 'none';
+        joystickStick.style.display = 'none';
+      }
+      function moveJoystick(x, y) {
+        const dx = x - (baseX + 55);
+        const dy = y - (baseY + 55);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        let angle = Math.atan2(dy, dx);
+        let maxDist = 44;
+        let useDist = Math.min(dist, maxDist);
+        let sx = Math.cos(angle) * useDist;
+        let sy = Math.sin(angle) * useDist;
+        joystickStick.style.left = (baseX + 27 + sx) + 'px';
+        joystickStick.style.top = (baseY + 27 + sy) + 'px';
+
+        // Normalize movement
+        joyDelta.x = sx / maxDist;
+        joyDelta.y = sy / maxDist;
+      }
+
+      // Touch events only (no mouse)
+      window.addEventListener('touchstart', function(e) {
+        if (!joyActive && e.touches.length === 1 && e.touches[0].clientX < window.innerWidth / 2) {
+          joyActive = true;
+          joystickPointerId = e.touches[0].identifier;
+          joyOrigin.x = e.touches[0].clientX;
+          joyOrigin.y = e.touches[0].clientY;
+          joyDelta.x = 0; joyDelta.y = 0;
+          showJoystick(joyOrigin.x, joyOrigin.y);
+        }
+      });
+      window.addEventListener('touchmove', function(e) {
+        if (joyActive) {
+          for (let i=0; i<e.touches.length; i++) {
+            if (e.touches[i].identifier === joystickPointerId) {
+              moveJoystick(e.touches[i].clientX, e.touches[i].clientY);
+              break;
+            }
+          }
+        }
+      });
+      window.addEventListener('touchend', function(e) {
+        if (joyActive) {
+          let stillActive = false;
+          for (let i=0; i<e.touches.length; i++) {
+            if (e.touches[i].identifier === joystickPointerId) {
+              stillActive = true;
+              break;
+            }
+          }
+          if (!stillActive) {
+            joyActive = false;
+            joyDelta.x = 0; joyDelta.y = 0;
+            hideJoystick();
+          }
+        }
+      });
+    }
+
+    // === Firebase balance logic ===
+    function getUserData() {
+      return db.ref("users/" + userId).once("value").then(snap => snap.val() || {});
+    }
+    function updateBalance(newVal) {
+      // Update only the mini-game balance (for now), and add to total balance
+      db.ref("users/" + userId).once("value").then(snap => {
+        let user = snap.val() || {};
+        let mainBalance = parseFloat(user.balance || 0);
+        let newTotal = (mainBalance + newVal).toFixed(8);
+        db.ref("users/" + userId).update({
+          balance: newTotal,
+          minigame_balance: newVal
+        });
+      });
+    }
+
+    // Get user balance on load (optional, if you want to show mini-game balance)
+    window.onload = function() {
+      if (!userId) return;
+      getUserData().then(user => {
+        let mg = parseFloat(user.minigame_balance || 0);
+        setBalance(mg);
+      });
+    }
+
+    // === Example: How to add coins and update balance ===
+    // function collectCoin(amount) {
+    //   // Update local UI balance
+    //   let cur = parseFloat(document.getElementById('balance-value').textContent) || 0;
+    //   cur += amount;
+    //   setBalance(cur);
+    //   // Also update in Firebase
+    //   updateBalance(cur);
+    // }
+  </script>
+</body>
+</html>
