@@ -2,47 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, minimum-scale=1, width=device-width"/>
   <title>WELLcoin Game</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+      touch-action: none;
+    }
+    body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #000;
       color: #ffd700;
       display: flex;
       flex-direction: column;
       height: 100vh;
+      width: 100vw;
       overflow: hidden;
+      position: relative;
     }
 
     header {
-  height: 59px; /* ارتفاع واضح وثابت للشريط الأسود */
-  background-color: rgba(0, 0, 0, 0.0);
-  width: 100%;
-  z-index: 5;
-  position: relative;
-}
+      height: 59px;
+      background-color: rgba(0, 0, 0, 0.0);
+      width: 100%;
+      z-index: 5;
+      position: relative;
+    }
 
-/* ✅ زر الرانكد بشكل عائم */
-#ranked {
-  position: fixed;        /* 🔓 يخلي الزر حر ومستقل */
-  top: 20px;              /* ⬇️ نزّله شوية لتحت */
-  right: 45px;            /* ⬅️ على اليمين تمامًا */
-  width: 32px;
-  height: 32px;
-  z-index: 9999;          /* ⬆️ فوق كل العناصر */
-  cursor: pointer;
-  background: none;
-  border: none;
-}
+    #ranked {
+      position: fixed;
+      top: 20px;
+      right: 45px;
+      width: 32px;
+      height: 32px;
+      z-index: 9999;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
     #ranked:hover {
-  transform: scale(1.15);
-  filter: drop-shadow(0 0 6px gold);
-}
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 6px gold);
+    }
 
     .balance-box {
       position: absolute;
@@ -94,12 +102,19 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      width: 100vw;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
     }
 
     .character {
       max-height: 100%;
       max-width: 100%;
       object-fit: contain;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: auto;
     }
 
     .mining-bar {
@@ -145,6 +160,10 @@
       padding: 10px;
       border-top: none;
       backdrop-filter: blur(4px);
+      width: 100vw;
+      min-width: 0;
+      box-sizing: border-box;
+      position: relative;
     }
 
     .btn {
@@ -162,6 +181,7 @@
       transition: 0.2s;
       text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.15);
       box-shadow: 0 4px 6px rgba(255, 215, 0, 0.15);
+      min-width: 0;
     }
 
     .username-frame {
@@ -175,30 +195,28 @@
     }
 
     .dragon-frame-img {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-  z-index: 1;
-
-  /* ✨ الإضاءة الذهبية */
-  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 10px rgba(255, 255, 200, 0.3));
-}
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      z-index: 1;
+      filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 10px rgba(255, 255, 200, 0.3));
+    }
 
     #username-inside {
-  position: absolute;
-  top: 20px; /* ✅ هذا يحكم مكانه عموديًا */
-  left: 42%;
-  transform: translateX(-50%);
-  z-index: 2;
-  text-align: center;
-  color: #fff;
-  font-weight: bold;
-  font-size: 14px;
-  padding: 4px 8px;
-  text-shadow: 0 0 6px gold;
-}
+      position: absolute;
+      top: 20px;
+      left: 42%;
+      transform: translateX(-50%);
+      z-index: 2;
+      text-align: center;
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px;
+      padding: 4px 8px;
+      text-shadow: 0 0 6px gold;
+    }
 
     .btn:hover {
       background-color: #1a1a1a;
@@ -215,8 +233,8 @@
 <body>
   <header></header>
 
-<!-- ✅ زر الرانكد كعنصر مستقل -->
-<img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
+  <!-- ✅ زر الرانكد كعنصر مستقل -->
+  <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
 
   <div class="balance-box">
     <img src="wellcoin-icon.png" alt="Coin Icon" class="coin-icon">
@@ -238,21 +256,60 @@
     <button class="btn">Me</button>
     <button class="btn" onclick="window.location.href='shop.html'">Shop</button>
     <button class="btn" onclick="window.location.href='missions.html'">Missions</button>
-    <button class="btn">Invite</button>
+    <button class="btn" onclick="window.location.href='play.html'">Play</button>
   </div>
 
   <script>
-    const app = firebase.initializeApp({
-  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-  authDomain: "wellcoinbotgame.firebaseapp.com",
-  databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "wellcoinbotgame",
-  storageBucket: "wellcoinbotgame.appspot.com",
-  messagingSenderId: "108640533638",
-  appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-});
+    // منع الزوم والسكرول باللمس أو الماوس
+    document.addEventListener('touchmove', function(event) {
+      if (event.scale !== 1) { event.preventDefault(); }
+    }, { passive: false });
 
-const db = firebase.database(app);
+    document.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('gesturechange', function (e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('gestureend', function (e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    // تعطيل سكرول اليمين واليسار بالأسهم أو التراكباد
+    window.addEventListener('keydown', function(e) {
+      if(["ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // تعطيل سكرول بالماوس
+    window.addEventListener('wheel', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    // تعطيل سحب الشاشة يمين ويسار
+    window.addEventListener('scroll', function() {
+      window.scrollTo(0, 0);
+    });
+
+    // تأكيد عدم وجود سكرول نهائيًا
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    // Firebase & Telegram
+    const app = firebase.initializeApp({
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+    });
+
+    const db = firebase.database(app);
     const tg = window.Telegram.WebApp;
     tg.ready();
 
@@ -312,35 +369,34 @@ const db = firebase.database(app);
     }
 
     window.addEventListener("load", () => {
-  if (!userId) {
-    alert("No user ID found.");
-    window.location.href = "welcome.html";
-    return;
-  }
+      if (!userId) {
+        alert("No user ID found.");
+        window.location.href = "welcome.html";
+        return;
+      }
 
-  const userRef = db.ref("users/" + userId);
-  userRef.once("value").then((snapshot) => {
-    if (!snapshot.exists()) {
-      alert("No user data found. Redirecting to welcome page.");
-      window.location.href = "welcome.html";
-      return;
-    }
+      const userRef = db.ref("users/" + userId);
+      userRef.once("value").then((snapshot) => {
+        if (!snapshot.exists()) {
+          alert("No user data found. Redirecting to welcome page.");
+          window.location.href = "welcome.html";
+          return;
+        }
 
-    const userData = snapshot.val();
-    console.log("بيانات اللاعب:", userData);
-    usernameBox.textContent = userData.username || "Unknown Player";
-    balance = parseFloat(userData.balance || 0);
-    coinCount = parseFloat(userData.coinCount || 0);
-    countdown = parseInt(userData.countdown || 10800);
+        const userData = snapshot.val();
+        console.log("بيانات اللاعب:", userData);
+        usernameBox.textContent = userData.username || "Unknown Player";
+        balance = parseFloat(userData.balance || 0);
+        coinCount = parseFloat(userData.coinCount || 0);
+        countdown = parseInt(userData.countdown || 10800);
 
-    updateDisplay();
+        updateDisplay();
 
-    if (countdown > 0 && !interval) startMining();
-  });
+        if (countdown > 0 && !interval) startMining();
+      });
 
-  // ✅ بعد تحميل كل شيء
-  document.querySelector(".character").addEventListener("click", restartMiningTimer);
-
+      // ✅ بعد تحميل كل شيء
+      document.querySelector(".character").addEventListener("click", restartMiningTimer);
     });
   </script>
 </body>
