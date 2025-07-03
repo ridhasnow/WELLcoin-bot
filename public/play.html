@@ -199,7 +199,6 @@
       pointer-events: none;
     }
   </style>
-  <!-- خط retro مناسب للألعاب 2D -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet"/>
 </head>
 <body>
@@ -264,7 +263,6 @@
     let coinAnimDuration = 800;
     let balanceValue = 0;
 
-    // === Phaser scene ===
     class MainScene extends Phaser.Scene {
       constructor() { super('MainScene'); }
 
@@ -278,8 +276,8 @@
       }
 
       create() {
+        // ==== هنا نعتمد فقط على حجم الصورة الأصلي ====
         bg = this.add.image(0, 0, 'city').setOrigin(0, 0);
-        bg.setDisplaySize(bg.width, bg.height);
 
         player = this.physics.add.sprite(bg.width/2, bg.height/2, 'player');
         player.setScale(0.11);
@@ -304,7 +302,6 @@
         allowControl = false;
         allowFire = false;
 
-        // Enemy & bullet groups
         this.enemyGroup = this.physics.add.group();
         this.bulletsGroup = this.physics.add.group();
         this.coinsGroup = this.physics.add.group();
@@ -313,13 +310,11 @@
 
         enemies = [];
 
-        // تصادم الرصاص مع الأعداء
         this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
           bullet.destroy();
           killEnemy(enemy, this);
         });
 
-        // تصادم اللاعب مع الأعداء (ممكن تضيف كود للخسارة هنا)
         this.physics.add.overlap(
           player,
           this.enemyGroup,
@@ -330,7 +325,6 @@
       }
 
       update(time, delta) {
-        // تحكم اللاعب فقط بعد انتهاء العداد!
         let vx = 0, vy = 0;
         if (allowControl && joyActive) {
           vx = joyDelta.x * 220;
@@ -356,7 +350,7 @@
         // ===== نظام الرماية التلقائي =====
         if (allowFire && time > lastFireTime + 500) {
           let nearest = null, minD = 999999;
-          let fireRadius = 320; // قطر متوسط حول اللاعب
+          let fireRadius = 320;
           for (let enemyObj of enemies) {
             let enemy = enemyObj.sprite;
             if (!enemy.active) continue;
@@ -399,27 +393,20 @@
 
     function killEnemy(enemy, scene) {
       enemy.disableBody(true, true);
-      // عملة صغيرة تسقط (wlc.png)
       let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
       coin.setScale(0.21);
       coin.setDepth(20);
       animateCoinToBalance(coin);
-      // زيادة الرصيد
       balanceValue += 0.00000100;
       setBalance(balanceValue);
       updateBalance(balanceValue);
     }
 
     function animateCoinToBalance(coin) {
-      // الحصول على مكان عداد الرصيد في الشاشة
       let balanceBar = document.getElementById('balance-bar');
       let rect = balanceBar.getBoundingClientRect();
-      // حساب نسبة المكان بالنسبة للعبة
       let targetX = rect.left + rect.width/2;
       let targetY = rect.top + rect.height/2;
-      let win = window;
-      let sx = win.scrollX || 0, sy = win.scrollY || 0;
-      // تحويل إحداثيات الشاشة لإحداثيات عالم فيزكس Phaser
       let gameRect = document.getElementById('game-container').getBoundingClientRect();
       let fx = (targetX - gameRect.left) * (coin.scene.cameras.main.worldView.width / gameRect.width) + coin.scene.cameras.main.worldView.x;
       let fy = (targetY - gameRect.top) * (coin.scene.cameras.main.worldView.height / gameRect.height) + coin.scene.cameras.main.worldView.y;
@@ -435,7 +422,6 @@
       });
     }
 
-    // ============ Joystick code (نصف الشاشة السفلي فقط) ============
     function setupJoystick() {
       const joystickBase = document.getElementById('joystick-base');
       const joystickStick = document.getElementById('joystick-stick');
@@ -472,7 +458,6 @@
         joyDelta.y = sy / maxDist;
       }
 
-      // Touch events only (no mouse), restrict to lower half
       window.addEventListener('touchstart', function(e) {
         let touch = e.touches[0];
         if (!joyActive && e.touches.length === 1 && touch.clientY > window.innerHeight / 2) {
@@ -512,7 +497,6 @@
       });
     }
 
-    // ============ Banner, Countdown, Enemies Logic =============
     function showStartBanner() {
       const banner = document.getElementById('start-banner');
       banner.classList.add('active');
@@ -559,7 +543,6 @@
       const scene = game.scene.scenes[0];
       let cityW = scene.bg.width;
       let cityH = scene.bg.height;
-      wave = 1;
       let wave1Timer = setInterval(() => {
         for(let i=0;i<4;i++) {
           let pos = randomEdgePosition(cityW, cityH);
@@ -573,7 +556,6 @@
 
       setTimeout(()=>{
         clearInterval(wave1Timer);
-        wave = 2;
         setInterval(()=>{
           for(let i=0;i<4;i++) {
             let pos = randomEdgePosition(cityW, cityH);
