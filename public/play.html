@@ -185,7 +185,7 @@
 
         // اطلاق النار التلقائي
         if (allowFire && time > lastFireTime + 500) {
-          let nearest = null, minD = 999999, fireRadius=120;
+          let nearest = null, minD = 999999, fireRadius=220;
           for (let enemyObj of enemies) {
             let enemy = enemyObj.sprite;
             if (!enemy.active) continue;
@@ -209,7 +209,7 @@
     function killEnemy(enemy, scene) {
       enemy.disableBody(true, true);
       let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
-      coin.setScale(0.5).setDepth(20);
+      coin.setScale(0.07).setDepth(20);
       animateCoinToBalance(coin);
       balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
     }
@@ -221,7 +221,7 @@
       let fx = (rect.left+rect.width/2-gameRect.left)*(coin.scene.cameras.main.worldView.width/gameRect.width)+coin.scene.cameras.main.worldView.x;
       let fy = (rect.top+rect.height/2-gameRect.top)*(coin.scene.cameras.main.worldView.height/gameRect.height)+coin.scene.cameras.main.worldView.y;
       coin.scene.tweens.add({
-        targets: coin, x: fx, y: fy, scale: 0.05, alpha: 0.3,
+        targets: coin, x: fx, y: fy, scale: 0.02, alpha: 0.3,
         duration: coinAnimDuration, ease: 'Cubic.easeIn', onComplete: () => { coin.destroy(); }
       });
     }
