@@ -167,74 +167,70 @@
         this.physics.add.overlap(player, this.enemyGroup, ()=>{/*خسارة*/}, null, this);
       }
       update(time, delta) {
-        let vx = 0, vy = 0;
-        if (allowControl && joyActive) {
-          vx = joyDelta.x * 220; vy = joyDelta.y * 220;
-        }
-        player.setVelocity(vx, vy);
-
-        for (let enemyObj of enemies) {
-  let enemy = enemyObj.sprite;
-  if (!enemy.active) continue;
-  let dx = player.x - enemy.x, dy = player.y - enemy.y;
-  let dist = Math.sqrt(dx*dx + dy*dy);
-
-  // الأعداء العاديين (type: 1)
-  if (enemyObj.type === 1) {
-    let speed = enemySpeed1;
-    if (dist > 2) enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
-    else enemy.setVelocity(0,0);
+  let vx = 0, vy = 0;
+  if (allowControl && joyActive) {
+    vx = joyDelta.x * 220; vy = joyDelta.y * 220;
   }
+  player.setVelocity(vx, vy);
 
-  // الأعداء المسلحين (type: 2)
-  else if (enemyObj.type === 2) {
-    let shootRange = 270; // مدى إطلاق النار
-    let wanderRadius = 70; // مساحة يتحرك فيها لما يصل للمدى
-    if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
-    if (!enemyObj.shooting) enemyObj.shooting = false;
+  for (let enemyObj of enemies) {
+    let enemy = enemyObj.sprite;
+    if (!enemy.active) continue;
+    let dx = player.x - enemy.x, dy = player.y - enemy.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
 
-    if (dist > shootRange) {
-      // يتحرك نحو اللاعب حتى يصل للمدى
-      let speed = enemySpeed2;
-      enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
-      enemyObj.shooting = false;
-    } else {
-      // داخل المدى: توقف عن الحركة، واطلق النار كل 3 ثواني
-      enemy.setVelocity(0,0);
+    // الأعداء العاديين (type: 1)
+    if (enemyObj.type === 1) {
+      let speed = enemySpeed1;
+      if (dist > 2) enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+      else enemy.setVelocity(0,0);
+    }
 
-      // اطلاق النار كل 3 ثواني
-      if (time - enemyObj.lastShotTime > 3000) {
-        enemyObj.shooting = true;
-        fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene);
-        enemyObj.lastShotTime = time;
-        // توقف عن الحركة أثناء إطلاق النار (تم بالفعل)
-        setTimeout(()=>{
-          enemyObj.shooting = false;
-        }, 900); // وقت التوقف أثناء إطلاق النار
-      }
+    // الأعداء المسلحين (type: 2)
+    else if (enemyObj.type === 2) {
+      let shootRange = 270;
+      let wanderRadius = 70;
+      if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
+      if (!enemyObj.shooting) enemyObj.shooting = false;
 
-      // إذا انتهى وقت إطلاق النار، يتحرك بشكل عشوائي داخل هذا المجال
-      if (!enemyObj.shooting) {
-        // حركة بسيطة يمين/يسار أو دوران
-        let angle = Math.random()*2*Math.PI;
-        let speed = 50;
-        enemy.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
-      }
+      if (dist > shootRange) {
+        let speed = enemySpeed2;
+        enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+        enemyObj.shooting = false;
+      } else {
+        enemy.setVelocity(0,0);
 
-        // اطلاق النار التلقائي
-        if (allowFire && time > lastFireTime + 500) {
-          let nearest = null, minD = 999999, fireRadius=220;
-          for (let enemyObj of enemies) {
-            let enemy = enemyObj.sprite;
-            if (!enemy.active) continue;
-            let dx = player.x - enemy.x, dy = player.y - enemy.y;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < fireRadius && dist < minD) {minD=dist; nearest=enemy;}
-          }
-          if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
+        if (time - enemyObj.lastShotTime > 3000) {
+          enemyObj.shooting = true;
+          fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene);
+          enemyObj.lastShotTime = time;
+          setTimeout(()=>{
+            enemyObj.shooting = false;
+          }, 900);
+        }
+
+        if (!enemyObj.shooting) {
+          let angle = Math.random()*2*Math.PI;
+          let speed = 50;
+          enemy.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
         }
       }
     }
+  }
+
+  // اطلاق النار التلقائي للاعب (*** خارج حلقة الأعداء ***)
+  if (allowFire && time > lastFireTime + 500) {
+    let nearest = null, minD = 999999, fireRadius=220;
+    for (let enemyObj of enemies) {
+      let enemy = enemyObj.sprite;
+      if (!enemy.active) continue;
+      let dx = player.x - enemy.x, dy = player.y - enemy.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < fireRadius && dist < minD) {minD=dist; nearest=enemy;}
+    }
+    if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
+  }
+}
 
     function fireBullet(px, py, tx, ty, scene) {
       let bullet = scene.bulletsGroup.create(px, py, 'kartoucha');
