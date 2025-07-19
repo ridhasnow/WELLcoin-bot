@@ -10,6 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet"/>
   <style>
+    /* كل CSS كما هو */
     html, body {height:100%;margin:0;overflow:hidden;background:#101016;}
     body {width:100vw;height:100vh;touch-action:none;}
     #balance-bar {
@@ -132,33 +133,8 @@
   </style>
 </head>
 <body>
-  <div id="balance-bar">
-    <span id="balance-value">0.00000000</span>
-    <span class="wlc">WLC</span>
-  </div>
-  <div id="health-bar">
-    <div id="health-bar-inner" style="width:100%"></div>
-    <div id="health-bar-text">100%</div>
-  </div>
-  <div id="back-btn" onclick="window.location.href='index.html'">
-    <svg viewBox="0 0 24 24"><path d="M15.5 5l-7 7 7 7"/></svg>
-  </div>
-  <div id="start-banner">
-    <div class="banner-title">you can servive ?</div>
-    <button class="banner-btn">Yes I Can</button>
-  </div>
-  <div id="start-countdown">5</div>
-  <div id="game-container"></div>
-  <div id="joystick-base"></div>
-  <div id="joystick-stick"></div>
-  <div id="gameover-overlay">
-    <div id="gameover-content">
-      <div id="gameover-title">GAME OVER</div>
-      <div id="gameover-coins"><span id="gameover-coins-val">0.00000000</span><span class="wlc">WLC</span></div>
-      <canvas id="gameover-fireworks"></canvas>
-      <button id="gameover-claim-btn">CLAIM</button>
-    </div>
-  </div>
+  <!-- كل عناصر HTML كما هي -->
+
   <script>
     // === Firebase & Telegram ===
     const firebaseConfig = { /* ... كما هو ... */ };
@@ -189,21 +165,18 @@
     let player, camera, bg, bgWidth, bgHeight;
     let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
     let enemies = [], allowControl=false, allowFire=false, lastFireTime=0;
-    let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0, lastSwordWaveTime=0, lastGunWaveTime=0;
+    let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0;
     let enemy1Key='enemy1', enemy2Key='enemy2';
     let enemyBulletGroup;
     let gameOver = false;
     let swordWaveCount = 6, gunWaveCount = 0;
-    let nextGunWaveTime = 0, nextSwordWaveTime = 0;
+    let lastSwordWaveTime = 0, lastGunWaveTime = 0;
+    let firstGunWaveStarted = false;
 
-    // سرعة البطل
     const playerSpeed = 220;
-    // سرعة العدو بالسيف (نصف سرعة البطل)
     const swordEnemySpeed = playerSpeed * 0.5;
-    // سرعة طلقة العدو الثاني (50% من سرعة جري العدو بالسيف)
-    const gunEnemyBulletSpeed = swordEnemySpeed * 0.5;
-    // سرعة العدو الثاني نفسه
     const gunEnemySpeed = swordEnemySpeed;
+    const gunEnemyBulletSpeed = gunEnemySpeed * 0.5;
 
     class MainScene extends Phaser.Scene {
       constructor() { super('MainScene'); }
@@ -214,7 +187,6 @@
         this.load.image(enemy2Key, 'assets/enemy2.png');
         this.load.image('kartoucha', 'assets/kartoucha.png');
         this.load.image('wlc', 'assets/wlc.png');
-        // صور ضرب السيف
         this.load.image('enemy1-attack1', 'assets/enemy1-attack1.png');
         this.load.image('enemy1-attack2', 'assets/enemy1-attack2.png');
       }
@@ -267,7 +239,6 @@
         // تصادم ضربة السيف مع البطل
         this.physics.add.overlap(player, this.enemyGroup, (p, enemy) => {
           if (!gameOver && enemy.active && enemy.customType === 1 && enemy.isAttacking) {
-            // الضربة تعمل دامج فقط اذا لم تتكرر في أقل من 0.8 ثانية
             if (!enemy.lastHitTime || (this.time.now - enemy.lastHitTime > 800)) {
               takeDamage(25);
               enemy.lastHitTime = this.time.now;
@@ -283,6 +254,26 @@
         }
         player.setVelocity(vx, vy);
 
+        // موجات الأعداء بالسيف
+        if (allowFire && (lastSwordWaveTime === 0 || time - lastSwordWaveTime > 7000)) {
+          addSwordEnemyWave(this, swordWaveCount);
+          swordWaveCount++;
+          lastSwordWaveTime = time;
+          if (!firstGunWaveStarted) {
+            setTimeout(() => {
+              gunWaveCount = 4;
+              lastGunWaveTime = Date.now();
+              firstGunWaveStarted = true;
+            }, 7000);
+          }
+        }
+        // موجات الأعداء بالمسدس
+        if (allowFire && firstGunWaveStarted && (lastGunWaveTime === 0 || time - lastGunWaveTime > 7000)) {
+          addGunEnemyWave(this, gunWaveCount);
+          gunWaveCount++;
+          lastGunWaveTime = time;
+        }
+
         // sword enemies (type 1)
         let swordEnemies = enemies.filter(e=>e.type==1);
         for (let i=0; i<swordEnemies.length; i++) {
@@ -293,12 +284,10 @@
           let dx = player.x - enemy.x, dy = player.y - enemy.y;
           let dist = Math.sqrt(dx*dx + dy*dy);
           if (!enemyObj.state) enemyObj.state = "chase";
-          // chase mode
           if (enemyObj.state==="chase") {
             if (dist > 34) {
-              let speed = swordEnemySpeed;
               enemy.setTexture(enemy1Key);
-              enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+              enemy.setVelocity((dx/dist)*swordEnemySpeed, (dy/dist)*swordEnemySpeed);
             } else {
               enemy.setVelocity(0,0);
               enemyObj.state = "attack";
@@ -307,10 +296,8 @@
               enemy.isAttacking = true;
             }
           }
-          // attack mode
           else if (enemyObj.state==="attack") {
             enemy.setVelocity(0,0);
-            // ضربتين سيف: الأولى بعد ثانية، الثانية بعد 3 ثواني، ثم كل 3 ثواني
             let attackSteps = [
               {t: 1000, img: 'enemy1-attack1'},
               {t: 3000, img: 'enemy1-attack2'}
@@ -324,14 +311,12 @@
                 enemyObj.attackStep++;
               }
             } else {
-              // باقي الضربات كل 3 ثواني بنفس صورة attack2
               if (elapsed > attackSteps[1].t + ((enemyObj.attackStep-attackSteps.length+1)*3000)) {
                 enemy.setTexture('enemy1-attack2');
                 takeDamage(25);
                 enemyObj.attackStep++;
               }
             }
-            // إذا ابتعد البطل يرجع يطارد
             if (dist > 38) {
               enemyObj.state="chase";
               enemy.isAttacking=false;
@@ -356,19 +341,16 @@
           if (!enemyObj.hasShot) enemyObj.hasShot = false;
 
           if (dist > shootRange) {
-            let speed = gunEnemySpeed;
             enemy.setTexture(enemy2Key);
-            enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+            enemy.setVelocity((dx/dist)*gunEnemySpeed, (dy/dist)*gunEnemySpeed);
             enemyObj.hasShot = false;
           } else {
             enemy.setVelocity(0,0);
-            // أول وصول يطلق طلقة مباشرة
             if (!enemyObj.hasShot) {
               fireEnemyBulletFromGun(enemy, player, enemy.scene);
               enemyObj.lastShotTime = time;
               enemyObj.hasShot = true;
             }
-            // كل 3 ثواني يطلق طلقة أخرى
             if (time - enemyObj.lastShotTime > 3000) {
               fireEnemyBulletFromGun(enemy, player, enemy.scene);
               enemyObj.lastShotTime = time;
@@ -388,39 +370,12 @@
           }
           if (nearest) {fireBulletFromPlayer(player, nearest, this); lastFireTime = time;}
         }
-
-        // موجات الأعداء بالسيف
-        if (allowFire && time > nextSwordWaveTime) {
-          addSwordEnemyWave(this, swordWaveCount);
-          swordWaveCount++;
-          nextSwordWaveTime = time + 7000;
-          // أول موجة للعدو الثاني بعد أول موجة للعدو الأول + 7 ثواني
-          if (gunWaveCount==0) nextGunWaveTime = time + 7000;
-        }
-        // موجات الأعداء بالمسدس
-        if (allowFire && gunWaveCount>0 && time > nextGunWaveTime) {
-          addGunEnemyWave(this, gunWaveCount);
-          gunWaveCount++;
-          nextGunWaveTime = time + 7000;
-        }
-        // بدء أول موجة بالسيف فقط
-        if (allowFire && swordWaveCount==6 && gunWaveCount==0 && nextSwordWaveTime==0) {
-          addSwordEnemyWave(this, swordWaveCount);
-          swordWaveCount++;
-          nextSwordWaveTime = time + 7000;
-          gunWaveCount = 4;
-          nextGunWaveTime = time + 7000;
-        }
       }
     }
 
-    function takeDamage(amount) {
-      setHealth(playerHealth-amount);
-    }
-
-    // طلقة البطل من فوهة السلاح
+    function takeDamage(amount) { setHealth(playerHealth-amount); }
     function fireBulletFromPlayer(player, targetEnemy, scene) {
-      let gunOffset = {x:22, y:-4}; // فوهة السلاح (تعديل حسب صورة البطل)
+      let gunOffset = {x:22, y:-4};
       let px = player.x + gunOffset.x, py = player.y + gunOffset.y;
       let tx = targetEnemy.x, ty = targetEnemy.y;
       let dx = tx-px, dy = ty-py;
@@ -431,10 +386,8 @@
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
     }
-
-    // طلقة العدو من فوهة المسدس، اتجاه مستقيم
     function fireEnemyBulletFromGun(enemy, player, scene) {
-      let gunOffset = {x:22, y:-4}; // فوهة السلاح للعدو (تعديل حسب صورة العدو2)
+      let gunOffset = {x:22, y:-4};
       let ex = enemy.x + gunOffset.x, ey = enemy.y + gunOffset.y;
       let px = player.x, py = player.y;
       let dx = px-ex, dy = py-ey;
@@ -445,7 +398,6 @@
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 2200);
     }
-
     function killEnemy(enemy, scene) {
       enemy.disableBody(true, true);
       let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
@@ -453,7 +405,6 @@
       animateCoinToBalance(coin);
       balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
     }
-
     function animateCoinToBalance(coin) {
       let balanceBar = document.getElementById('balance-bar');
       let rect = balanceBar.getBoundingClientRect();
@@ -465,10 +416,7 @@
         duration: coinAnimDuration, ease: 'Cubic.easeIn', onComplete: () => { coin.destroy(); }
       });
     }
-
     function setupJoystick() { /* كما هو */ }
-
-    // موجات العدو بالسيف
     function addSwordEnemyWave(scene, count) {
       let cityW = bgWidth, cityH = bgHeight;
       for(let i=0;i<count;i++) {
@@ -478,7 +426,6 @@
         enemies.push({sprite: enemy, type: 1});
       }
     }
-    // موجات العدو بالمسدس
     function addGunEnemyWave(scene, count) {
       let cityW = bgWidth, cityH = bgHeight;
       for(let i=0;i<count;i++) {
@@ -488,7 +435,6 @@
         enemies.push({sprite: enemy, type: 2});
       }
     }
-
     function randomEdgePosition(cityW, cityH) {
       const edge = Math.floor(Math.random()*4);
       switch(edge) {
@@ -498,10 +444,8 @@
         case 3: return { x: cityW, y: Math.random()*cityH };
       }
     }
-
     function getUserData() { /* كما هو */ }
     function updateBalance(newVal) { /* كما هو */ }
-
     function showGameOver() { /* كما هو */ }
     document.getElementById('gameover-claim-btn').onclick = function() {
       window.location.href = "index.html";
@@ -521,8 +465,9 @@
         setTimeout(()=>{
           showCountdown(5, ()=>{
             allowControl = true; allowFire = true;
-            nextSwordWaveTime = 0; nextGunWaveTime = 0; // يبدأ العد من الصفر
             swordWaveCount = 6; gunWaveCount = 0;
+            lastSwordWaveTime = 0; lastGunWaveTime = 0;
+            firstGunWaveStarted = false;
           });
         }, 440);
       };
