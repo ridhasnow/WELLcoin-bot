@@ -10,7 +10,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet"/>
   <style>
-    /* كل CSS كما هو */
     html, body {height:100%;margin:0;overflow:hidden;background:#101016;}
     body {width:100vw;height:100vh;touch-action:none;}
     #balance-bar {
@@ -133,11 +132,44 @@
   </style>
 </head>
 <body>
-  <!-- كل عناصر HTML كما هي -->
-
+  <div id="balance-bar">
+    <span id="balance-value">0.00000000</span>
+    <span class="wlc">WLC</span>
+  </div>
+  <div id="health-bar">
+    <div id="health-bar-inner" style="width:100%"></div>
+    <div id="health-bar-text">100%</div>
+  </div>
+  <div id="back-btn" onclick="window.location.href='index.html'">
+    <svg viewBox="0 0 24 24"><path d="M15.5 5l-7 7 7 7"/></svg>
+  </div>
+  <div id="start-banner">
+    <div class="banner-title">you can servive ?</div>
+    <button class="banner-btn">Yes I Can</button>
+  </div>
+  <div id="start-countdown">5</div>
+  <div id="game-container"></div>
+  <div id="joystick-base"></div>
+  <div id="joystick-stick"></div>
+  <div id="gameover-overlay">
+    <div id="gameover-content">
+      <div id="gameover-title">GAME OVER</div>
+      <div id="gameover-coins"><span id="gameover-coins-val">0.00000000</span><span class="wlc">WLC</span></div>
+      <canvas id="gameover-fireworks"></canvas>
+      <button id="gameover-claim-btn">CLAIM</button>
+    </div>
+  </div>
   <script>
     // === Firebase & Telegram ===
-    const firebaseConfig = { /* ... كما هو ... */ };
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+    };
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database(app);
 
@@ -145,7 +177,6 @@
     tg.ready();
     const userId = tg.initDataUnsafe?.user?.id;
 
-    // ==== HEALTH BAR ====
     let playerHealth = 100;
     function setHealth(val) {
       playerHealth = Math.max(0, Math.min(100, val));
@@ -153,30 +184,23 @@
       document.getElementById('health-bar-text').textContent = playerHealth + '%';
       if (playerHealth <= 0) showGameOver();
     }
-
     let totalBalance = 0;
     function setBalance(val) {
       document.getElementById('balance-value').textContent = Number(val).toFixed(8);
     }
-
     const gameWidth = window.innerWidth;
     const gameHeight = window.innerHeight;
 
     let player, camera, bg, bgWidth, bgHeight;
     let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
-    let enemies = [], allowControl=false, allowFire=false, lastFireTime=0;
-    let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0;
+    let enemies = [], enemySpeed1=0, enemySpeed2=0, allowControl=false, allowFire=false, lastFireTime=0;
+    let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0;
     let enemy1Key='enemy1', enemy2Key='enemy2';
     let enemyBulletGroup;
     let gameOver = false;
-    let swordWaveCount = 6, gunWaveCount = 0;
-    let lastSwordWaveTime = 0, lastGunWaveTime = 0;
-    let firstGunWaveStarted = false;
-
-    const playerSpeed = 220;
-    const swordEnemySpeed = playerSpeed * 0.5;
-    const gunEnemySpeed = swordEnemySpeed;
-    const gunEnemyBulletSpeed = gunEnemySpeed * 0.5;
+    let waveCount = 1;
+    let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
+    let enemy1AttackFrameIndex = 0;
 
     class MainScene extends Phaser.Scene {
       constructor() { super('MainScene'); }
@@ -218,6 +242,7 @@
         playerHealth = 100;
         setHealth(100);
         gameOver = false;
+        waveCount = 1;
 
         this.enemyGroup = this.physics.add.group();
         this.bulletsGroup = this.physics.add.group();
@@ -236,13 +261,24 @@
           bullet.destroy(); if (!gameOver) takeDamage(25);
         });
 
-        // تصادم ضربة السيف مع البطل
-        this.physics.add.overlap(player, this.enemyGroup, (p, enemy) => {
-          if (!gameOver && enemy.active && enemy.customType === 1 && enemy.isAttacking) {
-            if (!enemy.lastHitTime || (this.time.now - enemy.lastHitTime > 800)) {
-              takeDamage(25);
-              enemy.lastHitTime = this.time.now;
-            }
+        // تصادم العدو رقم 1 مع البطل (ضربة سيف)
+        this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
+          let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !e.dead);
+          if (!obj) return;
+          if (!obj.attackTimer) {
+            obj.attackTimer = this.time.addEvent({
+              delay: 1000,
+              callback: () => {
+                enemyAttackSword(obj, this, playerObj);
+                obj.attackTimer2 = this.time.addEvent({
+                  delay: 3000,
+                  loop: true,
+                  callback: () => {
+                    enemyAttackSword(obj, this, playerObj);
+                  }
+                });
+              }
+            });
           }
         }, null, this);
       }
@@ -250,161 +286,113 @@
         if (gameOver) return;
         let vx = 0, vy = 0;
         if (allowControl && joyActive) {
-          vx = joyDelta.x * playerSpeed; vy = joyDelta.y * playerSpeed;
+          vx = joyDelta.x * 220; vy = joyDelta.y * 220;
         }
         player.setVelocity(vx, vy);
 
-        // موجات الأعداء بالسيف
-        if (allowFire && (lastSwordWaveTime === 0 || time - lastSwordWaveTime > 7000)) {
-          addSwordEnemyWave(this, swordWaveCount);
-          swordWaveCount++;
-          lastSwordWaveTime = time;
-          if (!firstGunWaveStarted) {
-            setTimeout(() => {
-              gunWaveCount = 4;
-              lastGunWaveTime = Date.now();
-              firstGunWaveStarted = true;
-            }, 7000);
-          }
-        }
-        // موجات الأعداء بالمسدس
-        if (allowFire && firstGunWaveStarted && (lastGunWaveTime === 0 || time - lastGunWaveTime > 7000)) {
-          addGunEnemyWave(this, gunWaveCount);
-          gunWaveCount++;
-          lastGunWaveTime = time;
-        }
-
-        // sword enemies (type 1)
-        let swordEnemies = enemies.filter(e=>e.type==1);
-        for (let i=0; i<swordEnemies.length; i++) {
-          let enemyObj = swordEnemies[i];
+        // حركة الأعداء + منطق إطلاق النار للأعداء المسلحين
+        for (let enemyObj of enemies) {
           let enemy = enemyObj.sprite;
-          if (!enemy.active) continue;
-          enemy.customType = 1;
+          if (!enemy.active || enemyObj.dead) continue;
           let dx = player.x - enemy.x, dy = player.y - enemy.y;
           let dist = Math.sqrt(dx*dx + dy*dy);
-          if (!enemyObj.state) enemyObj.state = "chase";
-          if (enemyObj.state==="chase") {
-            if (dist > 34) {
-              enemy.setTexture(enemy1Key);
-              enemy.setVelocity((dx/dist)*swordEnemySpeed, (dy/dist)*swordEnemySpeed);
+
+          // عدو السيف (type: 1)
+          if (enemyObj.type === 1) {
+            let speed = (player.body && player.body.maxSpeed ? player.body.maxSpeed : 220) / 2;
+            enemySpeed1 = speed;
+            if (!enemyObj.attacking) {
+              if (dist > 35) enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+              else enemy.setVelocity(0,0);
             } else {
               enemy.setVelocity(0,0);
-              enemyObj.state = "attack";
-              enemyObj.attackStep = 0;
-              enemyObj.lastAttackTime = time;
-              enemy.isAttacking = true;
             }
           }
-          else if (enemyObj.state==="attack") {
-            enemy.setVelocity(0,0);
-            let attackSteps = [
-              {t: 1000, img: 'enemy1-attack1'},
-              {t: 3000, img: 'enemy1-attack2'}
-            ];
-            if (!enemyObj.attackStep) enemyObj.attackStep=0;
-            let elapsed = time - enemyObj.lastAttackTime;
-            if (enemyObj.attackStep < attackSteps.length) {
-              if (elapsed > attackSteps[enemyObj.attackStep].t) {
-                enemy.setTexture(attackSteps[enemyObj.attackStep].img);
-                takeDamage(25);
-                enemyObj.attackStep++;
-              }
+          // العدو الثاني (type: 2) إطلاق نار
+          else if (enemyObj.type === 2) {
+            let speed = enemySpeed1;
+            enemySpeed2 = speed;
+            let shootRange = 220; // نفس مدى البطل
+            if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
+            if (!enemyObj.hasShot) enemyObj.hasShot = false;
+            if (dist > shootRange) {
+              enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+              enemyObj.hasShot = false;
             } else {
-              if (elapsed > attackSteps[1].t + ((enemyObj.attackStep-attackSteps.length+1)*3000)) {
-                enemy.setTexture('enemy1-attack2');
-                takeDamage(25);
-                enemyObj.attackStep++;
+              enemy.setVelocity(0,0);
+              // أول طلقة بعد الاقتراب
+              if (!enemyObj.hasShot) {
+                enemyObj.hasShot = true;
+                enemyObj.lastShotTime = time;
+                setTimeout(() => {
+                  fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
+                }, 0);
+              }
+              // كل 3 ثواني طلقة جديدة
+              if (time - enemyObj.lastShotTime > 3000) {
+                enemyObj.lastShotTime = time;
+                fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
               }
             }
-            if (dist > 38) {
-              enemyObj.state="chase";
-              enemy.isAttacking=false;
-              enemy.setTexture(enemy1Key);
-              enemyObj.lastAttackTime = time;
-              enemyObj.attackStep=0;
-            }
           }
         }
-
-        // gun enemies (type 2)
-        let gunEnemies = enemies.filter(e=>e.type==2);
-        for (let i=0; i<gunEnemies.length; i++) {
-          let enemyObj = gunEnemies[i];
-          let enemy = enemyObj.sprite;
-          if (!enemy.active) continue;
-          enemy.customType = 2;
-          let dx = player.x - enemy.x, dy = player.y - enemy.y;
-          let dist = Math.sqrt(dx*dx + dy*dy);
-          let shootRange = 220;
-          if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
-          if (!enemyObj.hasShot) enemyObj.hasShot = false;
-
-          if (dist > shootRange) {
-            enemy.setTexture(enemy2Key);
-            enemy.setVelocity((dx/dist)*gunEnemySpeed, (dy/dist)*gunEnemySpeed);
-            enemyObj.hasShot = false;
-          } else {
-            enemy.setVelocity(0,0);
-            if (!enemyObj.hasShot) {
-              fireEnemyBulletFromGun(enemy, player, enemy.scene);
-              enemyObj.lastShotTime = time;
-              enemyObj.hasShot = true;
-            }
-            if (time - enemyObj.lastShotTime > 3000) {
-              fireEnemyBulletFromGun(enemy, player, enemy.scene);
-              enemyObj.lastShotTime = time;
-            }
-          }
-        }
-
         // اطلاق النار التلقائي للبطل
         if (allowFire && time > lastFireTime + 500) {
           let nearest = null, minD = 999999, fireRadius=220;
           for (let enemyObj of enemies) {
             let enemy = enemyObj.sprite;
-            if (!enemy.active) continue;
+            if (!enemy.active || enemyObj.dead) continue;
             let dx = player.x - enemy.x, dy = player.y - enemy.y;
             let dist = Math.sqrt(dx*dx + dy*dy);
             if (dist < fireRadius && dist < minD) {minD=dist; nearest=enemy;}
           }
-          if (nearest) {fireBulletFromPlayer(player, nearest, this); lastFireTime = time;}
+          if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
         }
       }
     }
 
-    function takeDamage(amount) { setHealth(playerHealth-amount); }
-    function fireBulletFromPlayer(player, targetEnemy, scene) {
-      let gunOffset = {x:22, y:-4};
-      let px = player.x + gunOffset.x, py = player.y + gunOffset.y;
-      let tx = targetEnemy.x, ty = targetEnemy.y;
-      let dx = tx-px, dy = ty-py;
-      let dist = Math.sqrt(dx*dx + dy*dy);
-      let bullet = scene.bulletsGroup.create(px, py, 'kartoucha');
-      bullet.setScale(0.06).setDepth(10); bullet.body.setAllowGravity(false);
-      let speed = 520;
+    function takeDamage(amount) {
+      setHealth(playerHealth-amount);
+    }
+
+    function fireBullet(px, py, tx, ty, scene) {
+      // الطلقة تخرج من فوهة السلاح بدقة و حجم مناسب جدا
+      let gunOffset = {x: 18, y: -8}; // ضبط حسب صورة البطل
+      let fromX = px + gunOffset.x;
+      let fromY = py + gunOffset.y;
+      let bullet = scene.bulletsGroup.create(fromX, fromY, 'kartoucha');
+      bullet.setScale(0.055).setDepth(10); bullet.body.setAllowGravity(false);
+      let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+      bullet.rotation = Math.atan2(dy, dx);
       setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
     }
-    function fireEnemyBulletFromGun(enemy, player, scene) {
-      let gunOffset = {x:22, y:-4};
-      let ex = enemy.x + gunOffset.x, ey = enemy.y + gunOffset.y;
-      let px = player.x, py = player.y;
-      let dx = px-ex, dy = py-ey;
-      let dist = Math.sqrt(dx*dx + dy*dy);
-      let bullet = scene.enemyBulletGroup.create(ex, ey, 'kartoucha');
-      bullet.setScale(0.06).setDepth(10); bullet.body.setAllowGravity(false);
-      let speed = gunEnemyBulletSpeed;
+
+    function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
+      // الطلقة تخرج من فوهة السلاح بدقة و حجم مناسب جدا للعدو الثاني فقط
+      let gunOffset = {x: 18, y: -8}; // ضبط حسب صورة العدو
+      let fromX = px + gunOffset.x;
+      let fromY = py + gunOffset.y;
+      let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
+      bullet.setScale(0.055).setDepth(10); bullet.body.setAllowGravity(false);
+
+      let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
+      let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2); // سرعة الطلقة اقل من سرعة جري العدو ب 50%
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+      bullet.rotation = Math.atan2(dy, dx);
       setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 2200);
     }
+
     function killEnemy(enemy, scene) {
       enemy.disableBody(true, true);
       let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
       coin.setScale(0.07).setDepth(20);
       animateCoinToBalance(coin);
       balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
+      let obj = enemies.find(e => e.sprite === enemy);
+      if (obj) obj.dead = true;
     }
+
     function animateCoinToBalance(coin) {
       let balanceBar = document.getElementById('balance-bar');
       let rect = balanceBar.getBoundingClientRect();
@@ -416,25 +404,66 @@
         duration: coinAnimDuration, ease: 'Cubic.easeIn', onComplete: () => { coin.destroy(); }
       });
     }
-    function setupJoystick() { /* كما هو */ }
-    function addSwordEnemyWave(scene, count) {
-      let cityW = bgWidth, cityH = bgHeight;
-      for(let i=0;i<count;i++) {
-        let pos = randomEdgePosition(cityW, cityH);
-        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy1Key);
-        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-        enemies.push({sprite: enemy, type: 1});
+
+    function setupJoystick() {
+      const joystickBase = document.getElementById('joystick-base');
+      const joystickStick = document.getElementById('joystick-stick');
+      let baseX=0, baseY=0, stickX=0, stickY=0;
+      function showJoystick(x, y) {
+        baseX = x - 55; baseY = y - 55; stickX = x - 28; stickY = y - 28;
+        joystickBase.style.left = baseX + 'px'; joystickBase.style.top = baseY + 'px';
+        joystickStick.style.left = stickX + 'px'; joystickStick.style.top = stickY + 'px';
+        joystickBase.style.display = 'block'; joystickStick.style.display = 'block';
       }
-    }
-    function addGunEnemyWave(scene, count) {
-      let cityW = bgWidth, cityH = bgHeight;
-      for(let i=0;i<count;i++) {
-        let pos = randomEdgePosition(cityW, cityH);
-        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
-        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-        enemies.push({sprite: enemy, type: 2});
+      function hideJoystick() { joystickBase.style.display = 'none'; joystickStick.style.display = 'none'; }
+      function moveJoystick(x, y) {
+        const dx = x - (baseX + 55), dy = y - (baseY + 55);
+        const dist = Math.sqrt(dx*dx + dy*dy); let angle = Math.atan2(dy, dx);
+        let maxDist = 44, useDist = Math.min(dist, maxDist);
+        let sx = Math.cos(angle) * useDist, sy = Math.sin(angle) * useDist;
+        joystickStick.style.left = (baseX + 27 + sx) + 'px'; joystickStick.style.top = (baseY + 27 + sy) + 'px';
+        joyDelta.x = sx / maxDist; joyDelta.y = sy / maxDist;
       }
+      window.addEventListener('touchstart', function(e) {
+        let touch = e.touches[0];
+        if (!joyActive && e.touches.length === 1 && touch.clientY > window.innerHeight / 2) {
+          joyActive = true; joystickPointerId = touch.identifier;
+          joyOrigin.x = touch.clientX; joyOrigin.y = touch.clientY; joyDelta.x = 0; joyDelta.y = 0;
+          showJoystick(joyOrigin.x, joyOrigin.y);
+        }
+      });
+      window.addEventListener('touchmove', function(e) {
+        if (joyActive) {
+          for (let i=0; i<e.touches.length; i++) {
+            if (e.touches[i].identifier === joystickPointerId) {
+              moveJoystick(e.touches[i].clientX, e.touches[i].clientY); break;
+            }
+          }
+        }
+      });
+      window.addEventListener('touchend', function(e) {
+        if (joyActive) {
+          let stillActive = false;
+          for (let i=0; i<e.touches.length; i++) {
+            if (e.touches[i].identifier === joystickPointerId) {stillActive = true; break;}
+          }
+          if (!stillActive) {joyActive = false; joyDelta.x = 0; joyDelta.y = 0; hideJoystick();}
+        }
+      });
     }
+
+    function showStartBanner() {document.getElementById('start-banner').classList.add('active');}
+    function hideStartBanner() {document.getElementById('start-banner').classList.remove('active');}
+    function showCountdown(sec, after) {
+      const cd = document.getElementById('start-countdown');
+      cd.textContent = sec; cd.style.display = 'block';
+      let s = sec;
+      let interval = setInterval(() => {
+        s--; cd.textContent = (s>0) ? s : "00";
+        if (s<=0) {clearInterval(interval); setTimeout(()=>{cd.style.display='none';allowFire=true;if(after)after();},700);}
+      }, 1000);
+    }
+
     function randomEdgePosition(cityW, cityH) {
       const edge = Math.floor(Math.random()*4);
       switch(edge) {
@@ -444,13 +473,150 @@
         case 3: return { x: cityW, y: Math.random()*cityH };
       }
     }
-    function getUserData() { /* كما هو */ }
-    function updateBalance(newVal) { /* كما هو */ }
-    function showGameOver() { /* كما هو */ }
+
+    function addEnemyWave(scene) {
+      let cityW = bgWidth, cityH = bgHeight;
+      // أعداء السيف في هذه الموجة
+      let n_enemy1 = 6 + (waveCount-1);
+      // أعداء المسدس في هذه الموجة
+      let n_enemy2 = 4 + (waveCount-1);
+
+      // أعداء السيف يدخلون أولا
+      let enemy1List = [];
+      for(let i=0;i<n_enemy1;i++) {
+        let pos = randomEdgePosition(cityW, cityH);
+        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy1Key);
+        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
+        enemy.attackFrameIndex = 0;
+        enemy.attacking = false;
+        enemies.push({sprite: enemy, type: 1, attacking: false, attackFrameIndex: 0, dead: false});
+        enemy1List.push(enemy);
+      }
+      function spawnEnemy2Wave() {
+        for(let i=0;i<n_enemy2;i++) {
+          let pos = randomEdgePosition(cityW, cityH);
+          let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
+          enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
+          enemies.push({sprite: enemy, type: 2, dead: false});
+        }
+      }
+
+      // بعد 7 ثواني من دخول عدو السيف تظهر موجة العدو الثاني
+      setTimeout(spawnEnemy2Wave, 7000);
+
+      waveCount++;
+      // موجة جديدة بعد 7 ثواني أخرى
+      setTimeout(() => {
+        if (!gameOver) addEnemyWave(scene);
+      }, 7000);
+    }
+
+    function startEnemyWaves() {
+      const scene = game.scene.scenes[0];
+      lastEnemyWaveTime = 0;
+      addEnemyWave(scene);
+    }
+
+    function getUserData() {
+      return db.ref("users/" + userId).once("value").then(snap => snap.val() || {});
+    }
+    function updateBalance(newVal) {
+      db.ref("users/" + userId).once("value").then(snap => {
+        let user = snap.val() || {};
+        let mainBalance = parseFloat(user.balance || 0);
+        let newTotal = (mainBalance + newVal).toFixed(8);
+        db.ref("users/" + userId).update({
+          balance: newTotal,
+          minigame_balance: newVal
+        });
+      });
+    }
+
+    // === GAME OVER UI ===
+    function showGameOver() {
+      gameOver = true;
+      allowControl = false;
+      allowFire = false;
+      setTimeout(()=>{
+        document.getElementById('gameover-coins-val').textContent = Number(balanceValue).toFixed(8);
+        document.getElementById('gameover-overlay').style.display = 'flex';
+        gameoverFireworks();
+      }, 500);
+    }
     document.getElementById('gameover-claim-btn').onclick = function() {
       window.location.href = "index.html";
     };
-    function gameoverFireworks() { /* كما هو */ }
+
+    function gameoverFireworks() {
+      let canvas = document.getElementById('gameover-fireworks');
+      let ctx = canvas.getContext('2d');
+      let w = canvas.width = 300, h = canvas.height = 75;
+      let sparks = [];
+      for(let i=0;i<25;i++) {
+        let angle = Math.random()*2*Math.PI;
+        let speed = 2+Math.random()*3;
+        sparks.push({
+          x: w/2, y: h/2,
+          vx: Math.cos(angle)*speed,
+          vy: Math.sin(angle)*speed,
+          alpha: 1,
+          color: `rgba(${220+Math.random()*30},${170+Math.random()*60},0,1)`
+        });
+      }
+      let coins = [];
+      for(let i=0;i<8;i++) {
+        coins.push({
+          x: w/2, y: h/2,
+          vx: Math.cos(i/8*2*Math.PI)*2.5 + (Math.random()-0.5)*1.2,
+          vy: Math.sin(i/8*2*Math.PI)*2.5 + (Math.random()-0.5)*1.2,
+          alpha: 1,
+          r: 9 + Math.random()*3
+        });
+      }
+      function draw() {
+        ctx.clearRect(0,0,w,h);
+        for(let s of sparks) {
+          ctx.beginPath();
+          ctx.arc(s.x,s.y,2,0,2*Math.PI);
+          ctx.fillStyle = s.color;
+          ctx.globalAlpha = s.alpha;
+          ctx.fill();
+          s.x += s.vx;s.y += s.vy;s.alpha -= 0.015;
+        }
+        for(let c of coins) {
+          ctx.beginPath();
+          ctx.arc(c.x,c.y,c.r,0,2*Math.PI);
+          ctx.fillStyle = "gold";
+          ctx.globalAlpha = c.alpha;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          c.x += c.vx;c.y += c.vy;c.alpha -= 0.01;
+        }
+        sparks = sparks.filter(s=>s.alpha>0.1);
+        coins = coins.filter(c=>c.alpha>0.08);
+        if(sparks.length+coins.length>0) requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // حركة ضرب السيف للعدو رقم 1
+    function enemyAttackSword(enemyObj, scene, playerObj) {
+      if (enemyObj.dead) return;
+      // أظهر فريم ضرب السيف
+      let enemy = enemyObj.sprite;
+      enemyObj.attacking = true;
+      enemy.setTexture(enemy1AttackFrames[enemyObj.attackFrameIndex % 2].replace('.png',''));
+      enemyObj.attackFrameIndex = (enemyObj.attackFrameIndex + 1) % 2;
+      // بعد فريم قصير يرجع للصورة الأصلية
+      setTimeout(() => {
+        if (enemy.active)
+          enemy.setTexture(enemy1Key);
+        enemyObj.attacking = false;
+      }, 350);
+      // أضرب البطل إذا كان قريب
+      let dx = playerObj.x - enemy.x, dy = playerObj.y - enemy.y, dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 40 && !gameOver) takeDamage(25);
+    }
 
     window.onload = function() {
       if (!userId) return;
@@ -464,10 +630,7 @@
         hideStartBanner();
         setTimeout(()=>{
           showCountdown(5, ()=>{
-            allowControl = true; allowFire = true;
-            swordWaveCount = 6; gunWaveCount = 0;
-            lastSwordWaveTime = 0; lastGunWaveTime = 0;
-            firstGunWaveStarted = false;
+            allowControl = true; allowFire = true; startEnemyWaves();
           });
         }, 440);
       };
