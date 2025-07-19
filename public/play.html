@@ -4,11 +4,8 @@
   <meta charset="UTF-8" />
   <title>Play Game</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
-  <!-- Phaser.js -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.js"></script>
-  <!-- Telegram WebApp JS -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet"/>
@@ -26,6 +23,27 @@
       letter-spacing: 0.7px; backdrop-filter: blur(2.5px); user-select: none;
     }
     #balance-bar .wlc {font-size:15px;margin-left:8px;color:gold;font-weight:bold;letter-spacing:1.2px;filter:drop-shadow(0 0 5px #fff70073);}
+    #health-bar {
+      position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
+      width: 200px; height: 18px;
+      background: #2c2020cf;
+      border-radius: 9px; border: 1.6px solid #a00a;
+      box-shadow: 0 2px 8px 2px #a003;
+      z-index: 12; overflow: hidden;
+      display: flex; align-items: center;
+    }
+    #health-bar-inner {
+      height: 100%; background: linear-gradient(90deg,#f33,#d00 70%,#f99);
+      border-radius: 9px; transition: width 0.3s;
+      box-shadow: 0 2px 8px 1px #f004;
+    }
+    #health-bar-text {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+      font-family: 'VT323','Press Start 2P',monospace;
+      font-size: 15px; color: #fff; font-weight: bold; letter-spacing:1px;
+      text-shadow:0 1px 4px #a003;
+      pointer-events:none;
+    }
     #game-container {width:100vw;height:100vh;overflow:hidden;position:absolute;left:0;top:0;background:#101016;}
     #joystick-base, #joystick-stick {
       position: absolute; z-index: 10; pointer-events:none; touch-action:none; display:none;
@@ -68,12 +86,59 @@
     }
     #back-btn:hover {background:rgba(60,60,60,0.99);}
     #back-btn svg {width:27px;height:27px;fill:#fff;filter:drop-shadow(0 1px 2px #0008);pointer-events:none;}
+    #gameover-overlay {
+      position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:99;
+      background:rgba(180,0,0,0.80);backdrop-filter:blur(5px);
+      display:none;align-items:center;justify-content:center;flex-direction:column;
+      animation: showOverlay 0.7s cubic-bezier(.66,-0.08,.56,1.01);
+    }
+    @keyframes showOverlay {
+      0% {opacity:0;}
+      100% {opacity:1;}
+    }
+    #gameover-content {
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      margin-top:-55px;position:relative;
+    }
+    #gameover-title {
+      font-family:'Press Start 2P', 'VT323', monospace;
+      font-size:2.2rem; font-weight:bold; color:#fff;
+      text-shadow:0 1px 16px #a00, 0 0 18px #fff7;
+      margin-bottom:25px; letter-spacing:2px;
+    }
+    #gameover-coins {
+      font-family:'VT323','Press Start 2P',monospace;
+      font-size:2.5rem; color:gold; font-weight:bold;
+      margin-bottom:17px; letter-spacing:2px;
+      text-shadow:0 1px 16px #f80,0 0 12px #fff;
+      display:flex;align-items:center;justify-content:center;
+    }
+    #gameover-coins .wlc {font-size:1.3rem;margin-left:7px;color:gold;font-weight:bold;filter:drop-shadow(0 0 5px #fff70073);}
+    #gameover-claim-btn {
+      margin-top:30px;padding:12px 44px;
+      font-size:1.4rem;
+      background:linear-gradient(90deg,#f33,#d00 70%,#f99);
+      color:#fff;border:0;border-radius:14px;
+      box-shadow:0 2px 15px 1px #a003,0 1px 0 #fff8;
+      font-family:'Press Start 2P','VT323','Consolas','monospace','Segoe UI',sans-serif;
+      font-weight:bold;letter-spacing:1.5px;cursor:pointer;
+      transition:background 0.11s,transform 0.11s;
+    }
+    #gameover-claim-btn:active {background:#a00;transform:scale(0.97);}
+    #gameover-fireworks {
+      position:absolute;top:95px;left:50%;transform:translateX(-50%);
+      width:300px;height:75px;pointer-events:none;overflow:visible;z-index:1;
+    }
   </style>
 </head>
 <body>
   <div id="balance-bar">
     <span id="balance-value">0.00000000</span>
     <span class="wlc">WLC</span>
+  </div>
+  <div id="health-bar">
+    <div id="health-bar-inner" style="width:100%"></div>
+    <div id="health-bar-text">100%</div>
   </div>
   <div id="back-btn" onclick="window.location.href='index.html'">
     <svg viewBox="0 0 24 24"><path d="M15.5 5l-7 7 7 7"/></svg>
@@ -86,6 +151,14 @@
   <div id="game-container"></div>
   <div id="joystick-base"></div>
   <div id="joystick-stick"></div>
+  <div id="gameover-overlay">
+    <div id="gameover-content">
+      <div id="gameover-title">GAME OVER</div>
+      <div id="gameover-coins"><span id="gameover-coins-val">0.00000000</span><span class="wlc">WLC</span></div>
+      <canvas id="gameover-fireworks"></canvas>
+      <button id="gameover-claim-btn">CLAIM</button>
+    </div>
+  </div>
   <script>
     // === Firebase & Telegram ===
     const firebaseConfig = {
@@ -104,20 +177,32 @@
     tg.ready();
     const userId = tg.initDataUnsafe?.user?.id;
 
+    // ==== HEALTH BAR ====
+    let playerHealth = 100;
+    function setHealth(val) {
+      playerHealth = Math.max(0, Math.min(100, val));
+      document.getElementById('health-bar-inner').style.width = playerHealth + '%';
+      document.getElementById('health-bar-text').textContent = playerHealth + '%';
+      if (playerHealth <= 0) showGameOver();
+    }
+
+    // ==== BALANCE ====
     let totalBalance = 0;
     function setBalance(val) {
       document.getElementById('balance-value').textContent = Number(val).toFixed(8);
     }
 
-    // Phaser Game Config
+    // ==== GAME VARIABLES ====
     const gameWidth = window.innerWidth;
     const gameHeight = window.innerHeight;
 
     let player, camera, bg, bgWidth, bgHeight;
     let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
     let enemies = [], enemySpeed1=130, enemySpeed2=165, allowControl=false, allowFire=false, lastFireTime=0;
-    let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0;
+    let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0;
     let enemy1Key='enemy1', enemy2Key='enemy2';
+    let enemyBulletGroup;
+    let gameOver = false;
 
     class MainScene extends Phaser.Scene {
       constructor() { super('MainScene'); }
@@ -154,20 +239,31 @@
         balanceValue = 0;
         allowControl = false;
         allowFire = false;
+        playerHealth = 100;
+        setHealth(100);
+        gameOver = false;
 
         this.enemyGroup = this.physics.add.group();
         this.bulletsGroup = this.physics.add.group();
+        this.enemyBulletGroup = this.physics.add.group();
         this.coinsGroup = this.physics.add.group();
-        bulletsGroup = this.bulletsGroup; coinsGroup = this.coinsGroup;
+        bulletsGroup = this.bulletsGroup; coinsGroup = this.coinsGroup; enemyBulletGroup = this.enemyBulletGroup;
         enemies = [];
 
+        // تصادم طلقة البطل مع العدو
         this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
           bullet.destroy(); killEnemy(enemy, this);
         });
+
+        // تصادم طلقة العدو مع البطل
+        this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
+          bullet.destroy(); if (!gameOver) takeDamage(25);
+        });
+
         this.physics.add.overlap(player, this.enemyGroup, ()=>{/*خسارة*/}, null, this);
       }
       update(time, delta) {
-        // حركة اللاعب
+        if (gameOver) return;
         let vx = 0, vy = 0;
         if (allowControl && joyActive) {
           vx = joyDelta.x * 220; vy = joyDelta.y * 220;
@@ -190,38 +286,32 @@
 
           // الأعداء المسلحين (type: 2)
           else if (enemyObj.type === 2) {
-            let shootRange = 270;
+            let shootRange = 220; // نفس مدى البطل
             if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
-            if (!enemyObj.shooting) enemyObj.shooting = false;
+            if (!enemyObj.hasShot) enemyObj.hasShot = false;
 
             if (dist > shootRange) {
               let speed = enemySpeed2;
               enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
-              enemyObj.shooting = false;
+              enemyObj.hasShot = false;
             } else {
               enemy.setVelocity(0,0);
-
-              // يطلق رصاصة كل 3 ثواني
-              if (time - enemyObj.lastShotTime > 3000) {
-                enemyObj.shooting = true;
+              // أول وصول يطلق طلقة مباشرة
+              if (!enemyObj.hasShot) {
                 fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene);
                 enemyObj.lastShotTime = time;
-                setTimeout(()=>{
-                  enemyObj.shooting = false;
-                }, 900);
+                enemyObj.hasShot = true;
               }
-
-              // لما لا يطلق، يتحرك بشكل عشوائي داخل المساحة
-              if (!enemyObj.shooting) {
-                let angle = Math.random()*2*Math.PI;
-                let speed = 50;
-                enemy.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
+              // كل 3 ثواني يطلق طلقة أخرى
+              if (time - enemyObj.lastShotTime > 3000) {
+                fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene);
+                enemyObj.lastShotTime = time;
               }
             }
           }
         }
 
-        // اطلاق النار التلقائي للاعب (*** خارج حلقة الأعداء ***)
+        // اطلاق النار التلقائي للبطل
         if (allowFire && time > lastFireTime + 500) {
           let nearest = null, minD = 999999, fireRadius=220;
           for (let enemyObj of enemies) {
@@ -233,7 +323,17 @@
           }
           if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
         }
+
+        // زيادة عدد الأعداء كل 7 ثواني
+        if (allowFire && time - lastEnemyWaveTime > 7000) {
+          addEnemyWave(this);
+          lastEnemyWaveTime = time;
+        }
       }
+    }
+
+    function takeDamage(amount) {
+      setHealth(playerHealth-amount);
     }
 
     function fireBullet(px, py, tx, ty, scene) {
@@ -245,9 +345,9 @@
     }
 
     function fireEnemyBullet(px, py, tx, ty, scene) {
-      let bullet = scene.bulletsGroup.create(px, py, 'kartoucha');
+      let bullet = scene.enemyBulletGroup.create(px, py, 'kartoucha');
       bullet.setScale(0.1).setDepth(10); bullet.body.setAllowGravity(false);
-      let dx = tx-px, dy = ty-py, dist = Math.sqrt(dx*dx + dy*dy), speed = 220; // بطيئة
+      let dx = tx-px, dy = ty-py, dist = Math.sqrt(dx*dx + dy*dy), speed = 220;
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 2200);
     }
@@ -293,7 +393,6 @@
       }
       window.addEventListener('touchstart', function(e) {
         let touch = e.touches[0];
-        // joystick في النصف السفلي فقط
         if (!joyActive && e.touches.length === 1 && touch.clientY > window.innerHeight / 2) {
           joyActive = true; joystickPointerId = touch.identifier;
           joyOrigin.x = touch.clientX; joyOrigin.y = touch.clientY; joyDelta.x = 0; joyDelta.y = 0;
@@ -342,34 +441,29 @@
       }
     }
 
+    function addEnemyWave(scene) {
+      // نفس منطقك الحالي لكن كل موجة تضيف عدد جديد حسب الموجود
+      let cityW = bgWidth, cityH = bgHeight;
+      for(let i=0;i<4;i++) {
+        let pos = randomEdgePosition(cityW, cityH);
+        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy1Key);
+        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
+        enemies.push({sprite: enemy, type: 1});
+      }
+      for(let i=0;i<6;i++) {
+        let pos = randomEdgePosition(cityW, cityH);
+        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
+        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
+        enemies.push({sprite: enemy, type: 2});
+      }
+    }
+
     function startEnemyWaves() {
       const scene = game.scene.scenes[0];
       let cityW = bgWidth, cityH = bgHeight;
-      let wave1Timer = setInterval(() => {
-        for(let i=0;i<4;i++) {
-          let pos = randomEdgePosition(cityW, cityH);
-          let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy1Key);
-          enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-          enemies.push({sprite: enemy, type: 1});
-        }
-      }, 5000);
-      setTimeout(()=>{
-        clearInterval(wave1Timer);
-        setInterval(()=>{
-          for(let i=0;i<4;i++) {
-            let pos = randomEdgePosition(cityW, cityH);
-            let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy1Key);
-            enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-            enemies.push({sprite: enemy, type: 1});
-          }
-          for(let i=0;i<6;i++) {
-            let pos = randomEdgePosition(cityW, cityH);
-            let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
-            enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-            enemies.push({sprite: enemy, type: 2});
-          }
-        }, 4000);
-      }, 55000);
+      lastEnemyWaveTime = 0;
+      // أول موجة
+      addEnemyWave(scene);
     }
 
     function getUserData() {
@@ -385,6 +479,73 @@
           minigame_balance: newVal
         });
       });
+    }
+
+    // === GAME OVER UI ===
+    function showGameOver() {
+      gameOver = true;
+      allowControl = false;
+      allowFire = false;
+      setTimeout(()=>{
+        document.getElementById('gameover-coins-val').textContent = Number(balanceValue).toFixed(8);
+        document.getElementById('gameover-overlay').style.display = 'flex';
+        gameoverFireworks();
+      }, 500);
+    }
+    document.getElementById('gameover-claim-btn').onclick = function() {
+      window.location.href = "index.html";
+    };
+
+    function gameoverFireworks() {
+      let canvas = document.getElementById('gameover-fireworks');
+      let ctx = canvas.getContext('2d');
+      let w = canvas.width = 300, h = canvas.height = 75;
+      let sparks = [];
+      for(let i=0;i<25;i++) {
+        let angle = Math.random()*2*Math.PI;
+        let speed = 2+Math.random()*3;
+        sparks.push({
+          x: w/2, y: h/2,
+          vx: Math.cos(angle)*speed,
+          vy: Math.sin(angle)*speed,
+          alpha: 1,
+          color: `rgba(${220+Math.random()*30},${170+Math.random()*60},0,1)`
+        });
+      }
+      let coins = [];
+      for(let i=0;i<8;i++) {
+        coins.push({
+          x: w/2, y: h/2,
+          vx: Math.cos(i/8*2*Math.PI)*2.5 + (Math.random()-0.5)*1.2,
+          vy: Math.sin(i/8*2*Math.PI)*2.5 + (Math.random()-0.5)*1.2,
+          alpha: 1,
+          r: 9 + Math.random()*3
+        });
+      }
+      function draw() {
+        ctx.clearRect(0,0,w,h);
+        for(let s of sparks) {
+          ctx.beginPath();
+          ctx.arc(s.x,s.y,2,0,2*Math.PI);
+          ctx.fillStyle = s.color;
+          ctx.globalAlpha = s.alpha;
+          ctx.fill();
+          s.x += s.vx;s.y += s.vy;s.alpha -= 0.015;
+        }
+        for(let c of coins) {
+          ctx.beginPath();
+          ctx.arc(c.x,c.y,c.r,0,2*Math.PI);
+          ctx.fillStyle = "gold";
+          ctx.globalAlpha = c.alpha;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          c.x += c.vx;c.y += c.vy;c.alpha -= 0.01;
+        }
+        sparks = sparks.filter(s=>s.alpha>0.1);
+        coins = coins.filter(c=>c.alpha>0.08);
+        if(sparks.length+coins.length>0) requestAnimationFrame(draw);
+      }
+      draw();
     }
 
     window.onload = function() {
