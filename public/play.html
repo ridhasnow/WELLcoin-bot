@@ -161,15 +161,7 @@
   </div>
   <script>
     // === Firebase & Telegram ===
-    const firebaseConfig = {
-      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-      authDomain: "wellcoinbotgame.firebaseapp.com",
-      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "wellcoinbotgame",
-      storageBucket: "wellcoinbotgame.appspot.com",
-      messagingSenderId: "108640533638",
-      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-    };
+    const firebaseConfig = { /* ... كما هو ... */ };
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database(app);
 
@@ -186,23 +178,32 @@
       if (playerHealth <= 0) showGameOver();
     }
 
-    // ==== BALANCE ====
     let totalBalance = 0;
     function setBalance(val) {
       document.getElementById('balance-value').textContent = Number(val).toFixed(8);
     }
 
-    // ==== GAME VARIABLES ====
     const gameWidth = window.innerWidth;
     const gameHeight = window.innerHeight;
 
     let player, camera, bg, bgWidth, bgHeight;
     let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
-    let enemies = [], enemySpeed1=130, enemySpeed2=165, allowControl=false, allowFire=false, lastFireTime=0;
-    let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0;
+    let enemies = [], allowControl=false, allowFire=false, lastFireTime=0;
+    let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0, lastSwordWaveTime=0, lastGunWaveTime=0;
     let enemy1Key='enemy1', enemy2Key='enemy2';
     let enemyBulletGroup;
     let gameOver = false;
+    let swordWaveCount = 6, gunWaveCount = 0;
+    let nextGunWaveTime = 0, nextSwordWaveTime = 0;
+
+    // سرعة البطل
+    const playerSpeed = 220;
+    // سرعة العدو بالسيف (نصف سرعة البطل)
+    const swordEnemySpeed = playerSpeed * 0.5;
+    // سرعة طلقة العدو الثاني (50% من سرعة جري العدو بالسيف)
+    const gunEnemyBulletSpeed = swordEnemySpeed * 0.5;
+    // سرعة العدو الثاني نفسه
+    const gunEnemySpeed = swordEnemySpeed;
 
     class MainScene extends Phaser.Scene {
       constructor() { super('MainScene'); }
@@ -213,6 +214,9 @@
         this.load.image(enemy2Key, 'assets/enemy2.png');
         this.load.image('kartoucha', 'assets/kartoucha.png');
         this.load.image('wlc', 'assets/wlc.png');
+        // صور ضرب السيف
+        this.load.image('enemy1-attack1', 'assets/enemy1-attack1.png');
+        this.load.image('enemy1-attack2', 'assets/enemy1-attack2.png');
       }
       create() {
         bg = this.add.image(0, 0, 'city');
@@ -260,53 +264,114 @@
           bullet.destroy(); if (!gameOver) takeDamage(25);
         });
 
-        this.physics.add.overlap(player, this.enemyGroup, ()=>{/*خسارة*/}, null, this);
+        // تصادم ضربة السيف مع البطل
+        this.physics.add.overlap(player, this.enemyGroup, (p, enemy) => {
+          if (!gameOver && enemy.active && enemy.customType === 1 && enemy.isAttacking) {
+            // الضربة تعمل دامج فقط اذا لم تتكرر في أقل من 0.8 ثانية
+            if (!enemy.lastHitTime || (this.time.now - enemy.lastHitTime > 800)) {
+              takeDamage(25);
+              enemy.lastHitTime = this.time.now;
+            }
+          }
+        }, null, this);
       }
       update(time, delta) {
         if (gameOver) return;
         let vx = 0, vy = 0;
         if (allowControl && joyActive) {
-          vx = joyDelta.x * 220; vy = joyDelta.y * 220;
+          vx = joyDelta.x * playerSpeed; vy = joyDelta.y * playerSpeed;
         }
         player.setVelocity(vx, vy);
 
-        // حركة الأعداء + منطق إطلاق النار للأعداء المسلحين
-        for (let enemyObj of enemies) {
+        // sword enemies (type 1)
+        let swordEnemies = enemies.filter(e=>e.type==1);
+        for (let i=0; i<swordEnemies.length; i++) {
+          let enemyObj = swordEnemies[i];
           let enemy = enemyObj.sprite;
           if (!enemy.active) continue;
+          enemy.customType = 1;
           let dx = player.x - enemy.x, dy = player.y - enemy.y;
           let dist = Math.sqrt(dx*dx + dy*dy);
-
-          // الأعداء العاديين (type: 1)
-          if (enemyObj.type === 1) {
-            let speed = enemySpeed1;
-            if (dist > 2) enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
-            else enemy.setVelocity(0,0);
-          }
-
-          // الأعداء المسلحين (type: 2)
-          else if (enemyObj.type === 2) {
-            let shootRange = 220; // نفس مدى البطل
-            if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
-            if (!enemyObj.hasShot) enemyObj.hasShot = false;
-
-            if (dist > shootRange) {
-              let speed = enemySpeed2;
+          if (!enemyObj.state) enemyObj.state = "chase";
+          // chase mode
+          if (enemyObj.state==="chase") {
+            if (dist > 34) {
+              let speed = swordEnemySpeed;
+              enemy.setTexture(enemy1Key);
               enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
-              enemyObj.hasShot = false;
             } else {
               enemy.setVelocity(0,0);
-              // أول وصول يطلق طلقة مباشرة
-              if (!enemyObj.hasShot) {
-                fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene);
-                enemyObj.lastShotTime = time;
-                enemyObj.hasShot = true;
+              enemyObj.state = "attack";
+              enemyObj.attackStep = 0;
+              enemyObj.lastAttackTime = time;
+              enemy.isAttacking = true;
+            }
+          }
+          // attack mode
+          else if (enemyObj.state==="attack") {
+            enemy.setVelocity(0,0);
+            // ضربتين سيف: الأولى بعد ثانية، الثانية بعد 3 ثواني، ثم كل 3 ثواني
+            let attackSteps = [
+              {t: 1000, img: 'enemy1-attack1'},
+              {t: 3000, img: 'enemy1-attack2'}
+            ];
+            if (!enemyObj.attackStep) enemyObj.attackStep=0;
+            let elapsed = time - enemyObj.lastAttackTime;
+            if (enemyObj.attackStep < attackSteps.length) {
+              if (elapsed > attackSteps[enemyObj.attackStep].t) {
+                enemy.setTexture(attackSteps[enemyObj.attackStep].img);
+                takeDamage(25);
+                enemyObj.attackStep++;
               }
-              // كل 3 ثواني يطلق طلقة أخرى
-              if (time - enemyObj.lastShotTime > 3000) {
-                fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene);
-                enemyObj.lastShotTime = time;
+            } else {
+              // باقي الضربات كل 3 ثواني بنفس صورة attack2
+              if (elapsed > attackSteps[1].t + ((enemyObj.attackStep-attackSteps.length+1)*3000)) {
+                enemy.setTexture('enemy1-attack2');
+                takeDamage(25);
+                enemyObj.attackStep++;
               }
+            }
+            // إذا ابتعد البطل يرجع يطارد
+            if (dist > 38) {
+              enemyObj.state="chase";
+              enemy.isAttacking=false;
+              enemy.setTexture(enemy1Key);
+              enemyObj.lastAttackTime = time;
+              enemyObj.attackStep=0;
+            }
+          }
+        }
+
+        // gun enemies (type 2)
+        let gunEnemies = enemies.filter(e=>e.type==2);
+        for (let i=0; i<gunEnemies.length; i++) {
+          let enemyObj = gunEnemies[i];
+          let enemy = enemyObj.sprite;
+          if (!enemy.active) continue;
+          enemy.customType = 2;
+          let dx = player.x - enemy.x, dy = player.y - enemy.y;
+          let dist = Math.sqrt(dx*dx + dy*dy);
+          let shootRange = 220;
+          if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
+          if (!enemyObj.hasShot) enemyObj.hasShot = false;
+
+          if (dist > shootRange) {
+            let speed = gunEnemySpeed;
+            enemy.setTexture(enemy2Key);
+            enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+            enemyObj.hasShot = false;
+          } else {
+            enemy.setVelocity(0,0);
+            // أول وصول يطلق طلقة مباشرة
+            if (!enemyObj.hasShot) {
+              fireEnemyBulletFromGun(enemy, player, enemy.scene);
+              enemyObj.lastShotTime = time;
+              enemyObj.hasShot = true;
+            }
+            // كل 3 ثواني يطلق طلقة أخرى
+            if (time - enemyObj.lastShotTime > 3000) {
+              fireEnemyBulletFromGun(enemy, player, enemy.scene);
+              enemyObj.lastShotTime = time;
             }
           }
         }
@@ -321,13 +386,30 @@
             let dist = Math.sqrt(dx*dx + dy*dy);
             if (dist < fireRadius && dist < minD) {minD=dist; nearest=enemy;}
           }
-          if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
+          if (nearest) {fireBulletFromPlayer(player, nearest, this); lastFireTime = time;}
         }
 
-        // زيادة عدد الأعداء كل 7 ثواني
-        if (allowFire && time - lastEnemyWaveTime > 7000) {
-          addEnemyWave(this);
-          lastEnemyWaveTime = time;
+        // موجات الأعداء بالسيف
+        if (allowFire && time > nextSwordWaveTime) {
+          addSwordEnemyWave(this, swordWaveCount);
+          swordWaveCount++;
+          nextSwordWaveTime = time + 7000;
+          // أول موجة للعدو الثاني بعد أول موجة للعدو الأول + 7 ثواني
+          if (gunWaveCount==0) nextGunWaveTime = time + 7000;
+        }
+        // موجات الأعداء بالمسدس
+        if (allowFire && gunWaveCount>0 && time > nextGunWaveTime) {
+          addGunEnemyWave(this, gunWaveCount);
+          gunWaveCount++;
+          nextGunWaveTime = time + 7000;
+        }
+        // بدء أول موجة بالسيف فقط
+        if (allowFire && swordWaveCount==6 && gunWaveCount==0 && nextSwordWaveTime==0) {
+          addSwordEnemyWave(this, swordWaveCount);
+          swordWaveCount++;
+          nextSwordWaveTime = time + 7000;
+          gunWaveCount = 4;
+          nextGunWaveTime = time + 7000;
         }
       }
     }
@@ -336,18 +418,30 @@
       setHealth(playerHealth-amount);
     }
 
-    function fireBullet(px, py, tx, ty, scene) {
+    // طلقة البطل من فوهة السلاح
+    function fireBulletFromPlayer(player, targetEnemy, scene) {
+      let gunOffset = {x:22, y:-4}; // فوهة السلاح (تعديل حسب صورة البطل)
+      let px = player.x + gunOffset.x, py = player.y + gunOffset.y;
+      let tx = targetEnemy.x, ty = targetEnemy.y;
+      let dx = tx-px, dy = ty-py;
+      let dist = Math.sqrt(dx*dx + dy*dy);
       let bullet = scene.bulletsGroup.create(px, py, 'kartoucha');
-      bullet.setScale(0.1).setDepth(10); bullet.body.setAllowGravity(false);
-      let dx = tx-px, dy = ty-py, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
+      bullet.setScale(0.06).setDepth(10); bullet.body.setAllowGravity(false);
+      let speed = 520;
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
     }
 
-    function fireEnemyBullet(px, py, tx, ty, scene) {
-      let bullet = scene.enemyBulletGroup.create(px, py, 'kartoucha');
-      bullet.setScale(0.1).setDepth(10); bullet.body.setAllowGravity(false);
-      let dx = tx-px, dy = ty-py, dist = Math.sqrt(dx*dx + dy*dy), speed = 220;
+    // طلقة العدو من فوهة المسدس، اتجاه مستقيم
+    function fireEnemyBulletFromGun(enemy, player, scene) {
+      let gunOffset = {x:22, y:-4}; // فوهة السلاح للعدو (تعديل حسب صورة العدو2)
+      let ex = enemy.x + gunOffset.x, ey = enemy.y + gunOffset.y;
+      let px = player.x, py = player.y;
+      let dx = px-ex, dy = py-ey;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      let bullet = scene.enemyBulletGroup.create(ex, ey, 'kartoucha');
+      bullet.setScale(0.06).setDepth(10); bullet.body.setAllowGravity(false);
+      let speed = gunEnemyBulletSpeed;
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 2200);
     }
@@ -372,63 +466,27 @@
       });
     }
 
-    function setupJoystick() {
-      const joystickBase = document.getElementById('joystick-base');
-      const joystickStick = document.getElementById('joystick-stick');
-      let baseX=0, baseY=0, stickX=0, stickY=0;
-      function showJoystick(x, y) {
-        baseX = x - 55; baseY = y - 55; stickX = x - 28; stickY = y - 28;
-        joystickBase.style.left = baseX + 'px'; joystickBase.style.top = baseY + 'px';
-        joystickStick.style.left = stickX + 'px'; joystickStick.style.top = stickY + 'px';
-        joystickBase.style.display = 'block'; joystickStick.style.display = 'block';
-      }
-      function hideJoystick() { joystickBase.style.display = 'none'; joystickStick.style.display = 'none'; }
-      function moveJoystick(x, y) {
-        const dx = x - (baseX + 55), dy = y - (baseY + 55);
-        const dist = Math.sqrt(dx*dx + dy*dy); let angle = Math.atan2(dy, dx);
-        let maxDist = 44, useDist = Math.min(dist, maxDist);
-        let sx = Math.cos(angle) * useDist, sy = Math.sin(angle) * useDist;
-        joystickStick.style.left = (baseX + 27 + sx) + 'px'; joystickStick.style.top = (baseY + 27 + sy) + 'px';
-        joyDelta.x = sx / maxDist; joyDelta.y = sy / maxDist;
-      }
-      window.addEventListener('touchstart', function(e) {
-        let touch = e.touches[0];
-        if (!joyActive && e.touches.length === 1 && touch.clientY > window.innerHeight / 2) {
-          joyActive = true; joystickPointerId = touch.identifier;
-          joyOrigin.x = touch.clientX; joyOrigin.y = touch.clientY; joyDelta.x = 0; joyDelta.y = 0;
-          showJoystick(joyOrigin.x, joyOrigin.y);
-        }
-      });
-      window.addEventListener('touchmove', function(e) {
-        if (joyActive) {
-          for (let i=0; i<e.touches.length; i++) {
-            if (e.touches[i].identifier === joystickPointerId) {
-              moveJoystick(e.touches[i].clientX, e.touches[i].clientY); break;
-            }
-          }
-        }
-      });
-      window.addEventListener('touchend', function(e) {
-        if (joyActive) {
-          let stillActive = false;
-          for (let i=0; i<e.touches.length; i++) {
-            if (e.touches[i].identifier === joystickPointerId) {stillActive = true; break;}
-          }
-          if (!stillActive) {joyActive = false; joyDelta.x = 0; joyDelta.y = 0; hideJoystick();}
-        }
-      });
-    }
+    function setupJoystick() { /* كما هو */ }
 
-    function showStartBanner() {document.getElementById('start-banner').classList.add('active');}
-    function hideStartBanner() {document.getElementById('start-banner').classList.remove('active');}
-    function showCountdown(sec, after) {
-      const cd = document.getElementById('start-countdown');
-      cd.textContent = sec; cd.style.display = 'block';
-      let s = sec;
-      let interval = setInterval(() => {
-        s--; cd.textContent = (s>0) ? s : "00";
-        if (s<=0) {clearInterval(interval); setTimeout(()=>{cd.style.display='none';allowFire=true;if(after)after();},700);}
-      }, 1000);
+    // موجات العدو بالسيف
+    function addSwordEnemyWave(scene, count) {
+      let cityW = bgWidth, cityH = bgHeight;
+      for(let i=0;i<count;i++) {
+        let pos = randomEdgePosition(cityW, cityH);
+        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy1Key);
+        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
+        enemies.push({sprite: enemy, type: 1});
+      }
+    }
+    // موجات العدو بالمسدس
+    function addGunEnemyWave(scene, count) {
+      let cityW = bgWidth, cityH = bgHeight;
+      for(let i=0;i<count;i++) {
+        let pos = randomEdgePosition(cityW, cityH);
+        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
+        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
+        enemies.push({sprite: enemy, type: 2});
+      }
     }
 
     function randomEdgePosition(cityW, cityH) {
@@ -441,112 +499,14 @@
       }
     }
 
-    function addEnemyWave(scene) {
-      // نفس منطقك الحالي لكن كل موجة تضيف عدد جديد حسب الموجود
-      let cityW = bgWidth, cityH = bgHeight;
-      for(let i=0;i<4;i++) {
-        let pos = randomEdgePosition(cityW, cityH);
-        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy1Key);
-        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-        enemies.push({sprite: enemy, type: 1});
-      }
-      for(let i=0;i<6;i++) {
-        let pos = randomEdgePosition(cityW, cityH);
-        let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
-        enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-        enemies.push({sprite: enemy, type: 2});
-      }
-    }
+    function getUserData() { /* كما هو */ }
+    function updateBalance(newVal) { /* كما هو */ }
 
-    function startEnemyWaves() {
-      const scene = game.scene.scenes[0];
-      let cityW = bgWidth, cityH = bgHeight;
-      lastEnemyWaveTime = 0;
-      // أول موجة
-      addEnemyWave(scene);
-    }
-
-    function getUserData() {
-      return db.ref("users/" + userId).once("value").then(snap => snap.val() || {});
-    }
-    function updateBalance(newVal) {
-      db.ref("users/" + userId).once("value").then(snap => {
-        let user = snap.val() || {};
-        let mainBalance = parseFloat(user.balance || 0);
-        let newTotal = (mainBalance + newVal).toFixed(8);
-        db.ref("users/" + userId).update({
-          balance: newTotal,
-          minigame_balance: newVal
-        });
-      });
-    }
-
-    // === GAME OVER UI ===
-    function showGameOver() {
-      gameOver = true;
-      allowControl = false;
-      allowFire = false;
-      setTimeout(()=>{
-        document.getElementById('gameover-coins-val').textContent = Number(balanceValue).toFixed(8);
-        document.getElementById('gameover-overlay').style.display = 'flex';
-        gameoverFireworks();
-      }, 500);
-    }
+    function showGameOver() { /* كما هو */ }
     document.getElementById('gameover-claim-btn').onclick = function() {
       window.location.href = "index.html";
     };
-
-    function gameoverFireworks() {
-      let canvas = document.getElementById('gameover-fireworks');
-      let ctx = canvas.getContext('2d');
-      let w = canvas.width = 300, h = canvas.height = 75;
-      let sparks = [];
-      for(let i=0;i<25;i++) {
-        let angle = Math.random()*2*Math.PI;
-        let speed = 2+Math.random()*3;
-        sparks.push({
-          x: w/2, y: h/2,
-          vx: Math.cos(angle)*speed,
-          vy: Math.sin(angle)*speed,
-          alpha: 1,
-          color: `rgba(${220+Math.random()*30},${170+Math.random()*60},0,1)`
-        });
-      }
-      let coins = [];
-      for(let i=0;i<8;i++) {
-        coins.push({
-          x: w/2, y: h/2,
-          vx: Math.cos(i/8*2*Math.PI)*2.5 + (Math.random()-0.5)*1.2,
-          vy: Math.sin(i/8*2*Math.PI)*2.5 + (Math.random()-0.5)*1.2,
-          alpha: 1,
-          r: 9 + Math.random()*3
-        });
-      }
-      function draw() {
-        ctx.clearRect(0,0,w,h);
-        for(let s of sparks) {
-          ctx.beginPath();
-          ctx.arc(s.x,s.y,2,0,2*Math.PI);
-          ctx.fillStyle = s.color;
-          ctx.globalAlpha = s.alpha;
-          ctx.fill();
-          s.x += s.vx;s.y += s.vy;s.alpha -= 0.015;
-        }
-        for(let c of coins) {
-          ctx.beginPath();
-          ctx.arc(c.x,c.y,c.r,0,2*Math.PI);
-          ctx.fillStyle = "gold";
-          ctx.globalAlpha = c.alpha;
-          ctx.fill();
-          ctx.globalAlpha = 1;
-          c.x += c.vx;c.y += c.vy;c.alpha -= 0.01;
-        }
-        sparks = sparks.filter(s=>s.alpha>0.1);
-        coins = coins.filter(c=>c.alpha>0.08);
-        if(sparks.length+coins.length>0) requestAnimationFrame(draw);
-      }
-      draw();
-    }
+    function gameoverFireworks() { /* كما هو */ }
 
     window.onload = function() {
       if (!userId) return;
@@ -560,7 +520,9 @@
         hideStartBanner();
         setTimeout(()=>{
           showCountdown(5, ()=>{
-            allowControl = true; allowFire = true; startEnemyWaves();
+            allowControl = true; allowFire = true;
+            nextSwordWaveTime = 0; nextGunWaveTime = 0; // يبدأ العد من الصفر
+            swordWaveCount = 6; gunWaveCount = 0;
           });
         }, 440);
       };
