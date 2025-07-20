@@ -44,6 +44,11 @@ let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
 let enemy1AttackFrameIndex = 0;
 
+// === لمنع توقف اللعبة لأي تصادم غير معرف ===
+// 1. سنستخدم نظام تصادم مخصص لجميع الأجسام المتحركة (رصاص البطل، رصاص الأعداء، الأعداء)
+// 2. كل جسم سيمنع التصادم مع أي جسم آخر إلا إذا كان الهدف صحيح (رصاصة البطل مع الأعداء فقط، رصاصة العدو مع البطل فقط)
+// 3. أي تصادم آخر يتم تجاهله تلقائياً
+
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
   preload() {
@@ -88,8 +93,8 @@ class MainScene extends Phaser.Scene {
     waveCount = 1;
 
     this.enemyGroup = this.physics.add.group();
-    this.bulletsGroup = this.physics.add.group(); // player bullets
-    this.enemyBulletGroup = this.physics.add.group(); // enemy bullets
+    this.bulletsGroup = this.physics.add.group();
+    this.enemyBulletGroup = this.physics.add.group();
     this.coinsGroup = this.physics.add.group();
     bulletsGroup = this.bulletsGroup;
     coinsGroup = this.coinsGroup;
@@ -133,47 +138,50 @@ class MainScene extends Phaser.Scene {
       }
     }, null, this);
 
-    // حذف أي collider تلقائي بين الرصاصتين في كل فريم
+    // الحل القاطع: إزالة أي collider غير معرف بين كل المجموعات
     this.time.addEvent({
-      delay: 50,
+      delay: 100,
       loop: true,
       callback: () => {
         this.physics.world.colliders.getActive().forEach(collider => {
-          if (
-            (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyBulletGroup) ||
-            (collider.object1 === this.enemyBulletGroup && collider.object2 === this.bulletsGroup)
-          ) {
-            collider.destroy();
-          }
+          // فقط اترك المسموحين: البطل مع رصاص العدو، رصاص البطل مع الأعداء، البطل مع الأعداء
+          let allow =
+            (
+              (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyGroup) ||
+              (collider.object1 === this.enemyGroup && collider.object2 === this.bulletsGroup) ||
+              (collider.object1 === player && collider.object2 === this.enemyBulletGroup) ||
+              (collider.object1 === this.enemyBulletGroup && collider.object2 === player) ||
+              (collider.object1 === player && collider.object2 === this.enemyGroup) ||
+              (collider.object1 === this.enemyGroup && collider.object2 === player)
+            );
+          if (!allow) collider.destroy();
         });
       }
     });
 
-    // فصل رصاص البطل عن رصاص العدو تماماً من حيث الفيزياء
-    // التأكد أن كل رصاصة لا تتفاعل إلا مع هدفها
-
-    // تعطيل تصادم رصاص البطل مع غير الأعداء
-    this.bulletsGroup.children.each(bullet => {
-      if (bullet.body) {
-        bullet.body.setCollideWorldBounds(false);
-        bullet.body.checkCollision.up = false;
-        bullet.body.checkCollision.down = false;
-        bullet.body.checkCollision.left = false;
-        bullet.body.checkCollision.right = false;
-        bullet.body.checkCollision.none = false;
-      }
-    });
-
-    // تعطيل تصادم رصاص العدو مع غير اللاعب
-    this.enemyBulletGroup.children.each(bullet => {
-      if (bullet.body) {
-        bullet.body.setCollideWorldBounds(false);
-        bullet.body.checkCollision.up = false;
-        bullet.body.checkCollision.down = false;
-        bullet.body.checkCollision.left = false;
-        bullet.body.checkCollision.right = false;
-        bullet.body.checkCollision.none = false;
-      }
+    // حماية إضافية: أي جسم جديد (رصاصة/عدو) لا يسمح بتصادم إلا مع هدفه فقط
+    this.events.on('postupdate', () => {
+      this.bulletsGroup.children.each(bullet => {
+        if (bullet.body) {
+          bullet.body.setAllowGravity(false);
+          bullet.body.setCollideWorldBounds(false);
+          bullet.body.checkCollision.none = false;
+        }
+      });
+      this.enemyBulletGroup.children.each(bullet => {
+        if (bullet.body) {
+          bullet.body.setAllowGravity(false);
+          bullet.body.setCollideWorldBounds(false);
+          bullet.body.checkCollision.none = false;
+        }
+      });
+      this.enemyGroup.children.each(enemy => {
+        if (enemy.body) {
+          enemy.body.setAllowGravity(false);
+          enemy.body.setCollideWorldBounds(true);
+          enemy.body.checkCollision.none = false;
+        }
+      });
     });
   }
   update(time, delta) {
