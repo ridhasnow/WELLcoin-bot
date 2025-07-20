@@ -22,7 +22,7 @@ let gameOver = false;
 // حماية من تكرار التصادم في نفس اللحظة
 let lastPlayerHitTime = 0;
 
-// إذا مات اللاعب، نوقف فقط حساب العملات (وليس اللعبة)
+// إيقاف جمع العملات فقط عند الموت
 let balanceStopped = false;
 
 function setHealth(val) {
@@ -31,7 +31,7 @@ function setHealth(val) {
   document.getElementById('health-bar-text').textContent = playerHealth + '%';
   if (playerHealth <= 0 && !isGameOverTriggered) {
     isGameOverTriggered = true;
-    balanceStopped = true; // أوقف جمع العملات فقط
+    balanceStopped = true;
     showGameOver();
   }
 }
@@ -199,7 +199,7 @@ class MainScene extends Phaser.Scene {
     });
   }
   update(time, delta) {
-    // ألغِ توقف اللعبة حتى لو مات اللاعب
+    // حذف أي شرط يمنع الحركة أو إطلاق النار حتى لو مات اللاعب
     player.setVisible(true);
 
     let vx = 0, vy = 0;
@@ -312,7 +312,7 @@ function killEnemy(enemy, scene) {
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
-  // أضف حماية: إذا مات اللاعب وقف جمع العملات
+  // جمع العملات فقط إذا اللاعب حي
   if (!balanceStopped) {
     balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
   }
