@@ -26,6 +26,7 @@ function setHealth(val) {
   playerHealth = Math.max(0, Math.min(100, val));
   document.getElementById('health-bar-inner').style.width = playerHealth + '%';
   document.getElementById('health-bar-text').textContent = playerHealth + '%';
+  // فقط فعل Game Over إذا فعلاً الهيلث صفر أو أقل
   if (playerHealth <= 0 && !isGameOverTriggered) {
     isGameOverTriggered = true;
     showGameOver();
@@ -133,12 +134,17 @@ class MainScene extends Phaser.Scene {
         obj.attackTimer = this.time.addEvent({
           delay: 1000,
           callback: () => {
-            enemyAttackSword(obj, this, playerObj);
+            // لا يتم خصم الهيلث إلا لو اللاعب حي فعلاً
+            if (!gameOver && !isGameOverTriggered && playerHealth > 0) {
+              enemyAttackSword(obj, this, playerObj);
+            }
             obj.attackTimer2 = this.time.addEvent({
               delay: 3000,
               loop: true,
               callback: () => {
-                enemyAttackSword(obj, this, playerObj);
+                if (!gameOver && !isGameOverTriggered && playerHealth > 0) {
+                  enemyAttackSword(obj, this, playerObj);
+                }
               }
             });
           }
@@ -190,8 +196,10 @@ class MainScene extends Phaser.Scene {
     });
   }
   update(time, delta) {
+    // اللاعب يتحرك فقط إذا الهيلث أكبر من صفر و لم يتم تفعيل Game Over
     if (gameOver || isGameOverTriggered || playerHealth <= 0) return;
     player.setVisible(true);
+
     let vx = 0, vy = 0;
     if (allowControl && joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
