@@ -63,6 +63,7 @@ class MainScene extends Phaser.Scene {
     bgWidth = bg.width; bgHeight = bg.height;
     bg.setPosition(bgWidth/2, bgHeight/2);
 
+    // اللاعب ليس في أي مجموعة، فقط كائن منفرد
     player = this.physics.add.sprite(bgWidth/2, bgHeight/2, 'player').setScale(0.11);
     player.setDepth(2).setCollideWorldBounds(true);
 
@@ -108,10 +109,10 @@ class MainScene extends Phaser.Scene {
 
     // تصادم رصاص الأعداء مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      // لا تلمس اللاعب! فقط الرصاصة تختفي والهيلث ينقص
+      // فقط الرصاصة تختفي والهيلث ينقص، اللاعب يبقى دائماً
       if (bullet.active && playerHealth > 0 && !gameOver && !isGameOverTriggered) {
-        bullet.disableBody(true, true); // فقط الرصاصة تختفي
-        takeDamage(25); // ينقص الهيلث فقط
+        bullet.disableBody(true, true);
+        setHealth(playerHealth-25);
       }
     });
 
@@ -155,7 +156,7 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // حماية إضافية: أي جسم جديد (رصاصة/عدو) لا يسمح بتصادم إلا مع هدفه فقط
+    // أي جسم جديد (رصاصة/عدو) لا يسمح بتصادم إلا مع هدفه فقط
     this.events.on('postupdate', () => {
       this.bulletsGroup.children.each(bullet => {
         if (bullet.body) {
@@ -260,12 +261,6 @@ class MainScene extends Phaser.Scene {
         }
       }
     });
-  }
-}
-
-function takeDamage(amount) {
-  if (playerHealth > 0 && !gameOver && !isGameOverTriggered) {
-    setHealth(playerHealth-amount);
   }
 }
 
@@ -447,6 +442,7 @@ function showGameOver() {
     document.getElementById('gameover-coins-val').textContent = Number(balanceValue).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
     gameoverFireworks();
+    // اللاعب يختفي فقط هنا لو أردت (مثلاً player.setVisible(false);)
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
@@ -517,7 +513,7 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
     enemyObj.attacking = false;
   }, 350);
   let dx = playerObj.x - enemy.x, dy = playerObj.y - enemy.y, dist = Math.sqrt(dx*dx + dy*dy);
-  if (dist < 40 && playerHealth > 0 && !gameOver && !isGameOverTriggered) takeDamage(25);
+  if (dist < 40 && playerHealth > 0 && !gameOver && !isGameOverTriggered) setHealth(playerHealth-25);
 }
 
 window.onload = function() {
