@@ -129,6 +129,12 @@ class MainScene extends Phaser.Scene {
         });
       }
     }, null, this);
+
+    // ==== حل مشكلة تصادم الرصاص مع بعضهم البعض ====
+    // لا نضع أي تصادم بين bulletsGroup و enemyBulletGroup (ولا overlap بينهم)
+    // فقط الرصاص من البطل يضرب الأعداء، والرصاص من الأعداء يضرب البطل
+    // إذا كان هناك أي تداخل أو overlap بينهم سابقاً، لا تضيفه هنا أبداً.
+    // === انتهى الحل ===
   }
   update(time, delta) {
     if (gameOver) return;
