@@ -130,11 +130,18 @@ class MainScene extends Phaser.Scene {
       }
     }, null, this);
 
-    // ==== حل مشكلة تصادم الرصاص مع بعضهم البعض ====
-    // لا نضع أي تصادم بين bulletsGroup و enemyBulletGroup (ولا overlap بينهم)
-    // فقط الرصاص من البطل يضرب الأعداء، والرصاص من الأعداء يضرب البطل
-    // إذا كان هناك أي تداخل أو overlap بينهم سابقاً، لا تضيفه هنا أبداً.
-    // === انتهى الحل ===
+    // ---- إصلاح تصادم الرصاصات: عطل التصادم بين رصاص البطل ورصاص الأعداء تماماً ----
+    // لا collider ولا overlap ولا أي تفاعل بينهم.
+    // حتى لو تم إضافتهم بالخطأ من قبل، أضف سطر يمنع التصادم أو تفاعل بينهم:
+    this.physics.world.colliders.getActive().forEach(collider => {
+      if (
+        (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyBulletGroup) ||
+        (collider.object1 === this.enemyBulletGroup && collider.object2 === this.bulletsGroup)
+      ) {
+        collider.destroy();
+      }
+    });
+    // -------------------------------------------------
   }
   update(time, delta) {
     if (gameOver) return;
