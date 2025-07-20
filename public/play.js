@@ -101,18 +101,16 @@ class MainScene extends Phaser.Scene {
     // تصادم رصاص البطل مع الأعداء فقط
     this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
       if (bullet.active && enemy.active) {
-        bullet.destroy();
+        bullet.disableBody(true, true); // بدل destroy() للحماية
         killEnemy(enemy, this);
       }
     });
 
     // تصادم رصاص الأعداء مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      // حماية من التصادمات المتكررة وتكدس الرصاص:
       if (bullet.active && playerHealth > 0 && !gameOver && !isGameOverTriggered) {
-        bullet.active = false; // حماية من تكرار التصادم
-        bullet.destroy();      // دمر الرصاصة فوراً
-        takeDamage(25);        // خصم الهيلث فقط، لا توقف اللعبة هنا
+        bullet.disableBody(true, true); // بدل destroy() للحماية من التعليق
+        takeDamage(25);
       }
     });
 
@@ -137,7 +135,6 @@ class MainScene extends Phaser.Scene {
       }
     }, null, this);
 
-    // الحل القاطع: إزالة أي collider غير معرف بين كل المجموعات
     this.time.addEvent({
       delay: 100,
       loop: true,
@@ -157,7 +154,6 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // حماية إضافية: أي جسم جديد (رصاصة/عدو) لا يسمح بتصادم إلا مع هدفه فقط
     this.events.on('postupdate', () => {
       this.bulletsGroup.children.each(bullet => {
         if (bullet.body) {
@@ -183,7 +179,7 @@ class MainScene extends Phaser.Scene {
     });
   }
   update(time, delta) {
-    if (gameOver || isGameOverTriggered || playerHealth <= 0) return; // التحديثات تتوقف فقط إذا مات اللاعب
+    if (gameOver || isGameOverTriggered || playerHealth <= 0) return;
 
     let vx = 0, vy = 0;
     if (allowControl && joyActive) {
@@ -191,7 +187,6 @@ class MainScene extends Phaser.Scene {
     }
     player.setVelocity(vx, vy);
 
-    // حركة الأعداء وإطلاق النار
     for (let enemyObj of enemies) {
       let enemy = enemyObj.sprite;
       if (!enemy.active || enemyObj.dead) continue;
@@ -230,7 +225,6 @@ class MainScene extends Phaser.Scene {
         }
       }
     }
-    // اطلاق النار التلقائي للبطل
     if (allowFire && time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
@@ -243,14 +237,13 @@ class MainScene extends Phaser.Scene {
       if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
     }
 
-    // حذف الرصاصة فقط إذا خرجت من حدود العالم
     enemyBulletGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
         if (
           bullet.x < 0 || bullet.x > bgWidth ||
           bullet.y < 0 || bullet.y > bgHeight
         ) {
-          bullet.destroy();
+          bullet.disableBody(true, true);
         }
       }
     });
@@ -261,7 +254,7 @@ class MainScene extends Phaser.Scene {
           bullet.x < 0 || bullet.x > bgWidth ||
           bullet.y < 0 || bullet.y > bgHeight
         ) {
-          bullet.destroy();
+          bullet.disableBody(true, true);
         }
       }
     });
@@ -269,7 +262,6 @@ class MainScene extends Phaser.Scene {
 }
 
 function takeDamage(amount) {
-  // فقط خصم الهيلث بدون تعطيل أي شيء هنا
   if (playerHealth > 0 && !gameOver && !isGameOverTriggered) {
     setHealth(playerHealth-amount);
   }
@@ -284,7 +276,7 @@ function fireBullet(px, py, tx, ty, scene) {
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
-  setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
+  setTimeout(() => { if (bullet && bullet.active) bullet.disableBody(true, true); }, 1200);
 }
 
 function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
