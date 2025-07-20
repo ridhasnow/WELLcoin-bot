@@ -88,8 +88,8 @@ class MainScene extends Phaser.Scene {
     waveCount = 1;
 
     this.enemyGroup = this.physics.add.group();
-    this.bulletsGroup = this.physics.add.group(); // رصاص البطل
-    this.enemyBulletGroup = this.physics.add.group(); // رصاص الأعداء
+    this.bulletsGroup = this.physics.add.group(); // player bullets
+    this.enemyBulletGroup = this.physics.add.group(); // enemy bullets
     this.coinsGroup = this.physics.add.group();
     bulletsGroup = this.bulletsGroup;
     coinsGroup = this.coinsGroup;
@@ -146,6 +146,33 @@ class MainScene extends Phaser.Scene {
             collider.destroy();
           }
         });
+      }
+    });
+
+    // فصل رصاص البطل عن رصاص العدو تماماً من حيث الفيزياء
+    // التأكد أن كل رصاصة لا تتفاعل إلا مع هدفها
+
+    // تعطيل تصادم رصاص البطل مع غير الأعداء
+    this.bulletsGroup.children.each(bullet => {
+      if (bullet.body) {
+        bullet.body.setCollideWorldBounds(false);
+        bullet.body.checkCollision.up = false;
+        bullet.body.checkCollision.down = false;
+        bullet.body.checkCollision.left = false;
+        bullet.body.checkCollision.right = false;
+        bullet.body.checkCollision.none = false;
+      }
+    });
+
+    // تعطيل تصادم رصاص العدو مع غير اللاعب
+    this.enemyBulletGroup.children.each(bullet => {
+      if (bullet.body) {
+        bullet.body.setCollideWorldBounds(false);
+        bullet.body.checkCollision.up = false;
+        bullet.body.checkCollision.down = false;
+        bullet.body.checkCollision.left = false;
+        bullet.body.checkCollision.right = false;
+        bullet.body.checkCollision.none = false;
       }
     });
   }
