@@ -191,7 +191,7 @@ class MainScene extends Phaser.Scene {
   }
   update(time, delta) {
     if (gameOver || isGameOverTriggered || playerHealth <= 0) return;
-
+    player.setVisible(true);
     let vx = 0, vy = 0;
     if (allowControl && joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
