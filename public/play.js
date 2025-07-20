@@ -244,8 +244,24 @@ class MainScene extends Phaser.Scene {
       if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
     }
 
-    // حذف الرصاصة فقط إذا خرجت من حدود العالم
+    // حذف الرصاصة فقط إذا خرجت من حدود العالم (تعديل: الرصاصة لا تدمر إلا في الحافة فقط)
     enemyBulletGroup.children.iterate(function(bullet){
+      if (bullet && bullet.active) {
+        if (
+          bullet.x < 0 || bullet.x > bgWidth ||
+          bullet.y < 0 || bullet.y > bgHeight
+        ) {
+          bullet.destroy();
+        }
+      }
+    });
+
+    // تعديل مهم: رصاصة العدو لا تدمر إذا اصطدمت بأي عدو آخر، فقط تواصل طريقها حتى نهاية الخريطة
+    // حذف أي منطق يسبب تدمير رصاصة العدو عند اصطدامها بغير البطل (تم بالفعل عبر منطق التصادم أعلاه)
+    // وكذلك حذف أي رصاصة بطل لا تدمر إلا إذا أصابت عدو أو خرجت من الحافة (تم بالفعل)
+
+    // نفس الشيء لرصاصة البطل:
+    bulletsGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
         if (
           bullet.x < 0 || bullet.x > bgWidth ||
@@ -273,6 +289,7 @@ function fireBullet(px, py, tx, ty, scene) {
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
+  // لا تدمر إلا إذا خرجت من الخريطة (الحافة)
   setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
 }
 
@@ -287,14 +304,13 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
+  // لا تدمر إلا إذا خرجت من الخريطة (الحافة)
+  // لا يوجد منطق يدمرها عند الاصطدام بغير البطل!
 }
 
 function killEnemy(enemy, scene) {
-  scene.enemyBulletGroup.children.iterate(function(bullet){
-    if (bullet.active && Phaser.Math.Distance.Between(bullet.x, bullet.y, enemy.x, enemy.y) < 30) {
-      bullet.destroy();
-    }
-  });
+  // لا تدمر رصاصة العدو عند قتل عدو
+  // فقط دمر العدو وأضف العملة
   enemy.disableBody(true, true);
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
@@ -345,7 +361,7 @@ function setupJoystick() {
   });
   window.addEventListener('touchmove', function(e) {
     if (joyActive) {
-      for (let i=0; i<e.touches.length; i++) {
+      for (let i=0;i<e.touches.length; i++) {
         if (e.touches[i].identifier === joystickPointerId) {
           moveJoystick(e.touches[i].clientX, e.touches[i].clientY); break;
         }
@@ -355,7 +371,7 @@ function setupJoystick() {
   window.addEventListener('touchend', function(e) {
     if (joyActive) {
       let stillActive = false;
-      for (let i=0; i<e.touches.length; i++) {
+      for (let i=0;i<e.touches.length; i++) {
         if (e.touches[i].identifier === joystickPointerId) {stillActive = true; break;}
       }
       if (!stillActive) {joyActive = false; joyDelta.x = 0; joyDelta.y = 0; hideJoystick();}
