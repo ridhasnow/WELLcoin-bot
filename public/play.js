@@ -96,12 +96,12 @@ class MainScene extends Phaser.Scene {
     enemyBulletGroup = this.enemyBulletGroup;
     enemies = [];
 
-    // تصادم طلقة البطل مع العدو
+    // تصادم طلقة البطل مع العدو فقط
     this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
       bullet.destroy(); killEnemy(enemy, this);
     });
 
-    // تصادم طلقة العدو مع البطل
+    // تصادم طلقة العدو مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       if (bullet.active && !gameOver && playerHealth > 0) {
         bullet.destroy();
@@ -130,22 +130,9 @@ class MainScene extends Phaser.Scene {
       }
     }, null, this);
 
-    // ---- إصلاح تصادم الرصاصات: عطل التصادم بين رصاص البطل ورصاص الأعداء تماماً ----
-    // حل نهائي: منع التصادم بشكل قاطع بين رصاص البطل ورصاص الأعداء فيزيائياً ومنطقياً
-    // لا collider ولا overlap ولا أي تفاعل بينهم، حتى لو تم إضافتهم بالخطأ.
-    // إضافة فلتر تصادم مخصص:
-    this.bulletsGroup.children.each(bullet => {
-      bullet.body.setCollideWorldBounds(false);
-      bullet.body.checkCollision.none = false;
-      bullet.body.setAllowGravity(false);
-    });
-    this.enemyBulletGroup.children.each(bullet => {
-      bullet.body.setCollideWorldBounds(false);
-      bullet.body.checkCollision.none = false;
-      bullet.body.setAllowGravity(false);
-    });
+    // ---- الحل النهائي: منع تصادم الرصاصات على جميع المستويات ----
 
-    // إزالة أي collider بين رصاص البطل ورصاص العدو
+    // 1. إزالة أي collider بين رصاص البطل ورصاص العدو
     this.physics.world.colliders.getActive().forEach(collider => {
       if (
         (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyBulletGroup) ||
@@ -155,17 +142,18 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // إضافة فلتر تصادم لمنع أي تفاعل مستقبلي بين الرصاصتين:
+    // 2. حماية كل رصاصة عند الإنشاء: لا تتفاعل مع أي شيء إلا الهدف المقصود فقط
+    // عند إنشاء رصاصة البطل:
     this.bulletsGroup.children.each(bullet => {
-      bullet.body.checkCollision = { none: false, up: true, down: true, left: true, right: true };
-      bullet.body.customSeparateX = false;
-      bullet.body.customSeparateY = false;
+      bullet.body.checkCollision.none = true; // لا تتفاعل مع أي جسم آخر
+      bullet.body.setAllowGravity(false);
     });
+    // وعند إنشاء رصاصة العدو:
     this.enemyBulletGroup.children.each(bullet => {
-      bullet.body.checkCollision = { none: false, up: true, down: true, left: true, right: true };
-      bullet.body.customSeparateX = false;
-      bullet.body.customSeparateY = false;
+      bullet.body.checkCollision.none = true; // لا تتفاعل مع أي جسم آخر
+      bullet.body.setAllowGravity(false);
     });
+
     // -------------------------------------------------
   }
   update(time, delta) {
@@ -260,6 +248,7 @@ function fireBullet(px, py, tx, ty, scene) {
   let fromY = py + gunOffset.y;
   let bullet = scene.bulletsGroup.create(fromX, fromY, 'kartoucha');
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
+  bullet.body.checkCollision.none = true; // لا تتفاعل مع أي جسم آخر
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
@@ -272,6 +261,7 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let fromY = py + gunOffset.y;
   let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
+  bullet.body.checkCollision.none = true; // لا تتفاعل مع أي جسم آخر
 
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
