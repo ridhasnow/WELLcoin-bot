@@ -109,10 +109,15 @@ class MainScene extends Phaser.Scene {
 
     // تصادم رصاص الأعداء مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      // فقط الرصاصة تختفي والهيلث ينقص، اللاعب يبقى دائماً
-      if (bullet.active && playerHealth > 0 && !gameOver && !isGameOverTriggered) {
+      // حماية من تكرار التصادم في نفس الفريم أو بسرعة كبيرة
+      const now = Date.now();
+      if (
+        bullet.active && playerHealth > 0 && !gameOver && !isGameOverTriggered &&
+        (now - lastPlayerHitTime > 200)
+      ) {
         bullet.disableBody(true, true);
         setHealth(playerHealth-25);
+        lastPlayerHitTime = now;
       }
     });
 
