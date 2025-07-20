@@ -17,7 +17,7 @@ const userId = tg.initDataUnsafe?.user?.id;
 
 let playerHealth = 100;
 let isGameOverTriggered = false;
-let gameOver = false; // moved up for clarity
+let gameOver = false;
 
 function setHealth(val) {
   playerHealth = Math.max(0, Math.min(100, val));
@@ -108,12 +108,11 @@ class MainScene extends Phaser.Scene {
 
     // تصادم رصاص الأعداء مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      // تصحيح مهم: لا توقف اللعبة إلا إذا فعلا الهيلث وصل للصفر
-      if (bullet.active && !gameOver && playerHealth > 0 && !isGameOverTriggered) {
-        bullet.destroy();
-        takeDamage(25);
-        // إزالة أي تعطيل أو وقف للعبة هنا، لأن منطق الوفاة يتم في setHealth فقط
-        // لا تضع gameOver = true هنا ولا تعطل الحركة هنا!
+      // حماية من التصادمات المتكررة وتكدس الرصاص:
+      if (bullet.active && playerHealth > 0 && !gameOver && !isGameOverTriggered) {
+        bullet.active = false; // حماية من تكرار التصادم
+        bullet.destroy();      // دمر الرصاصة فوراً
+        takeDamage(25);        // خصم الهيلث فقط، لا توقف اللعبة هنا
       }
     });
 
@@ -184,7 +183,8 @@ class MainScene extends Phaser.Scene {
     });
   }
   update(time, delta) {
-    if (gameOver) return;
+    if (gameOver || isGameOverTriggered || playerHealth <= 0) return; // التحديثات تتوقف فقط إذا مات اللاعب
+
     let vx = 0, vy = 0;
     if (allowControl && joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
@@ -269,10 +269,9 @@ class MainScene extends Phaser.Scene {
 }
 
 function takeDamage(amount) {
-  // حماية من تكرار الضرر أو توقف اللعبة بالخطأ
+  // فقط خصم الهيلث بدون تعطيل أي شيء هنا
   if (playerHealth > 0 && !gameOver && !isGameOverTriggered) {
     setHealth(playerHealth-amount);
-    // لا تعطل أي شيء هنا! كل تعطيل يتم في setHealth فقط عند الموت الحقيقي
   }
 }
 
