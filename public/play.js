@@ -17,6 +17,8 @@ const userId = tg.initDataUnsafe?.user?.id;
 
 let playerHealth = 100;
 let isGameOverTriggered = false;
+let gameOver = false; // moved up for clarity
+
 function setHealth(val) {
   playerHealth = Math.max(0, Math.min(100, val));
   document.getElementById('health-bar-inner').style.width = playerHealth + '%';
@@ -26,6 +28,7 @@ function setHealth(val) {
     showGameOver();
   }
 }
+
 let totalBalance = 0;
 function setBalance(val) {
   document.getElementById('balance-value').textContent = Number(val).toFixed(8);
@@ -39,15 +42,9 @@ let enemies = [], enemySpeed1=0, enemySpeed2=0, allowControl=false, allowFire=fa
 let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0;
 let enemy1Key='enemy1', enemy2Key='enemy2';
 let enemyBulletGroup;
-let gameOver = false;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
 let enemy1AttackFrameIndex = 0;
-
-// === لمنع توقف اللعبة لأي تصادم غير معرف ===
-// 1. سنستخدم نظام تصادم مخصص لجميع الأجسام المتحركة (رصاص البطل، رصاص الأعداء، الأعداء)
-// 2. كل جسم سيمنع التصادم مع أي جسم آخر إلا إذا كان الهدف صحيح (رصاصة البطل مع الأعداء فقط، رصاصة العدو مع البطل فقط)
-// 3. أي تصادم آخر يتم تجاهله تلقائياً
 
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
@@ -111,9 +108,12 @@ class MainScene extends Phaser.Scene {
 
     // تصادم رصاص الأعداء مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      if (bullet.active && !gameOver && playerHealth > 0) {
+      // تصحيح مهم: لا توقف اللعبة إلا إذا فعلا الهيلث وصل للصفر
+      if (bullet.active && !gameOver && playerHealth > 0 && !isGameOverTriggered) {
         bullet.destroy();
         takeDamage(25);
+        // إزالة أي تعطيل أو وقف للعبة هنا، لأن منطق الوفاة يتم في setHealth فقط
+        // لا تضع gameOver = true هنا ولا تعطل الحركة هنا!
       }
     });
 
@@ -144,7 +144,6 @@ class MainScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         this.physics.world.colliders.getActive().forEach(collider => {
-          // فقط اترك المسموحين: البطل مع رصاص العدو، رصاص البطل مع الأعداء، البطل مع الأعداء
           let allow =
             (
               (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyGroup) ||
@@ -244,7 +243,7 @@ class MainScene extends Phaser.Scene {
       if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
     }
 
-    // حذف الرصاصة فقط إذا خرجت من حدود العالم (تعديل: الرصاصة لا تدمر إلا في الحافة فقط)
+    // حذف الرصاصة فقط إذا خرجت من حدود العالم
     enemyBulletGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
         if (
@@ -256,11 +255,6 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تعديل مهم: رصاصة العدو لا تدمر إذا اصطدمت بأي عدو آخر، فقط تواصل طريقها حتى نهاية الخريطة
-    // حذف أي منطق يسبب تدمير رصاصة العدو عند اصطدامها بغير البطل (تم بالفعل عبر منطق التصادم أعلاه)
-    // وكذلك حذف أي رصاصة بطل لا تدمر إلا إذا أصابت عدو أو خرجت من الحافة (تم بالفعل)
-
-    // نفس الشيء لرصاصة البطل:
     bulletsGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
         if (
@@ -275,8 +269,10 @@ class MainScene extends Phaser.Scene {
 }
 
 function takeDamage(amount) {
+  // حماية من تكرار الضرر أو توقف اللعبة بالخطأ
   if (playerHealth > 0 && !gameOver && !isGameOverTriggered) {
     setHealth(playerHealth-amount);
+    // لا تعطل أي شيء هنا! كل تعطيل يتم في setHealth فقط عند الموت الحقيقي
   }
 }
 
@@ -289,7 +285,6 @@ function fireBullet(px, py, tx, ty, scene) {
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
-  // لا تدمر إلا إذا خرجت من الخريطة (الحافة)
   setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
 }
 
@@ -304,13 +299,9 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
-  // لا تدمر إلا إذا خرجت من الخريطة (الحافة)
-  // لا يوجد منطق يدمرها عند الاصطدام بغير البطل!
 }
 
 function killEnemy(enemy, scene) {
-  // لا تدمر رصاصة العدو عند قتل عدو
-  // فقط دمر العدو وأضف العملة
   enemy.disableBody(true, true);
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
