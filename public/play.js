@@ -114,7 +114,7 @@ class MainScene extends Phaser.Scene {
       const now = Date.now();
       if (
         bullet.active &&
-        playerHealth > 0 &&
+        playerHealth = 0 &&
         !gameOver &&
         !isGameOverTriggered &&
         (now - lastPlayerHitTime > 200)
