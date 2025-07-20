@@ -19,6 +19,9 @@ let playerHealth = 100;
 let isGameOverTriggered = false;
 let gameOver = false;
 
+// حماية من تكرار التصادم في نفس اللحظة
+let lastPlayerHitTime = 0;
+
 function setHealth(val) {
   playerHealth = Math.max(0, Math.min(100, val));
   document.getElementById('health-bar-inner').style.width = playerHealth + '%';
@@ -63,7 +66,6 @@ class MainScene extends Phaser.Scene {
     bgWidth = bg.width; bgHeight = bg.height;
     bg.setPosition(bgWidth/2, bgHeight/2);
 
-    // اللاعب ليس في أي مجموعة، فقط كائن منفرد
     player = this.physics.add.sprite(bgWidth/2, bgHeight/2, 'player').setScale(0.11);
     player.setDepth(2).setCollideWorldBounds(true);
 
@@ -107,12 +109,14 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم رصاص الأعداء مع البطل فقط
+    // تصادم رصاص الأعداء مع البطل فقط (مع حماية من تكرار التصادم)
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      // حماية من تكرار التصادم في نفس الفريم أو بسرعة كبيرة
       const now = Date.now();
       if (
-        bullet.active && playerHealth > 0 && !gameOver && !isGameOverTriggered &&
+        bullet.active &&
+        playerHealth > 0 &&
+        !gameOver &&
+        !isGameOverTriggered &&
         (now - lastPlayerHitTime > 200)
       ) {
         bullet.disableBody(true, true);
@@ -161,7 +165,6 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // أي جسم جديد (رصاصة/عدو) لا يسمح بتصادم إلا مع هدفه فقط
     this.events.on('postupdate', () => {
       this.bulletsGroup.children.each(bullet => {
         if (bullet.body) {
