@@ -101,18 +101,17 @@ class MainScene extends Phaser.Scene {
     // تصادم رصاص البطل مع الأعداء فقط
     this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
       if (bullet.active && enemy.active) {
-        bullet.disableBody(true, true); // بدل destroy() للحماية
+        bullet.disableBody(true, true);
         killEnemy(enemy, this);
       }
     });
 
     // تصادم رصاص الأعداء مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      // هنا لا تستخدم disableBody ولا destroy على اللاعب!
+      // لا تلمس اللاعب! فقط الرصاصة تختفي والهيلث ينقص
       if (bullet.active && playerHealth > 0 && !gameOver && !isGameOverTriggered) {
         bullet.disableBody(true, true); // فقط الرصاصة تختفي
         takeDamage(25); // ينقص الهيلث فقط
-        // اللاعب يبقى في مكانه ولا يختفي ولا تتغير صورته
       }
     });
 
@@ -156,6 +155,7 @@ class MainScene extends Phaser.Scene {
       }
     });
 
+    // حماية إضافية: أي جسم جديد (رصاصة/عدو) لا يسمح بتصادم إلا مع هدفه فقط
     this.events.on('postupdate', () => {
       this.bulletsGroup.children.each(bullet => {
         if (bullet.body) {
