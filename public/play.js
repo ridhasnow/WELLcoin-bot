@@ -108,9 +108,11 @@ class MainScene extends Phaser.Scene {
 
     // تصادم رصاص الأعداء مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
+      // هنا لا تستخدم disableBody ولا destroy على اللاعب!
       if (bullet.active && playerHealth > 0 && !gameOver && !isGameOverTriggered) {
-        bullet.disableBody(true, true); // بدل destroy() للحماية من التعليق
-        takeDamage(25);
+        bullet.disableBody(true, true); // فقط الرصاصة تختفي
+        takeDamage(25); // ينقص الهيلث فقط
+        // اللاعب يبقى في مكانه ولا يختفي ولا تتغير صورته
       }
     });
 
