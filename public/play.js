@@ -133,18 +133,21 @@ class MainScene extends Phaser.Scene {
       }
     }, null, this);
 
-    // إزالة أي collider بين رصاص البطل ورصاص الأعداء
-    this.physics.world.colliders.getActive().forEach(collider => {
-      if (
-        (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyBulletGroup) ||
-        (collider.object1 === this.enemyBulletGroup && collider.object2 === this.bulletsGroup)
-      ) {
-        collider.destroy();
+    // حذف أي collider تلقائي بين الرصاصتين في كل فريم
+    this.time.addEvent({
+      delay: 50,
+      loop: true,
+      callback: () => {
+        this.physics.world.colliders.getActive().forEach(collider => {
+          if (
+            (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyBulletGroup) ||
+            (collider.object1 === this.enemyBulletGroup && collider.object2 === this.bulletsGroup)
+          ) {
+            collider.destroy();
+          }
+        });
       }
     });
-
-    // لا علاقة بين رصاصتين من النوعين إطلاقًا
-    // لا تضيف أي overlap أو collider بينهم في أي مكان آخر
   }
   update(time, delta) {
     if (gameOver) return;
