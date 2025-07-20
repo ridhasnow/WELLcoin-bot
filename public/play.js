@@ -22,13 +22,16 @@ let gameOver = false;
 // حماية من تكرار التصادم في نفس اللحظة
 let lastPlayerHitTime = 0;
 
+// إذا مات اللاعب، نوقف فقط حساب العملات (وليس اللعبة)
+let balanceStopped = false;
+
 function setHealth(val) {
   playerHealth = Math.max(0, Math.min(100, val));
   document.getElementById('health-bar-inner').style.width = playerHealth + '%';
   document.getElementById('health-bar-text').textContent = playerHealth + '%';
-  // فقط فعل Game Over إذا فعلاً الهيلث صفر أو أقل
   if (playerHealth <= 0 && !isGameOverTriggered) {
     isGameOverTriggered = true;
+    balanceStopped = true; // أوقف جمع العملات فقط
     showGameOver();
   }
 }
@@ -92,6 +95,7 @@ class MainScene extends Phaser.Scene {
     gameOver = false;
     isGameOverTriggered = false;
     waveCount = 1;
+    balanceStopped = false;
 
     this.enemyGroup = this.physics.add.group();
     this.bulletsGroup = this.physics.add.group();
@@ -134,7 +138,6 @@ class MainScene extends Phaser.Scene {
         obj.attackTimer = this.time.addEvent({
           delay: 1000,
           callback: () => {
-            // لا يتم خصم الهيلث إلا لو اللاعب حي فعلاً
             if (!gameOver && !isGameOverTriggered && playerHealth > 0) {
               enemyAttackSword(obj, this, playerObj);
             }
@@ -196,8 +199,7 @@ class MainScene extends Phaser.Scene {
     });
   }
   update(time, delta) {
-    // اللاعب يتحرك فقط إذا الهيلث أكبر من صفر و لم يتم تفعيل Game Over
-    if (gameOver || isGameOverTriggered || playerHealth <= 0) return;
+    // ألغِ توقف اللعبة حتى لو مات اللاعب
     player.setVisible(true);
 
     let vx = 0, vy = 0;
@@ -310,7 +312,10 @@ function killEnemy(enemy, scene) {
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
-  balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
+  // أضف حماية: إذا مات اللاعب وقف جمع العملات
+  if (!balanceStopped) {
+    balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
+  }
   let obj = enemies.find(e => e.sprite === enemy);
   if (obj) obj.dead = true;
 }
@@ -538,13 +543,16 @@ window.onload = function() {
     let mg = parseFloat(user.minigame_balance || 0);
     setBalance(mg);
     balanceValue = mg;
+    balanceStopped = false;
   });
   showStartBanner();
   document.querySelector("#start-banner .banner-btn").onclick = function() {
     hideStartBanner();
     setTimeout(()=>{
       showCountdown(5, ()=>{
-        allowControl = true; allowFire = true; startEnemyWaves();
+        allowControl = true; allowFire = true;
+        balanceStopped = false;
+        startEnemyWaves();
       });
     }, 440);
   };
