@@ -178,7 +178,7 @@
     const userId = tg.initDataUnsafe?.user?.id;
 
     let playerHealth = 100;
-    let isGameOverTriggered = false; // إضافة متغير لتجنب تكرار الـ GameOver
+    let isGameOverTriggered = false; // حماية من تكرار gameover
     function setHealth(val) {
       playerHealth = Math.max(0, Math.min(100, val));
       document.getElementById('health-bar-inner').style.width = playerHealth + '%';
@@ -253,7 +253,9 @@
         this.bulletsGroup = this.physics.add.group();
         this.enemyBulletGroup = this.physics.add.group();
         this.coinsGroup = this.physics.add.group();
-        bulletsGroup = this.bulletsGroup; coinsGroup = this.coinsGroup; enemyBulletGroup = this.enemyBulletGroup;
+        bulletsGroup = this.bulletsGroup;
+        coinsGroup = this.coinsGroup;
+        enemyBulletGroup = this.enemyBulletGroup;
         enemies = [];
 
         // تصادم طلقة البطل مع العدو
@@ -263,7 +265,6 @@
 
         // تصادم طلقة العدو مع البطل
         this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-          // فقط إذا الطلقة نشطة (أي لم يمت العدو أو لم تدمر الطلقة)
           if (bullet.active && !gameOver && playerHealth > 0) {
             bullet.destroy();
             takeDamage(25);
@@ -308,7 +309,7 @@
 
           // عدو السيف (type: 1)
           if (enemyObj.type === 1) {
-            let speed = 110; // سرعة ثابتة للعدو بالسيف
+            let speed = 110;
             enemySpeed1 = speed;
             if (!enemyObj.attacking) {
               if (dist > 35) enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
@@ -355,6 +356,19 @@
           }
           if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
         }
+
+        // حذف الرصاصة فقط إذا خرجت من حدود العالم
+        enemyBulletGroup.children.iterate(function(bullet){
+          if (bullet && bullet.active) {
+            // world bounds
+            if (
+              bullet.x < 0 || bullet.x > bgWidth ||
+              bullet.y < 0 || bullet.y > bgHeight
+            ) {
+              bullet.destroy();
+            }
+          }
+        });
       }
     }
 
@@ -369,7 +383,7 @@
       let fromX = px + gunOffset.x;
       let fromY = py + gunOffset.y;
       let bullet = scene.bulletsGroup.create(fromX, fromY, 'kartoucha');
-      bullet.setScale(0.055).setDepth(10); bullet.body.setAllowGravity(false);
+      bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false); // حجم الطلقة أصغر للنصف
       let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       bullet.rotation = Math.atan2(dy, dx);
@@ -381,13 +395,13 @@
       let fromX = px + gunOffset.x;
       let fromY = py + gunOffset.y;
       let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
-      bullet.setScale(0.055).setDepth(10); bullet.body.setAllowGravity(false);
+      bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false); // حجم الطلقة أصغر للنصف
 
       let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
       let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       bullet.rotation = Math.atan2(dy, dx);
-      setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 2200);
+      // الطلقة لا تختفي تلقائياً، فقط عندما تغادر حدود المدينة (في update)
     }
 
     function killEnemy(enemy, scene) {
@@ -607,7 +621,6 @@
       draw();
     }
 
-    // حركة ضرب السيف للعدو رقم 1
     function enemyAttackSword(enemyObj, scene, playerObj) {
       if (enemyObj.dead || gameOver || isGameOverTriggered) return;
       let enemy = enemyObj.sprite;
