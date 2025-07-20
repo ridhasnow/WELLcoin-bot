@@ -88,20 +88,23 @@ class MainScene extends Phaser.Scene {
     waveCount = 1;
 
     this.enemyGroup = this.physics.add.group();
-    this.bulletsGroup = this.physics.add.group();
-    this.enemyBulletGroup = this.physics.add.group();
+    this.bulletsGroup = this.physics.add.group(); // رصاص البطل
+    this.enemyBulletGroup = this.physics.add.group(); // رصاص الأعداء
     this.coinsGroup = this.physics.add.group();
     bulletsGroup = this.bulletsGroup;
     coinsGroup = this.coinsGroup;
     enemyBulletGroup = this.enemyBulletGroup;
     enemies = [];
 
-    // تصادم طلقة البطل مع العدو فقط
+    // تصادم رصاص البطل مع الأعداء فقط
     this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
-      bullet.destroy(); killEnemy(enemy, this);
+      if (bullet.active && enemy.active) {
+        bullet.destroy();
+        killEnemy(enemy, this);
+      }
     });
 
-    // تصادم طلقة العدو مع البطل فقط
+    // تصادم رصاص الأعداء مع البطل فقط
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       if (bullet.active && !gameOver && playerHealth > 0) {
         bullet.destroy();
@@ -109,7 +112,7 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم العدو رقم 1 مع البطل (ضربة سيف)
+    // تصادم سيف العدو مع البطل
     this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
       let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !e.dead);
       if (!obj) return;
@@ -130,9 +133,7 @@ class MainScene extends Phaser.Scene {
       }
     }, null, this);
 
-    // ---- الحل النهائي: منع تصادم الرصاصات على جميع المستويات ----
-
-    // 1. إزالة أي collider بين رصاص البطل ورصاص العدو
+    // إزالة أي collider بين رصاص البطل ورصاص الأعداء
     this.physics.world.colliders.getActive().forEach(collider => {
       if (
         (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyBulletGroup) ||
@@ -142,19 +143,8 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // 2. حماية كل رصاصة عند الإنشاء: لا تتفاعل مع أي شيء إلا الهدف المقصود فقط
-    // عند إنشاء رصاصة البطل:
-    this.bulletsGroup.children.each(bullet => {
-      bullet.body.checkCollision.none = true; // لا تتفاعل مع أي جسم آخر
-      bullet.body.setAllowGravity(false);
-    });
-    // وعند إنشاء رصاصة العدو:
-    this.enemyBulletGroup.children.each(bullet => {
-      bullet.body.checkCollision.none = true; // لا تتفاعل مع أي جسم آخر
-      bullet.body.setAllowGravity(false);
-    });
-
-    // -------------------------------------------------
+    // لا علاقة بين رصاصتين من النوعين إطلاقًا
+    // لا تضيف أي overlap أو collider بينهم في أي مكان آخر
   }
   update(time, delta) {
     if (gameOver) return;
@@ -164,14 +154,13 @@ class MainScene extends Phaser.Scene {
     }
     player.setVelocity(vx, vy);
 
-    // حركة الأعداء + منطق إطلاق النار للأعداء المسلحين
+    // حركة الأعداء وإطلاق النار
     for (let enemyObj of enemies) {
       let enemy = enemyObj.sprite;
       if (!enemy.active || enemyObj.dead) continue;
       let dx = player.x - enemy.x, dy = player.y - enemy.y;
       let dist = Math.sqrt(dx*dx + dy*dy);
 
-      // عدو السيف (type: 1)
       if (enemyObj.type === 1) {
         let speed = 110;
         enemySpeed1 = speed;
@@ -181,9 +170,7 @@ class MainScene extends Phaser.Scene {
         } else {
           enemy.setVelocity(0,0);
         }
-      }
-      // العدو الثاني (type: 2) إطلاق نار
-      else if (enemyObj.type === 2) {
+      } else if (enemyObj.type === 2) {
         let speed = 110;
         enemySpeed2 = speed;
         let shootRange = 220;
@@ -194,13 +181,11 @@ class MainScene extends Phaser.Scene {
           enemyObj.hasShot = false;
         } else {
           enemy.setVelocity(0,0);
-          // أول طلقة بعد الاقتراب
           if (!enemyObj.hasShot) {
             enemyObj.hasShot = true;
             enemyObj.lastShotTime = time;
             fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
           }
-          // كل 3 ثواني طلقة جديدة
           if (time - enemyObj.lastShotTime > 3000) {
             enemyObj.lastShotTime = time;
             fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
@@ -224,7 +209,6 @@ class MainScene extends Phaser.Scene {
     // حذف الرصاصة فقط إذا خرجت من حدود العالم
     enemyBulletGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
-        // world bounds
         if (
           bullet.x < 0 || bullet.x > bgWidth ||
           bullet.y < 0 || bullet.y > bgHeight
@@ -248,7 +232,6 @@ function fireBullet(px, py, tx, ty, scene) {
   let fromY = py + gunOffset.y;
   let bullet = scene.bulletsGroup.create(fromX, fromY, 'kartoucha');
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
-  bullet.body.checkCollision.none = true; // لا تتفاعل مع أي جسم آخر
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
@@ -261,7 +244,6 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let fromY = py + gunOffset.y;
   let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
-  bullet.body.checkCollision.none = true; // لا تتفاعل مع أي جسم آخر
 
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
