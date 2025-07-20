@@ -178,7 +178,7 @@
     const userId = tg.initDataUnsafe?.user?.id;
 
     let playerHealth = 100;
-    let isGameOverTriggered = false; // حماية من تكرار gameover
+    let isGameOverTriggered = false;
     function setHealth(val) {
       playerHealth = Math.max(0, Math.min(100, val));
       document.getElementById('health-bar-inner').style.width = playerHealth + '%';
@@ -205,6 +205,7 @@
     let waveCount = 1;
     let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
     let enemy1AttackFrameIndex = 0;
+    let MAX_ENEMY_BULLETS = 80; // Object Pooling limit
 
     class MainScene extends Phaser.Scene {
       constructor() { super('MainScene'); }
@@ -251,27 +252,29 @@
 
         this.enemyGroup = this.physics.add.group();
         this.bulletsGroup = this.physics.add.group();
-        this.enemyBulletGroup = this.physics.add.group();
+        this.enemyBulletGroup = this.physics.add.group({
+          defaultKey: 'kartoucha',
+          maxSize: MAX_ENEMY_BULLETS,
+          runChildUpdate: true
+        });
         this.coinsGroup = this.physics.add.group();
         bulletsGroup = this.bulletsGroup;
         coinsGroup = this.coinsGroup;
         enemyBulletGroup = this.enemyBulletGroup;
         enemies = [];
 
-        // تصادم طلقة البطل مع العدو
         this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
           bullet.destroy(); killEnemy(enemy, this);
         });
 
-        // تصادم طلقة العدو مع البطل
         this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
           if (bullet.active && !gameOver && playerHealth > 0) {
-            bullet.destroy();
+            bullet.setActive(false).setVisible(false);
+            bullet.body.stop();
             takeDamage(25);
           }
         });
 
-        // تصادم العدو رقم 1 مع البطل (ضربة سيف)
         this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
           let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !e.dead);
           if (!obj) return;
@@ -300,14 +303,12 @@
         }
         player.setVelocity(vx, vy);
 
-        // حركة الأعداء + منطق إطلاق النار للأعداء المسلحين
         for (let enemyObj of enemies) {
           let enemy = enemyObj.sprite;
           if (!enemy.active || enemyObj.dead) continue;
           let dx = player.x - enemy.x, dy = player.y - enemy.y;
           let dist = Math.sqrt(dx*dx + dy*dy);
 
-          // عدو السيف (type: 1)
           if (enemyObj.type === 1) {
             let speed = 110;
             enemySpeed1 = speed;
@@ -318,7 +319,6 @@
               enemy.setVelocity(0,0);
             }
           }
-          // العدو الثاني (type: 2) إطلاق نار
           else if (enemyObj.type === 2) {
             let speed = 110;
             enemySpeed2 = speed;
@@ -330,13 +330,11 @@
               enemyObj.hasShot = false;
             } else {
               enemy.setVelocity(0,0);
-              // أول طلقة بعد الاقتراب
               if (!enemyObj.hasShot) {
                 enemyObj.hasShot = true;
                 enemyObj.lastShotTime = time;
                 fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
               }
-              // كل 3 ثواني طلقة جديدة
               if (time - enemyObj.lastShotTime > 3000) {
                 enemyObj.lastShotTime = time;
                 fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
@@ -344,7 +342,6 @@
             }
           }
         }
-        // اطلاق النار التلقائي للبطل
         if (allowFire && time > lastFireTime + 500) {
           let nearest = null, minD = 999999, fireRadius=220;
           for (let enemyObj of enemies) {
@@ -357,15 +354,14 @@
           if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
         }
 
-        // حذف الرصاصة فقط إذا خرجت من حدود العالم
         enemyBulletGroup.children.iterate(function(bullet){
           if (bullet && bullet.active) {
-            // world bounds
             if (
               bullet.x < 0 || bullet.x > bgWidth ||
               bullet.y < 0 || bullet.y > bgHeight
             ) {
-              bullet.destroy();
+              bullet.setActive(false).setVisible(false);
+              bullet.body.stop();
             }
           }
         });
@@ -383,7 +379,7 @@
       let fromX = px + gunOffset.x;
       let fromY = py + gunOffset.y;
       let bullet = scene.bulletsGroup.create(fromX, fromY, 'kartoucha');
-      bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false); // حجم الطلقة أصغر للنصف
+      bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
       let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       bullet.rotation = Math.atan2(dy, dx);
@@ -391,24 +387,24 @@
     }
 
     function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
-      let gunOffset = {x: 18, y: -8};
-      let fromX = px + gunOffset.x;
-      let fromY = py + gunOffset.y;
-      let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
-      bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false); // حجم الطلقة أصغر للنصف
-
-      let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
+      let bullet = scene.enemyBulletGroup.getFirstDead(false);
+      if (!bullet) return;
+      bullet.setActive(true).setVisible(true);
+      bullet.setScale(0.0275);
+      bullet.body.setAllowGravity(false);
+      bullet.x = px + 18;
+      bullet.y = py - 8;
+      let dx = tx-bullet.x, dy = ty-bullet.y, dist = Math.sqrt(dx*dx + dy*dy);
       let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
       bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
       bullet.rotation = Math.atan2(dy, dx);
-      // الطلقة لا تختفي تلقائياً، فقط عندما تغادر حدود المدينة (في update)
     }
 
     function killEnemy(enemy, scene) {
-      // تدمير كل طلقات العدو عند موت العدو حتى لا تظل في مكانه وتسبب ضرر
       scene.enemyBulletGroup.children.iterate(function(bullet){
         if (bullet.active && Phaser.Math.Distance.Between(bullet.x, bullet.y, enemy.x, enemy.y) < 30) {
-          bullet.destroy();
+          bullet.setActive(false).setVisible(false);
+          bullet.body.stop();
         }
       });
       enemy.disableBody(true, true);
@@ -554,7 +550,6 @@
       });
     }
 
-    // === GAME OVER UI ===
     function showGameOver() {
       gameOver = true;
       allowControl = false;
