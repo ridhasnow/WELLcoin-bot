@@ -16,21 +16,14 @@ tg.ready();
 const userId = tg.initDataUnsafe?.user?.id;
 
 let playerHealth = 100;
-let isGameOverTriggered = false;
-let gameOver = false;
-
-// حماية من تكرار التصادم في نفس اللحظة
 let lastPlayerHitTime = 0;
-
-// إيقاف جمع العملات فقط عند الموت
 let balanceStopped = false;
 
 function setHealth(val) {
   playerHealth = Math.max(0, Math.min(100, val));
   document.getElementById('health-bar-inner').style.width = playerHealth + '%';
   document.getElementById('health-bar-text').textContent = playerHealth + '%';
-  if (playerHealth <= 0 && !isGameOverTriggered) {
-    isGameOverTriggered = true;
+  if (playerHealth <= 0) {
     balanceStopped = true;
     showGameOver();
   }
@@ -92,8 +85,6 @@ class MainScene extends Phaser.Scene {
     allowFire = false;
     playerHealth = 100;
     setHealth(100);
-    gameOver = false;
-    isGameOverTriggered = false;
     waveCount = 1;
     balanceStopped = false;
 
@@ -120,8 +111,6 @@ class MainScene extends Phaser.Scene {
       if (
         bullet.active &&
         playerHealth > 0 &&
-        !gameOver &&
-        !isGameOverTriggered &&
         (now - lastPlayerHitTime > 200)
       ) {
         bullet.disableBody(true, true);
@@ -138,14 +127,14 @@ class MainScene extends Phaser.Scene {
         obj.attackTimer = this.time.addEvent({
           delay: 1000,
           callback: () => {
-            if (!gameOver && !isGameOverTriggered && playerHealth > 0) {
+            if (playerHealth > 0) {
               enemyAttackSword(obj, this, playerObj);
             }
             obj.attackTimer2 = this.time.addEvent({
               delay: 3000,
               loop: true,
               callback: () => {
-                if (!gameOver && !isGameOverTriggered && playerHealth > 0) {
+                if (playerHealth > 0) {
                   enemyAttackSword(obj, this, playerObj);
                 }
               }
@@ -199,13 +188,9 @@ class MainScene extends Phaser.Scene {
     });
   }
   update(time, delta) {
-    // أُزلْت نهائياً شرط التوقف عند الموت أو Game Over!
-    // كان هنا: if (gameOver || isGameOverTriggered || playerHealth <= 0) return;
-
     player.setVisible(true);
 
     let vx = 0, vy = 0;
-    // خلي اللاعب دايماً يمشي ويضرب حتى بعد الموت
     if (allowControl && joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
     }
@@ -249,7 +234,6 @@ class MainScene extends Phaser.Scene {
         }
       }
     }
-    // خلي اللاعب يضرب حتى لو مات
     if (allowFire && time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
@@ -316,7 +300,6 @@ function killEnemy(enemy, scene) {
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
-  // جمع العملات فقط إذا اللاعب حي
   if (!balanceStopped) {
     balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
   }
@@ -433,7 +416,7 @@ function addEnemyWave(scene) {
 
   waveCount++;
   setTimeout(() => {
-    if (!gameOver && !isGameOverTriggered) addEnemyWave(scene);
+    addEnemyWave(scene);
   }, 7000);
 }
 
@@ -460,14 +443,11 @@ function updateBalance(newVal) {
 
 // === GAME OVER UI ===
 function showGameOver() {
-  gameOver = true;
-  allowControl = false;
-  allowFire = false;
+  balanceStopped = true;
   setTimeout(()=>{
     document.getElementById('gameover-coins-val').textContent = Number(balanceValue).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
     gameoverFireworks();
-    // اللاعب يختفي فقط هنا لو أردت (مثلاً player.setVisible(false);)
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
@@ -527,7 +507,6 @@ function gameoverFireworks() {
 }
 
 function enemyAttackSword(enemyObj, scene, playerObj) {
-  // ألغي شرط التوقف عند الموت تماماً حتى يبقى اللاعب يتحرك ويضرب
   if (enemyObj.dead) return;
   let enemy = enemyObj.sprite;
   enemyObj.attacking = true;
@@ -539,7 +518,7 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
     enemyObj.attacking = false;
   }, 350);
   let dx = playerObj.x - enemy.x, dy = playerObj.y - enemy.y, dist = Math.sqrt(dx*dx + dy*dy);
-  if (dist < 40 && playerHealth > 0 && !gameOver && !isGameOverTriggered) setHealth(playerHealth-25);
+  if (dist < 40 && playerHealth > 0) setHealth(playerHealth-25);
 }
 
 window.onload = function() {
