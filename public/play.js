@@ -53,7 +53,7 @@ const gameHeight = window.innerHeight;
 let player, camera, bg, bgWidth, bgHeight;
 let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
 let enemies = [], enemySpeed1=0, enemySpeed2=0, lastFireTime=0;
-let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0;
+let bulletsGroup, coinsGroup, coinAnimDuration=800;
 let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
@@ -95,104 +95,11 @@ class MainScene extends Phaser.Scene {
     this.input.manager.canvas.addEventListener('contextmenu', e => e.preventDefault());
     setupJoystick();
 
-    // Reset for a new session (new 3 hearts round)
-    prepareSession();
-
-    this.enemyGroup = this.physics.add.group();
-    this.bulletsGroup = this.physics.add.group();
-    this.enemyBulletGroup = this.physics.add.group();
-    this.coinsGroup = this.physics.add.group();
-    bulletsGroup = this.bulletsGroup;
-    coinsGroup = this.coinsGroup;
-    enemyBulletGroup = this.enemyBulletGroup;
-    enemies = [];
-
-    // تصادم رصاص البطل مع الأعداء فقط
-    this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
-      if (bullet.active && enemy.active && !gamePaused) {
-        bullet.disableBody(true, true);
-        killEnemy(enemy, this);
-      }
-    });
-
-    // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
-    this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      const now = Date.now();
-      if (bullet.active && (now - lastPlayerHitTime > 200) && !warningActive && !gamePaused) {
-        bullet.disableBody(true, true);
-        handlePlayerHit();
-        lastPlayerHitTime = now;
-      }
-    });
-
-    // تصادم سيف العدو مع البطل دائمًا
-    this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
-      let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !e.dead);
-      if (!obj) return;
-      if (!obj.attackTimer) {
-        obj.attackTimer = this.time.addEvent({
-          delay: 1000,
-          callback: () => {
-            enemyAttackSword(obj, this, playerObj);
-            obj.attackTimer2 = this.time.addEvent({
-              delay: 3000,
-              loop: true,
-              callback: () => {
-                enemyAttackSword(obj, this, playerObj);
-              }
-            });
-          }
-        });
-      }
-    }, null, this);
-
-    this.time.addEvent({
-      delay: 100,
-      loop: true,
-      callback: () => {
-        this.physics.world.colliders.getActive().forEach(collider => {
-          let allow =
-            (
-              (collider.object1 === this.bulletsGroup && collider.object2 === this.enemyGroup) ||
-              (collider.object1 === this.enemyGroup && collider.object2 === this.bulletsGroup) ||
-              (collider.object1 === player && collider.object2 === this.enemyBulletGroup) ||
-              (collider.object1 === this.enemyBulletGroup && collider.object2 === player) ||
-              (collider.object1 === player && collider.object2 === this.enemyGroup) ||
-              (collider.object1 === this.enemyGroup && collider.object2 === player)
-            );
-          if (!allow) collider.destroy();
-        });
-      }
-    });
-
-    this.events.on('postupdate', () => {
-      this.bulletsGroup.children.each(bullet => {
-        if (bullet.body) {
-          bullet.body.setAllowGravity(false);
-          bullet.body.setCollideWorldBounds(false);
-          bullet.body.checkCollision.none = false;
-        }
-      });
-      this.enemyBulletGroup.children.each(bullet => {
-        if (bullet.body) {
-          bullet.body.setAllowGravity(false);
-          bullet.body.setCollideWorldBounds(false);
-          bullet.body.checkCollision.none = false;
-        }
-      });
-      this.enemyGroup.children.each(enemy => {
-        if (enemy.body) {
-          enemy.body.setAllowGravity(false);
-          enemy.body.setCollideWorldBounds(true);
-          enemy.body.checkCollision.none = false;
-        }
-      });
-    });
+    startSession(); // هنا تبدأ الجولة الجديدة
   }
 
   update(time, delta) {
-    if (gamePaused) return; // Pause everything!
-
+    if (gamePaused) return;
     player.setVisible(true);
     player.body.enable = true;
 
@@ -207,20 +114,14 @@ class MainScene extends Phaser.Scene {
       if (!enemy.active || enemyObj.dead) continue;
       let dx = player.x - enemy.x, dy = player.y - enemy.y;
       let dist = Math.sqrt(dx*dx + dy*dy);
-
       let evx = 0, evy = 0;
       if (enemyObj.type === 1) {
         let speed = 110;
         enemySpeed1 = speed;
         if (!enemyObj.attacking) {
-          if (dist > 35) {
-            evx = (dx/dist)*speed; evy = (dy/dist)*speed;
-            enemy.setVelocity(evx, evy);
-          }
+          if (dist > 35) { evx = (dx/dist)*speed; evy = (dy/dist)*speed; enemy.setVelocity(evx, evy);}
           else enemy.setVelocity(0,0);
-        } else {
-          enemy.setVelocity(0,0);
-        }
+        } else enemy.setVelocity(0,0);
       } else if (enemyObj.type === 2) {
         let speed = 110;
         enemySpeed2 = speed;
@@ -264,26 +165,39 @@ class MainScene extends Phaser.Scene {
 
     enemyBulletGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
-        if (
-          bullet.x < 0 || bullet.x > bgWidth ||
-          bullet.y < 0 || bullet.y > bgHeight
-        ) {
-          bullet.disableBody(true, true);
-        }
+        if (bullet.x < 0 || bullet.x > bgWidth || bullet.y < 0 || bullet.y > bgHeight) bullet.disableBody(true, true);
       }
     });
-
     bulletsGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
-        if (
-          bullet.x < 0 || bullet.x > bgWidth ||
-          bullet.y < 0 || bullet.y > bgHeight
-        ) {
-          bullet.disableBody(true, true);
-        }
+        if (bullet.x < 0 || bullet.x > bgWidth || bullet.y < 0 || bullet.y > bgHeight) bullet.disableBody(true, true);
       }
     });
   }
+}
+
+function startSession() {
+  // تصفير كل شيء ماعدا sessionBalance والقلب
+  waveCount = 1;
+  balanceStopped = false;
+  gamePaused = false;
+  enemies = [];
+  if (bulletsGroup) bulletsGroup.clear(true, true);
+  if (coinsGroup) coinsGroup.clear(true, true);
+  if (enemyBulletGroup) enemyBulletGroup.clear(true, true);
+
+  setBalance(sessionBalance); // الرصيد يبقى
+  updateHeartsUI();
+
+  // إعادة اللاعب لنقطة البداية
+  if (player) {
+    player.x = bgWidth / 2;
+    player.y = bgHeight / 2;
+    player.setVelocity(0, 0);
+  }
+
+  // إعادة توليد الأعداء والموجة من جديد
+  setTimeout(()=>{ startEnemyWaves(); }, 250);
 }
 
 function fireBullet(px, py, tx, ty, scene) {
@@ -306,7 +220,6 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let fromY = py + gunOffset.y;
   let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
-
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
@@ -319,11 +232,9 @@ function killEnemy(enemy, scene) {
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
-
-  // Add coin value to sessionBalance, not to user's main balance
+  // كل كوين 0.00000050
   sessionBalance += 0.00000050;
   setBalance(sessionBalance);
-
   let obj = enemies.find(e => e.sprite === enemy);
   if (obj) obj.dead = true;
 }
@@ -488,9 +399,9 @@ function showGameOver() {
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
-  // Send coins to main balance, then redirect
   updateBalance(sessionBalance);
   setTimeout(() => {
+    sessionBalance = 0; // Reset session balance after claim
     prepareSession();
     document.getElementById('gameover-overlay').style.display = 'none';
     window.location.href = "index.html";
@@ -568,7 +479,7 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
 function handlePlayerHit() {
   if (currentHearts > 0 && !warningActive && !gamePaused) {
     warningActive = true;
-    gamePaused = true; // Pause everything
+    gamePaused = true;
     currentHearts -= 1;
     updateHeartsUI();
     showWarningOverlay();
@@ -581,7 +492,6 @@ function showWarningOverlay() {
   document.getElementById('warning-tryagain-btn').style.display = currentHearts > 0 ? 'block' : 'none';
   document.getElementById('warning-title').innerText = currentHearts > 0 ?
     'You lost a life! Try Again?' : '';
-  // إذا انتهت القلوب أظهر مباشرة واجهة النهاية
   if (currentHearts <= 0) {
     setTimeout(() => {
       document.getElementById('warning-overlay').style.display = 'none';
@@ -595,16 +505,8 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
   document.getElementById('warning-overlay').style.display = 'none';
   warningActive = false;
   if (currentHearts > 0) {
-    // Restart point & enemies, but preserve sessionBalance & hearts!
-    player.x = bgWidth / 2;
-    player.y = bgHeight / 2;
-    player.setVelocity(0, 0);
-    enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
-    updateHeartsUI();
-    waveCount = 1;
-    balanceStopped = false;
-    gamePaused = false;
-    startEnemyWaves();
+    // إعادة اللعبة بالكامل من الصفر مع الاحتفاظ بالرصيد المُجمع والجولات المتبقية
+    startSession();
   }
 };
 
@@ -632,7 +534,6 @@ function showGunFireAnim(scene, x, y) {
 window.onload = function() {
   if (!userId) return;
   getUserData().then(user => {
-    // لا نحمل رصيد الميني غيم القديم أبداً، يبدأ كل جلسة بصفر
     prepareSession();
   });
   showStartBanner();
@@ -641,7 +542,7 @@ window.onload = function() {
     setTimeout(()=>{
       showCountdown(5, ()=>{
         gamePaused = false;
-        startEnemyWaves();
+        startSession();
       });
     }, 440);
   };
