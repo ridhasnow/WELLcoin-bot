@@ -16,6 +16,7 @@ tg.ready();
 const userId = tg.initDataUnsafe?.user?.id;
 
 let playerHealth = 100;
+let lastPlayerHitTime = 0;
 let balanceStopped = false;
 
 function setHealth(val) {
@@ -41,6 +42,10 @@ let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWav
 let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
+
+// ========== إصلاح استقبال الرصاص ==========
+let playerBulletCooldown = 0; // تعيين مؤقت تبريد للرصاصة (اللاعب)
+const PLAYER_BULLET_HIT_COOLDOWN = 200; // ms
 
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
@@ -100,13 +105,16 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم رصاص الأعداء مع البطل (كل رصاصة لها منطقها الخاص)
+    // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      // كل رصاصة لها خاصية hit تمنع تكرار الإصابة المتزامنة
-      if (!bullet.hit) {
-        bullet.hit = true;
-        setHealth(playerHealth-25);
+      const now = Date.now();
+      if (
+        bullet.active &&
+        (now - playerBulletCooldown > PLAYER_BULLET_HIT_COOLDOWN)
+      ) {
         bullet.disableBody(true, true);
+        setHealth(playerHealth-25);
+        playerBulletCooldown = now;
       }
     });
 
@@ -179,6 +187,7 @@ class MainScene extends Phaser.Scene {
     player.body.enable = true;
 
     let vx = 0, vy = 0;
+    // اللاعب يتحرك دائمًا مع الجويستك مهما صار
     if (joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
     }
@@ -204,20 +213,23 @@ class MainScene extends Phaser.Scene {
         enemySpeed2 = speed;
         let shootRange = 220;
         if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
-        // منع سبام الرصاص: كل عدو يطلق رصاصة كل 3 ثواني فقط
-        if (!enemyObj.lastEnemyBulletTime) enemyObj.lastEnemyBulletTime = 0;
+        if (!enemyObj.hasShot) enemyObj.hasShot = false;
         if (dist > shootRange) {
           enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+          enemyObj.hasShot = false;
         } else {
           enemy.setVelocity(0,0);
-          if (time - enemyObj.lastEnemyBulletTime > 3000) {
-            enemyObj.lastEnemyBulletTime = time;
+
+          // ===== إصلاح إطلاق رصاصة واحدة فقط لكل فترة زمنية =====
+          if (time - enemyObj.lastShotTime > 3000) {
+            enemyObj.lastShotTime = time;
             fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
           }
         }
       }
     }
 
+    // اللاعب يضرب دائمًا بدون توقف
     if (time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
@@ -277,7 +289,6 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
-  setTimeout(() => { if (bullet && bullet.active) bullet.disableBody(true, true); }, 1200);
 }
 
 function killEnemy(enemy, scene) {
