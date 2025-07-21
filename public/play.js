@@ -42,31 +42,28 @@ let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
 
-// === player invincibility (respawn blink) ===
+// ==== invincibility for player after hit ====
 let playerInvincible = false;
-let invincibleBlinkTimer = null;
-let invincibleEndTimer = null;
-
+let playerBlinkTimer = null;
 function startPlayerInvincibility(scene) {
   playerInvincible = true;
-  let blinkOn = true;
-  if (invincibleBlinkTimer) invincibleBlinkTimer.remove();
-  if (invincibleEndTimer) invincibleEndTimer.remove();
-  invincibleBlinkTimer = scene.time.addEvent({
-    delay: 120, // كل 0.12 ثانية يغير حالة الإظهار
+  let blinkState = true;
+  if (playerBlinkTimer) playerBlinkTimer.remove();
+  playerBlinkTimer = scene.time.addEvent({
+    delay: 120,
     loop: true,
     callback: () => {
-      blinkOn = !blinkOn;
-      if (player) player.setVisible(blinkOn);
+      blinkState = !blinkState;
+      if (player) player.setVisible(blinkState);
     }
   });
-  invincibleEndTimer = scene.time.addEvent({
-    delay: 2000, // مدة الريسباون ثانيتين
+  scene.time.addEvent({
+    delay: 2000,
     callback: () => {
       playerInvincible = false;
       if (player) player.setVisible(true);
-      if (invincibleBlinkTimer) invincibleBlinkTimer.remove();
-      invincibleBlinkTimer = null;
+      if (playerBlinkTimer) playerBlinkTimer.remove();
+      playerBlinkTimer = null;
     }
   });
 }
@@ -129,12 +126,12 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم رصاص الأعداء مع البطل مع الريسباون والبلينك
+    // تصادم رصاص الأعداء مع البطل مع invincibility
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       if (bullet.active && !playerInvincible) {
         bullet.disableBody(true, true);
         setHealth(playerHealth-25);
-        startPlayerInvincibility(this); // فعل الريسباون والبلينك
+        startPlayerInvincibility(this);
       }
     });
 
