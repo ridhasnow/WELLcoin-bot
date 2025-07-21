@@ -23,13 +23,12 @@ function setHealth(val) {
   playerHealth = Math.max(0, Math.min(100, val));
   document.getElementById('health-bar-inner').style.width = playerHealth + '%';
   document.getElementById('health-bar-text').textContent = playerHealth + '%';
-  if (playerHealth <= 0) {
+  if (playerHealth <= 0 && !balanceStopped) {
     balanceStopped = true;
     showGameOver();
   }
 }
 
-let totalBalance = 0;
 function setBalance(val) {
   document.getElementById('balance-value').textContent = Number(val).toFixed(8);
 }
@@ -40,11 +39,9 @@ let player, camera, bg, bgWidth, bgHeight;
 let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
 let enemies = [], enemySpeed1=0, enemySpeed2=0, lastFireTime=0;
 let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0;
-let enemy1Key='enemy1', enemy2Key='enemy2';
-let enemyBulletGroup;
+let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
-let enemy1AttackFrameIndex = 0;
 
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
@@ -65,6 +62,7 @@ class MainScene extends Phaser.Scene {
 
     player = this.physics.add.sprite(bgWidth/2, bgHeight/2, 'player').setScale(0.11);
     player.setDepth(2).setCollideWorldBounds(true);
+    player.body.enable = true;
 
     this.physics.world.setBounds(0, 0, bgWidth, bgHeight);
     this.cameras.main.setBounds(0, 0, bgWidth, bgHeight);
@@ -103,12 +101,11 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم رصاص الأعداء مع البطل فقط (مع حماية من تكرار التصادم)
+    // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       const now = Date.now();
       if (
         bullet.active &&
-        playerHealth > 0 &&
         (now - lastPlayerHitTime > 200)
       ) {
         bullet.disableBody(true, true);
@@ -117,7 +114,7 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم سيف العدو مع البطل
+    // تصادم سيف العدو مع البطل دائمًا
     this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
       let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !e.dead);
       if (!obj) return;
@@ -125,16 +122,12 @@ class MainScene extends Phaser.Scene {
         obj.attackTimer = this.time.addEvent({
           delay: 1000,
           callback: () => {
-            if (playerHealth > 0) {
-              enemyAttackSword(obj, this, playerObj);
-            }
+            enemyAttackSword(obj, this, playerObj);
             obj.attackTimer2 = this.time.addEvent({
               delay: 3000,
               loop: true,
               callback: () => {
-                if (playerHealth > 0) {
-                  enemyAttackSword(obj, this, playerObj);
-                }
+                enemyAttackSword(obj, this, playerObj);
               }
             });
           }
@@ -187,9 +180,10 @@ class MainScene extends Phaser.Scene {
   }
   update(time, delta) {
     player.setVisible(true);
+    player.body.enable = true;
 
     let vx = 0, vy = 0;
-    // اللاعب يتحرك دايماً طول ما الجويستك شغال
+    // اللاعب يتحرك دائمًا مع الجويستك مهما صار
     if (joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
     }
@@ -233,7 +227,8 @@ class MainScene extends Phaser.Scene {
         }
       }
     }
-    // اللاعب يضرب دايماً حتى لو مات
+
+    // اللاعب يضرب دائمًا بدون توقف
     if (time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
@@ -518,7 +513,7 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
     enemyObj.attacking = false;
   }, 350);
   let dx = playerObj.x - enemy.x, dy = playerObj.y - enemy.y, dist = Math.sqrt(dx*dx + dy*dy);
-  if (dist < 40 && playerHealth > 0) setHealth(playerHealth-25);
+  if (dist < 40) setHealth(playerHealth-25);
 }
 
 window.onload = function() {
