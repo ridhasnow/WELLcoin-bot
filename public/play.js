@@ -83,7 +83,7 @@ class MainScene extends Phaser.Scene {
     this.load.image('heart_pixel_red', 'assets/heart_pixel_red.png');
     this.load.image('heart_pixel_grey', 'assets/heart_pixel_grey.png');
     this.load.image('gun_fire', 'assets/gun_fire_pixel.gif');
-    this.load.image('player_hit', 'assets/gun_fire_pixel.gif'); // نفس الانيمشين للانفجار
+    this.load.image('player_hit', 'assets/gun_fire_pixel.gif');
   }
   create() {
     bg = this.add.image(0, 0, 'city');
@@ -94,12 +94,9 @@ class MainScene extends Phaser.Scene {
     player.setDepth(2).setCollideWorldBounds(true);
     player.body.enable = true;
 
-    // تصادم دائري لجسم اللاعب
-    player.body.setCircle(
-      player.displayWidth / 2.1,
-      player.body.width / 2 - player.displayWidth / 2.1,
-      player.body.height / 2 - player.displayWidth / 2.1
-    );
+    // جسم دائري للاعب
+    let playerRadius = player.displayWidth / 2.2;
+    player.body.setCircle(playerRadius, player.body.width/2 - playerRadius, player.body.height/2 - playerRadius);
 
     this.physics.world.setBounds(0, 0, bgWidth, bgHeight);
     this.cameras.main.setBounds(0, 0, bgWidth, bgHeight);
@@ -136,12 +133,18 @@ class MainScene extends Phaser.Scene {
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       if (!bullet.active || !p.active) return;
       const now = Date.now();
+
+      // جسم دائري للرصاصة
+      let bulletRadius = bullet.displayWidth / 2.2;
+      bullet.body.setCircle(bulletRadius, bullet.body.width/2 - bulletRadius, bullet.body.height/2 - bulletRadius);
+
       // مركز اللاعب
-      const px = p.x, py = p.y, pr = p.displayWidth/2.1;
+      let px = p.x, py = p.y;
       // مركز الرصاصة
-      const bx = bullet.x, by = bullet.y, br = bullet.displayWidth/2.1;
-      const dist = Phaser.Math.Distance.Between(px, py, bx, by);
-      if (dist < pr + br && (now - lastPlayerHitTime > 200) && !warningActive) {
+      let bx = bullet.x, by = bullet.y;
+      let dist = Phaser.Math.Distance.Between(px, py, bx, by);
+
+      if (dist < playerRadius + bulletRadius && (now - lastPlayerHitTime > 200) && !warningActive) {
         showPlayerHitExplosion(this, player);
         bullet.disableBody(true, true);
         handlePlayerHit();
@@ -327,11 +330,8 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
 
   // جسم دائري للرصاصة
-  bullet.body.setCircle(
-    bullet.displayWidth / 2.1,
-    bullet.body.width / 2 - bullet.displayWidth / 2.1,
-    bullet.body.height / 2 - bullet.displayWidth / 2.1
-  );
+  let bulletRadius = bullet.displayWidth / 2.2;
+  bullet.body.setCircle(bulletRadius, bullet.body.width/2 - bulletRadius, bullet.body.height/2 - bulletRadius);
 
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
@@ -652,7 +652,9 @@ function showGunFireAnim(scene, x, y) {
 // === انفجار على اللاعب عند الاصطدام برصاصة العدو ===
 function showPlayerHitExplosion(scene, playerObj) {
   // حجم الانفجار = نفس حجم اللاعب
-  let fire = scene.add.sprite(playerObj.x, playerObj.y, 'player_hit').setScale(playerObj.displayWidth/64, playerObj.displayHeight/64).setDepth(playerObj.depth + 1);
+  let fire = scene.add.sprite(playerObj.x, playerObj.y, 'player_hit')
+    .setScale(playerObj.displayWidth/64, playerObj.displayHeight/64)
+    .setDepth(playerObj.depth + 1);
   fire.alpha = 1;
   scene.tweens.add({
     targets: fire,
