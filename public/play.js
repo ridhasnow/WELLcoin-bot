@@ -17,17 +17,19 @@ const userId = tg.initDataUnsafe?.user?.id;
 
 // === Health System (Hearts) ===
 let maxHearts = 3;
-let currentHearts = maxHearts;
-let lastPlayerHitTime = 0;
-let warningActive = false;
 
-// === Game Session Logic ===
+// =========== استرجاع رصيد العملات والقلوب من localStorage ===========
 let sessionBalance = 0;
-
-// =========== استرجاع رصيد العملات من localStorage ===========
+let currentHearts = maxHearts;
 if (localStorage.getItem("sessionBalance") !== null) {
   sessionBalance = parseFloat(localStorage.getItem("sessionBalance") || "0");
 }
+if (localStorage.getItem("currentHearts") !== null) {
+  currentHearts = parseInt(localStorage.getItem("currentHearts") || maxHearts);
+}
+
+let lastPlayerHitTime = 0;
+let warningActive = false;
 
 // === UI Helpers ===
 function updateHeartsUI() {
@@ -308,7 +310,6 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   bullet.rotation = Math.atan2(dy, dx);
 }
 
-// === تعديل قيمة العملة عند قتل العدو ===
 const COIN_VALUE = 0.00000003;
 
 function killEnemy(enemy, scene) {
@@ -450,7 +451,6 @@ function startEnemyWaves() {
 
 // Reset session state for a new "3 hearts" game
 function prepareSession() {
-  currentHearts = maxHearts;
   setBalance(sessionBalance);
   waveCount = 1;
   updateHeartsUI();
@@ -471,20 +471,21 @@ function updateBalance(newVal) {
   });
 }
 
-// === GAME OVER UI ===
 function showGameOver() {
   setTimeout(()=>{
     document.getElementById('gameover-coins-val').textContent = Number(sessionBalance).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
     gameoverFireworks();
-    // امسح الرصيد بعد النهاية
+    // امسح الرصيد والقلوب بعد النهاية
     localStorage.removeItem("sessionBalance");
+    localStorage.removeItem("currentHearts");
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
   updateBalance(sessionBalance);
   setTimeout(() => {
     sessionBalance = 0;
+    currentHearts = maxHearts;
     prepareSession();
     document.getElementById('gameover-overlay').style.display = 'none';
     window.location.href = "index.html";
@@ -563,9 +564,10 @@ function handlePlayerHit() {
   if (currentHearts > 0 && !warningActive) {
     warningActive = true;
     currentHearts -= 1;
+    localStorage.setItem("currentHearts", currentHearts);
     updateHeartsUI();
 
-    // إذا لسه عندك قلوب، احفظ الرصيد و"restart" الصفحة (reload)
+    // إذا لسه عندك قلوب، احفظ الرصيد والقلوب و"restart" الصفحة (reload)
     if (currentHearts > 0) {
       localStorage.setItem("sessionBalance", sessionBalance);
       setTimeout(() => {
@@ -599,7 +601,6 @@ function checkGameOver() {
   }
 }
 
-// === Gun Fire Pixel Animation ===
 function showGunFireAnim(scene, x, y) {
   let fire = scene.add.sprite(x, y, 'gun_fire').setScale(0.08).setDepth(12);
   fire.alpha = 1;
