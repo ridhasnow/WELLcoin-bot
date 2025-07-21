@@ -21,7 +21,6 @@ let currentHearts = maxHearts;
 let lastPlayerHitTime = 0;
 let balanceStopped = false;
 let warningActive = false;
-let gamePaused = false;
 
 // === Game Session Logic ===
 let sessionBalance = 0;   // Coins collected in the current 3-heart session
@@ -109,7 +108,7 @@ class MainScene extends Phaser.Scene {
 
     // تصادم رصاص البطل مع الأعداء فقط
     this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
-      if (bullet.active && enemy.active && !gamePaused) {
+      if (bullet.active && enemy.active) {
         bullet.disableBody(true, true);
         killEnemy(enemy, this);
       }
@@ -118,7 +117,7 @@ class MainScene extends Phaser.Scene {
     // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       const now = Date.now();
-      if (bullet.active && (now - lastPlayerHitTime > 200) && !warningActive && !gamePaused) {
+      if (bullet.active && (now - lastPlayerHitTime > 200) && !warningActive) {
         bullet.disableBody(true, true);
         handlePlayerHit();
         lastPlayerHitTime = now;
@@ -191,8 +190,6 @@ class MainScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (gamePaused) return; // Pause everything!
-
     player.setVisible(true);
     player.body.enable = true;
 
@@ -287,7 +284,6 @@ class MainScene extends Phaser.Scene {
 }
 
 function fireBullet(px, py, tx, ty, scene) {
-  if (gamePaused) return;
   let gunOffset = {x: 18, y: -8};
   let fromX = px + gunOffset.x;
   let fromY = py + gunOffset.y;
@@ -300,7 +296,6 @@ function fireBullet(px, py, tx, ty, scene) {
 }
 
 function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
-  if (gamePaused) return;
   let gunOffset = {x: 18, y: -8};
   let fromX = px + gunOffset.x;
   let fromY = py + gunOffset.y;
@@ -317,7 +312,6 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
 const COIN_VALUE = 0.00000003;
 
 function killEnemy(enemy, scene) {
-  if (gamePaused) return;
   enemy.disableBody(true, true);
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
@@ -331,7 +325,6 @@ function killEnemy(enemy, scene) {
 }
 
 function animateCoinToBalance(coin) {
-  if (gamePaused) return;
   let balanceBar = document.getElementById('balance-bar');
   let rect = balanceBar.getBoundingClientRect();
   let gameRect = document.getElementById('game-container').getBoundingClientRect();
@@ -417,7 +410,6 @@ function randomEdgePosition(cityW, cityH) {
 }
 
 function addEnemyWave(scene) {
-  if (gamePaused) return;
   let cityW = bgWidth, cityH = bgHeight;
   let n_enemy1 = 6 + (waveCount-1);
   let n_enemy2 = 4 + (waveCount-1);
@@ -433,7 +425,6 @@ function addEnemyWave(scene) {
     enemy1List.push(enemy);
   }
   function spawnEnemy2Wave() {
-    if (gamePaused) return;
     for(let i=0;i<n_enemy2;i++) {
       let pos = randomEdgePosition(cityW, cityH);
       let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
@@ -451,7 +442,6 @@ function addEnemyWave(scene) {
 }
 
 function startEnemyWaves() {
-  if (gamePaused) return;
   const scene = game.scene.scenes[0];
   lastEnemyWaveTime = 0;
   addEnemyWave(scene);
@@ -464,20 +454,17 @@ function prepareSession() {
   setBalance(sessionBalance);
   waveCount = 1;
   balanceStopped = false;
-  gamePaused = false;
   updateHeartsUI();
 }
 
 // إعادة دخول جديد بعد كل موتة
 function resetRoundAfterDeath() {
-  // أعد ضبط كل شيء كأنها بداية جديدة لكن العملات محفوظة
   player.x = bgWidth / 2;
   player.y = bgHeight / 2;
   player.setVelocity(0, 0);
   enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
   waveCount = 1;
   balanceStopped = false;
-  gamePaused = true; // نوقف اللعب حتى يدخل من جديد
   showStartBanner(); // أظهر شاشة البداية من جديد مع كل موتة
 }
 
@@ -499,7 +486,6 @@ function updateBalance(newVal) {
 // === GAME OVER UI ===
 function showGameOver() {
   balanceStopped = true;
-  gamePaused = true;
   setTimeout(()=>{
     document.getElementById('gameover-coins-val').textContent = Number(sessionBalance).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
@@ -569,7 +555,7 @@ function gameoverFireworks() {
 }
 
 function enemyAttackSword(enemyObj, scene, playerObj) {
-  if (enemyObj.dead || gamePaused) return;
+  if (enemyObj.dead) return;
   let enemy = enemyObj.sprite;
   enemyObj.attacking = true;
   enemy.setTexture(enemy1AttackFrames[enemyObj.attackFrameIndex % 2].replace('.png',''));
@@ -585,9 +571,8 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
 
 // === HEART & WARNING LOGIC ===
 function handlePlayerHit() {
-  if (currentHearts > 0 && !warningActive && !gamePaused) {
+  if (currentHearts > 0 && !warningActive) {
     warningActive = true;
-    gamePaused = true; // Pause everything
     currentHearts -= 1;
     updateHeartsUI();
     showWarningOverlay();
@@ -615,7 +600,6 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
   document.getElementById('warning-overlay').style.display = 'none';
   warningActive = false;
   if (currentHearts > 0) {
-    // إعادة دخول جديد بعد كل موتة، العملات محفوظة
     resetRoundAfterDeath();
     updateHeartsUI();
   }
@@ -624,14 +608,12 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
 function checkGameOver() {
   if (currentHearts <= 0 && !balanceStopped) {
     balanceStopped = true;
-    gamePaused = true;
     showGameOver();
   }
 }
 
 // === Gun Fire Pixel Animation ===
 function showGunFireAnim(scene, x, y) {
-  if (gamePaused) return;
   let fire = scene.add.sprite(x, y, 'gun_fire').setScale(0.08).setDepth(12);
   fire.alpha = 1;
   scene.tweens.add({
@@ -652,7 +634,6 @@ window.onload = function() {
     hideStartBanner();
     setTimeout(()=>{
       showCountdown(5, ()=>{
-        gamePaused = false;
         startEnemyWaves();
       });
     }, 440);
