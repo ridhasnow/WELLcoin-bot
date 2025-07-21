@@ -15,26 +15,39 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 const userId = tg.initDataUnsafe?.user?.id;
 
-let playerHealth = 100;
+// === Health System (Hearts) ===
+let maxHearts = 3;
+let currentHearts = maxHearts;
 let lastPlayerHitTime = 0;
 let balanceStopped = false;
+let warningActive = false;
 
-function setHealth(val) {
-  playerHealth = Math.max(0, Math.min(100, val));
-  document.getElementById('health-bar-inner').style.width = playerHealth + '%';
-  document.getElementById('health-bar-text').textContent = playerHealth + '%';
-  if (playerHealth <= 0 && !balanceStopped) {
-    balanceStopped = true;
-    showGameOver();
+// === UI Helpers ===
+function updateHeartsUI() {
+  // Update hearts UI on both status bar and warning overlay
+  let heartsBar = document.getElementById('hearts-bar');
+  let warningHearts = document.getElementById('warning-hearts');
+  if (!heartsBar || !warningHearts) return;
+  let heartsHtml = '';
+  let warningHtml = '';
+  for (let i = 0; i < maxHearts; i++) {
+    let isActive = i < currentHearts;
+    let heartSrc = isActive ? 'assets/heart_pixel_red.png' : 'assets/heart_pixel_grey.png';
+    heartsHtml += `<img src="${heartSrc}" class="pixel-heart${isActive ? '' : ' grey'}" style="width:32px;height:32px;margin:0 2px;">`;
+    warningHtml += `<img src="${heartSrc}" class="pixel-heart${isActive ? '' : ' grey'}" style="width:48px;height:48px;margin:0 6px;">`;
   }
+  heartsBar.innerHTML = heartsHtml;
+  warningHearts.innerHTML = warningHtml;
 }
 
 function setBalance(val) {
   document.getElementById('balance-value').textContent = Number(val).toFixed(8);
 }
+
 const gameWidth = window.innerWidth;
 const gameHeight = window.innerHeight;
 
+// === Phaser Main Variables ===
 let player, camera, bg, bgWidth, bgHeight;
 let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
 let enemies = [], enemySpeed1=0, enemySpeed2=0, lastFireTime=0;
@@ -43,29 +56,25 @@ let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
 
-// دالة تضمن التصادم بين اللاعب ورصاص الأعداء حتى بعد إعادة تعيينهم
-function setupPlayerEnemyBulletCollision(scene) {
-  scene.physics.world.colliders.getActive().forEach(collider => {
-    const isPlayerBulletCollider =
-      (collider.object1 === player && collider.object2 === enemyBulletGroup) ||
-      (collider.object1 === enemyBulletGroup && collider.object2 === player);
-    if (isPlayerBulletCollider) {
-      collider.destroy();
-    }
-  });
-  // استخدم collider بدل overlap
-  scene.physics.add.collider(player, enemyBulletGroup, (bullet, p) => {
-    console.log('رصاصة اصطدمت باللاعب!', bullet, p);
-    const now = Date.now();
+// === Buildings & Cars Collision ===
+let buildingsRects = [
+  // Example: {x:100, y:200, width:70, height:50}
+  // You should fill this with real values from your map
+];
+let carsRects = [
+  // Example: {x:300, y:400, width:40, height:25}
+  // You should fill this with real values from your map
+];
+// Helper for overlap
+function checkRectCollision(sprite, rects) {
+  for (let rect of rects) {
+    let sx = sprite.x, sy = sprite.y;
     if (
-      bullet.active &&
-      (now - lastPlayerHitTime > 200)
-    ) {
-      bullet.disableBody(true, true);
-      setHealth(playerHealth-25);
-      lastPlayerHitTime = now;
-    }
-  });
+      sx > rect.x && sx < (rect.x + rect.width) &&
+      sy > rect.y && sy < (rect.y + rect.height)
+    ) return true;
+  }
+  return false;
 }
 
 class MainScene extends Phaser.Scene {
@@ -79,6 +88,9 @@ class MainScene extends Phaser.Scene {
     this.load.image('wlc', 'assets/wlc.png');
     this.load.image('enemy1-attack1', 'assets/enemy1-attack1.png');
     this.load.image('enemy1-attack2', 'assets/enemy1-attack2.png');
+    this.load.image('heart_pixel_red', 'assets/heart_pixel_red.png');
+    this.load.image('heart_pixel_grey', 'assets/heart_pixel_grey.png');
+    this.load.image('gun_fire', 'assets/gun_fire_pixel.gif'); // simple gun fire pixel sprite
   }
   create() {
     bg = this.add.image(0, 0, 'city');
@@ -104,8 +116,8 @@ class MainScene extends Phaser.Scene {
 
     setBalance(0.00000000);
     balanceValue = 0;
-    playerHealth = 100;
-    setHealth(100);
+    currentHearts = maxHearts;
+    updateHeartsUI();
     waveCount = 1;
     balanceStopped = false;
 
@@ -118,14 +130,21 @@ class MainScene extends Phaser.Scene {
     enemyBulletGroup = this.enemyBulletGroup;
     enemies = [];
 
-    // نعيد تعريف التصادم بعد تعيين اللاعب و enemyBulletGroup
-    setupPlayerEnemyBulletCollision(this);
-
     // تصادم رصاص البطل مع الأعداء فقط
-    this.physics.add.collider(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
+    this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
       if (bullet.active && enemy.active) {
         bullet.disableBody(true, true);
         killEnemy(enemy, this);
+      }
+    });
+
+    // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
+    this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
+      const now = Date.now();
+      if (bullet.active && (now - lastPlayerHitTime > 200) && !warningActive) {
+        bullet.disableBody(true, true);
+        handlePlayerHit();
+        lastPlayerHitTime = now;
       }
     });
 
@@ -150,6 +169,7 @@ class MainScene extends Phaser.Scene {
       }
     }, null, this);
 
+    // Clean up colliders
     this.time.addEvent({
       delay: 100,
       loop: true,
@@ -193,6 +213,7 @@ class MainScene extends Phaser.Scene {
       });
     });
   }
+
   update(time, delta) {
     player.setVisible(true);
     player.body.enable = true;
@@ -202,7 +223,17 @@ class MainScene extends Phaser.Scene {
     if (joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
     }
-    player.setVelocity(vx, vy);
+
+    // ==== COLLISION WITH BUILDINGS & CARS ====
+    let nextX = player.x + vx * (delta/1000);
+    let nextY = player.y + vy * (delta/1000);
+    let fakePlayer = {x: nextX, y: nextY};
+
+    if (!checkRectCollision(fakePlayer, buildingsRects) && !checkRectCollision(fakePlayer, carsRects)) {
+      player.setVelocity(vx, vy);
+    } else {
+      player.setVelocity(0, 0);
+    }
 
     for (let enemyObj of enemies) {
       let enemy = enemyObj.sprite;
@@ -210,11 +241,21 @@ class MainScene extends Phaser.Scene {
       let dx = player.x - enemy.x, dy = player.y - enemy.y;
       let dist = Math.sqrt(dx*dx + dy*dy);
 
+      // ==== COLLISION FOR ENEMIES ====
+      let evx = 0, evy = 0;
       if (enemyObj.type === 1) {
         let speed = 110;
         enemySpeed1 = speed;
         if (!enemyObj.attacking) {
-          if (dist > 35) enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+          if (dist > 35) {
+            evx = (dx/dist)*speed; evy = (dy/dist)*speed;
+            let nextEnemy = {x: enemy.x + evx * (delta/1000), y: enemy.y + evy * (delta/1000)};
+            if (!checkRectCollision(nextEnemy, buildingsRects) && !checkRectCollision(nextEnemy, carsRects)) {
+              enemy.setVelocity(evx, evy);
+            } else {
+              enemy.setVelocity(0,0);
+            }
+          }
           else enemy.setVelocity(0,0);
         } else {
           enemy.setVelocity(0,0);
@@ -226,10 +267,17 @@ class MainScene extends Phaser.Scene {
         if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
         if (!enemyObj.hasShot) enemyObj.hasShot = false;
         if (dist > shootRange) {
-          enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+          evx = (dx/dist)*speed; evy = (dy/dist)*speed;
+          let nextEnemy = {x: enemy.x + evx * (delta/1000), y: enemy.y + evy * (delta/1000)};
+          if (!checkRectCollision(nextEnemy, buildingsRects) && !checkRectCollision(nextEnemy, carsRects)) {
+            enemy.setVelocity(evx, evy);
+          } else {
+            enemy.setVelocity(0,0);
+          }
           enemyObj.hasShot = false;
         } else {
           enemy.setVelocity(0,0);
+          // === Enemy 2 only shoots once per engagement ===
           if (!enemyObj.hasShot) {
             enemyObj.hasShot = true;
             enemyObj.lastShotTime = time;
@@ -253,7 +301,11 @@ class MainScene extends Phaser.Scene {
         let dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < fireRadius && dist < minD) {minD=dist; nearest=enemy;}
       }
-      if (nearest) {fireBullet(player.x, player.y, nearest.x, nearest.y, this); lastFireTime = time;}
+      if (nearest) {
+        fireBullet(player.x, player.y, nearest.x, nearest.y, this);
+        lastFireTime = time;
+        showGunFireAnim(this, player.x + 18, player.y - 8);
+      }
     }
 
     enemyBulletGroup.children.iterate(function(bullet){
@@ -298,11 +350,11 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let fromY = py + gunOffset.y;
   let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
-  bullet.rotation = Math.atan2(ty-fromY, tx-fromX);
 
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
+  bullet.rotation = Math.atan2(dy, dx);
 }
 
 function killEnemy(enemy, scene) {
@@ -420,7 +472,6 @@ function addEnemyWave(scene) {
       enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
       enemies.push({sprite: enemy, type: 2, dead: false});
     }
-    setupPlayerEnemyBulletCollision(scene);
   }
 
   setTimeout(spawnEnemy2Wave, 7000);
@@ -529,7 +580,60 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
     enemyObj.attacking = false;
   }, 350);
   let dx = playerObj.x - enemy.x, dy = playerObj.y - enemy.y, dist = Math.sqrt(dx*dx + dy*dy);
-  if (dist < 40) setHealth(playerHealth-25);
+  if (dist < 40 && !warningActive) handlePlayerHit();
+}
+
+// === HEART & WARNING LOGIC ===
+function handlePlayerHit() {
+  if (currentHearts > 0 && !warningActive) {
+    warningActive = true;
+    currentHearts -= 1;
+    updateHeartsUI();
+    showWarningOverlay();
+  }
+}
+
+function showWarningOverlay() {
+  document.getElementById('warning-overlay').style.display = 'flex';
+  updateHeartsUI();
+  document.getElementById('warning-tryagain-btn').style.display = currentHearts > 0 ? 'block' : 'none';
+  document.getElementById('warning-title').innerText = currentHearts > 0 ?
+    'You lost a life! Try Again?' : 'No lives left!';
+}
+
+document.getElementById('warning-tryagain-btn').onclick = function() {
+  document.getElementById('warning-overlay').style.display = 'none';
+  warningActive = false;
+  if (currentHearts > 0) {
+    // Restart at initial point
+    player.x = bgWidth / 2;
+    player.y = bgHeight / 2;
+    player.setVelocity(0, 0);
+    enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
+    updateHeartsUI();
+    balanceStopped = false;
+    waveCount = 1;
+    startEnemyWaves();
+  }
+};
+
+function checkGameOver() {
+  if (currentHearts <= 0 && !balanceStopped) {
+    balanceStopped = true;
+    showGameOver();
+  }
+}
+
+// === Gun Fire Pixel Animation ===
+function showGunFireAnim(scene, x, y) {
+  let fire = scene.add.sprite(x, y, 'gun_fire').setScale(0.08).setDepth(12);
+  fire.alpha = 1;
+  scene.tweens.add({
+    targets: fire,
+    alpha: 0,
+    duration: 180,
+    onComplete: () => fire.destroy()
+  });
 }
 
 window.onload = function() {
@@ -549,6 +653,8 @@ window.onload = function() {
       });
     }, 440);
   };
+  updateHeartsUI();
+  document.getElementById('warning-overlay').style.display = 'none';
 }
 
 let game = new Phaser.Game({
@@ -556,7 +662,7 @@ let game = new Phaser.Game({
   width: gameWidth, height: gameHeight,
   backgroundColor: "#101016",
   scene: MainScene,
-  physics: { default: 'arcade', arcade: { debug: true } }, // debug مفعّل
+  physics: { default: 'arcade', arcade: { debug: false } },
   parent: 'game-container',
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
 });
