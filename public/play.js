@@ -21,21 +21,45 @@ let maxHearts = 3;
 // =========== استرجاع رصيد العملات والقلوب من localStorage ===========
 let sessionBalance = 0;
 let currentHearts = maxHearts;
-
-// اصلاح مشكلة تهيئة الرصيد: الرصيد صفر دائما عند أول جولة
-if (localStorage.getItem("sessionStarted") === null) {
-  // بداية جلسة جديدة، نضمن الرصيد صفر وكل شيء جديد
+let sessionActive = true;
+// ====== إصلاح localStorage: بداية جلسة نظيفة دائماً =======
+function initSessionStorage() {
   localStorage.setItem("sessionBalance", "0");
   localStorage.setItem("currentHearts", maxHearts);
   localStorage.setItem("sessionStarted", "1");
 }
+if (
+  !localStorage.getItem("sessionStarted") ||
+  isNaN(parseFloat(localStorage.getItem("sessionBalance"))) ||
+  isNaN(parseInt(localStorage.getItem("currentHearts"))) ||
+  parseFloat(localStorage.getItem("sessionBalance")) < 0 ||
+  parseInt(localStorage.getItem("currentHearts")) > maxHearts ||
+  parseInt(localStorage.getItem("currentHearts")) < 0
+) {
+  initSessionStorage();
+}
 sessionBalance = parseFloat(localStorage.getItem("sessionBalance") || "0");
 currentHearts = parseInt(localStorage.getItem("currentHearts") || maxHearts);
 
-let lastPlayerHitTime = 0;
 let warningActive = false;
+let isPlayerDying = false;
 
-let sessionActive = true; // نستخدمها لمنع تجميع العملات بعد الموت النهائي
+function cleanAllGameObjects(scene) {
+  try {
+    if (scene.enemyGroup) scene.enemyGroup.clear(true, true);
+    if (scene.bulletsGroup) scene.bulletsGroup.clear(true, true);
+    if (scene.enemyBulletGroup) scene.enemyBulletGroup.clear(true, true);
+    if (scene.coinsGroup) scene.coinsGroup.clear(true, true);
+  } catch (e) {}
+}
+
+function resetGameCamera(scene) {
+  try {
+    scene.cameras.main.setZoom(1.35);
+    scene.cameras.main.setScroll(0, 0);
+    scene.cameras.main.roundPixels = true;
+  } catch (e) {}
+}
 
 // === UI Helpers ===
 function updateHeartsUI() {
@@ -86,6 +110,9 @@ class MainScene extends Phaser.Scene {
     this.load.image('player_hit', 'assets/gun_fire_pixel.gif');
   }
   create() {
+    cleanAllGameObjects(this);
+    resetGameCamera(this);
+
     bg = this.add.image(0, 0, 'city');
     bgWidth = bg.width; bgHeight = bg.height;
     bg.setPosition(bgWidth/2, bgHeight/2);
@@ -93,8 +120,7 @@ class MainScene extends Phaser.Scene {
     player = this.physics.add.sprite(bgWidth/2, bgHeight/2, 'player').setScale(0.11);
     player.setDepth(2).setCollideWorldBounds(true);
     player.body.enable = true;
-
-    // جسم دائري للاعب
+    player.setScale(0.11, 0.11);
     let playerRadius = player.displayWidth / 2.2;
     player.body.setCircle(playerRadius, player.body.width/2 - playerRadius, player.body.height/2 - playerRadius);
 
@@ -129,26 +155,12 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم دائري حقيقي لرصاصة العدو مع اللاعب + انفجار عند اللمس فقط
-    this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      if (!bullet.active || !p.active) return;
-      const now = Date.now();
-
-      // جسم دائري للرصاصة
-      let bulletRadius = bullet.displayWidth / 2.2;
-      bullet.body.setCircle(bulletRadius, bullet.body.width/2 - bulletRadius, bullet.body.height/2 - bulletRadius);
-
-      // مركز اللاعب
-      let px = p.x, py = p.y;
-      // مركز الرصاصة
-      let bx = bullet.x, by = bullet.y;
-      let dist = Phaser.Math.Distance.Between(px, py, bx, by);
-
-      if (dist < playerRadius + bulletRadius && (now - lastPlayerHitTime > 200) && !warningActive) {
-        showPlayerHitExplosion(this, player);
+    // --- تصادم فوري: كل رصاصة تؤثر مرة واحدة فقط ---
+    this.physics.add.overlap(player, this.enemyBulletGroup, (player, bullet) => {
+      if (bullet.active && !bullet.hasHit && !isPlayerDying && sessionActive && !warningActive) {
+        bullet.hasHit = true; // حماية من التأثير المكرر
         bullet.disableBody(true, true);
-        handlePlayerHit();
-        lastPlayerHitTime = now;
+        triggerPlayerHit(this, player, bullet);
       }
     });
 
@@ -217,11 +229,17 @@ class MainScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    player.setVisible(true);
-    player.body.enable = true;
+    if (player && (player.displayWidth > bgWidth*0.2 || player.displayWidth < 10)) {
+      player.setScale(0.11, 0.11);
+    }
+    this.cameras.main.setZoom(Math.max(gameWidth/bgWidth, gameHeight/bgHeight)*1.35);
 
+    if (player && !isPlayerDying) {
+      player.setVisible(true);
+      player.body.enable = true;
+    }
     let vx = 0, vy = 0;
-    if (joyActive) {
+    if (joyActive && !isPlayerDying) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
     }
     player.setVelocity(vx, vy);
@@ -270,7 +288,7 @@ class MainScene extends Phaser.Scene {
       }
     }
 
-    if (sessionActive && time > lastFireTime + 500) {
+    if (sessionActive && !isPlayerDying && time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
         let enemy = enemyObj.sprite;
@@ -310,6 +328,18 @@ class MainScene extends Phaser.Scene {
   }
 }
 
+function triggerPlayerHit(scene, player, bullet) {
+  if (isPlayerDying) return;
+  isPlayerDying = true;
+  showPlayerHitExplosion(scene, player);
+  player.setVelocity(0, 0);
+  handlePlayerHit(() => {
+    setTimeout(() => {
+      isPlayerDying = false;
+    }, 1200);
+  });
+}
+
 function fireBullet(px, py, tx, ty, scene) {
   let gunOffset = {x: 18, y: -8};
   let fromX = px + gunOffset.x;
@@ -329,7 +359,6 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
 
-  // جسم دائري للرصاصة
   let bulletRadius = bullet.displayWidth / 2.2;
   bullet.body.setCircle(bulletRadius, bullet.body.width/2 - bulletRadius, bullet.body.height/2 - bulletRadius);
 
@@ -342,7 +371,7 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
 const COIN_VALUE = 0.00000003;
 
 function killEnemy(enemy, scene) {
-  if (!sessionActive) return; // لا تجمع عملات بعد الموت النهائي
+  if (!sessionActive) return;
   enemy.disableBody(true, true);
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
@@ -479,7 +508,6 @@ function startEnemyWaves() {
   addEnemyWave(scene);
 }
 
-// Reset session state for a new "3 hearts" game
 function prepareSession() {
   setBalance(sessionBalance);
   waveCount = 1;
@@ -501,22 +529,17 @@ function updateBalance(newVal) {
   });
 }
 
-// =============== إصلاح منطق نهاية الجلسة وجمع العملات ===============
 function showGameOver() {
   setTimeout(()=>{
-    sessionActive = false; // نوقف عداد العملات
+    sessionActive = false;
     document.getElementById('gameover-coins-val').textContent = Number(sessionBalance).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
     gameoverFireworks();
-    // لا نمسح الرصيد هنا، فقط بعد claim
-    //localStorage.removeItem("sessionBalance");
-    //localStorage.removeItem("currentHearts");
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
   updateBalance(sessionBalance);
   setTimeout(() => {
-    // تصفير كل شيء بعد claim
     sessionBalance = 0;
     currentHearts = maxHearts;
     localStorage.setItem("sessionBalance", "0");
@@ -596,29 +619,27 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
   if (dist < 40 && !warningActive) handlePlayerHit();
 }
 
-// === HEART & WARNING LOGIC ===
-function handlePlayerHit() {
+function handlePlayerHit(cb) {
   if (currentHearts > 0 && !warningActive) {
     warningActive = true;
     currentHearts -= 1;
     localStorage.setItem("currentHearts", currentHearts);
     updateHeartsUI();
 
-    // إذا لسه عندك قلوب، احفظ الرصيد والقلوب و"restart" الصفحة (reload)
     if (currentHearts > 0) {
       localStorage.setItem("sessionBalance", sessionBalance);
       setTimeout(() => {
+        if (cb) cb();
         window.location.reload();
       }, 400);
       return;
     }
 
-    // إذا القلوب انتهت، أظهر النهاية
-    showWarningOverlay();
+    showWarningOverlay(cb);
   }
 }
 
-function showWarningOverlay() {
+function showWarningOverlay(cb) {
   document.getElementById('warning-overlay').style.display = 'flex';
   updateHeartsUI();
   document.getElementById('warning-tryagain-btn').style.display = 'none';
@@ -628,6 +649,7 @@ function showWarningOverlay() {
       document.getElementById('warning-overlay').style.display = 'none';
       warningActive = false;
       showGameOver();
+      if (cb) cb();
     }, 800);
   }
 }
@@ -649,9 +671,7 @@ function showGunFireAnim(scene, x, y) {
   });
 }
 
-// === انفجار على اللاعب عند الاصطدام برصاصة العدو ===
 function showPlayerHitExplosion(scene, playerObj) {
-  // حجم الانفجار = نفس حجم اللاعب
   let fire = scene.add.sprite(playerObj.x, playerObj.y, 'player_hit')
     .setScale(playerObj.displayWidth/64, playerObj.displayHeight/64)
     .setDepth(playerObj.depth + 1);
