@@ -21,15 +21,21 @@ let maxHearts = 3;
 // =========== استرجاع رصيد العملات والقلوب من localStorage ===========
 let sessionBalance = 0;
 let currentHearts = maxHearts;
-if (localStorage.getItem("sessionBalance") !== null) {
-  sessionBalance = parseFloat(localStorage.getItem("sessionBalance") || "0");
+
+// اصلاح مشكلة تهيئة الرصيد: الرصيد صفر دائما عند أول جولة
+if (localStorage.getItem("sessionStarted") === null) {
+  // بداية جلسة جديدة، نضمن الرصيد صفر وكل شيء جديد
+  localStorage.setItem("sessionBalance", "0");
+  localStorage.setItem("currentHearts", maxHearts);
+  localStorage.setItem("sessionStarted", "1");
 }
-if (localStorage.getItem("currentHearts") !== null) {
-  currentHearts = parseInt(localStorage.getItem("currentHearts") || maxHearts);
-}
+sessionBalance = parseFloat(localStorage.getItem("sessionBalance") || "0");
+currentHearts = parseInt(localStorage.getItem("currentHearts") || maxHearts);
 
 let lastPlayerHitTime = 0;
 let warningActive = false;
+
+let sessionActive = true; // نستخدمها لمنع تجميع العملات بعد الموت النهائي
 
 // === UI Helpers ===
 function updateHeartsUI() {
@@ -77,6 +83,7 @@ class MainScene extends Phaser.Scene {
     this.load.image('heart_pixel_red', 'assets/heart_pixel_red.png');
     this.load.image('heart_pixel_grey', 'assets/heart_pixel_grey.png');
     this.load.image('gun_fire', 'assets/gun_fire_pixel.gif');
+    this.load.image('player_hit', 'assets/gun_fire_pixel.gif'); // نفس الانيمشين للانفجار
   }
   create() {
     bg = this.add.image(0, 0, 'city');
@@ -118,10 +125,15 @@ class MainScene extends Phaser.Scene {
       }
     });
 
+    // === تعديل: رصاصة العدو تقتل فقط لو تلمس اللاعب فعلاً وتعمل انفجار وتختفي ===
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       const now = Date.now();
       if (bullet.active && (now - lastPlayerHitTime > 200) && !warningActive) {
         bullet.disableBody(true, true);
+
+        // انفجار على اللاعب مكان الاصطدام
+        showPlayerHitExplosion(this, player);
+
         handlePlayerHit();
         lastPlayerHitTime = now;
       }
@@ -245,7 +257,7 @@ class MainScene extends Phaser.Scene {
       }
     }
 
-    if (time > lastFireTime + 500) {
+    if (sessionActive && time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
         let enemy = enemyObj.sprite;
@@ -313,6 +325,7 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
 const COIN_VALUE = 0.00000003;
 
 function killEnemy(enemy, scene) {
+  if (!sessionActive) return; // لا تجمع عملات بعد الموت النهائي
   enemy.disableBody(true, true);
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
@@ -471,21 +484,28 @@ function updateBalance(newVal) {
   });
 }
 
+// =============== إصلاح منطق نهاية الجلسة وجمع العملات ===============
 function showGameOver() {
   setTimeout(()=>{
+    sessionActive = false; // نوقف عداد العملات
     document.getElementById('gameover-coins-val').textContent = Number(sessionBalance).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
     gameoverFireworks();
-    // امسح الرصيد والقلوب بعد النهاية
-    localStorage.removeItem("sessionBalance");
-    localStorage.removeItem("currentHearts");
+    // لا نمسح الرصيد هنا، فقط بعد claim
+    //localStorage.removeItem("sessionBalance");
+    //localStorage.removeItem("currentHearts");
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
   updateBalance(sessionBalance);
   setTimeout(() => {
+    // تصفير كل شيء بعد claim
     sessionBalance = 0;
     currentHearts = maxHearts;
+    localStorage.setItem("sessionBalance", "0");
+    localStorage.setItem("currentHearts", maxHearts);
+    localStorage.removeItem("sessionStarted");
+    sessionActive = true;
     prepareSession();
     document.getElementById('gameover-overlay').style.display = 'none';
     window.location.href = "index.html";
@@ -608,6 +628,19 @@ function showGunFireAnim(scene, x, y) {
     targets: fire,
     alpha: 0,
     duration: 180,
+    onComplete: () => fire.destroy()
+  });
+}
+
+// === انفجار على اللاعب عند الاصطدام برصاصة العدو ===
+function showPlayerHitExplosion(scene, playerObj) {
+  // حجم الانفجار = نفس حجم اللاعب
+  let fire = scene.add.sprite(playerObj.x, playerObj.y, 'player_hit').setScale(playerObj.scaleX, playerObj.scaleY).setDepth(playerObj.depth + 1);
+  fire.alpha = 1;
+  scene.tweens.add({
+    targets: fire,
+    alpha: 0,
+    duration: 300,
     onComplete: () => fire.destroy()
   });
 }
