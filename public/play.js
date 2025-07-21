@@ -323,7 +323,6 @@ function killEnemy(enemy, scene) {
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
 
-  // اجمع قيمة العملة في رصيد الجلسة فقط
   sessionBalance += COIN_VALUE;
   setBalance(sessionBalance);
 
@@ -391,8 +390,12 @@ function setupJoystick() {
   });
 }
 
-function showStartBanner() {document.getElementById('start-banner').classList.add('active');}
-function hideStartBanner() {document.getElementById('start-banner').classList.remove('active');}
+function showStartBanner() {
+  document.getElementById('start-banner').classList.add('active');
+}
+function hideStartBanner() {
+  document.getElementById('start-banner').classList.remove('active');
+}
 function showCountdown(sec, after) {
   const cd = document.getElementById('start-countdown');
   cd.textContent = sec; cd.style.display = 'block';
@@ -463,6 +466,19 @@ function prepareSession() {
   balanceStopped = false;
   gamePaused = false;
   updateHeartsUI();
+}
+
+// إعادة دخول جديد بعد كل موتة
+function resetRoundAfterDeath() {
+  // أعد ضبط كل شيء كأنها بداية جديدة لكن العملات محفوظة
+  player.x = bgWidth / 2;
+  player.y = bgHeight / 2;
+  player.setVelocity(0, 0);
+  enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
+  waveCount = 1;
+  balanceStopped = false;
+  gamePaused = true; // نوقف اللعب حتى يدخل من جديد
+  showStartBanner(); // أظهر شاشة البداية من جديد مع كل موتة
 }
 
 function getUserData() {
@@ -594,20 +610,14 @@ function showWarningOverlay() {
   }
 }
 
+// عند الضغط على زر المحاولة مرة أخرى بعد الموت
 document.getElementById('warning-tryagain-btn').onclick = function() {
   document.getElementById('warning-overlay').style.display = 'none';
   warningActive = false;
   if (currentHearts > 0) {
-    // Restart point & enemies, but preserve sessionBalance & hearts!
-    player.x = bgWidth / 2;
-    player.y = bgHeight / 2;
-    player.setVelocity(0, 0);
-    enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
+    // إعادة دخول جديد بعد كل موتة، العملات محفوظة
+    resetRoundAfterDeath();
     updateHeartsUI();
-    waveCount = 1;
-    balanceStopped = false;
-    gamePaused = false;
-    startEnemyWaves();
   }
 };
 
@@ -635,7 +645,6 @@ function showGunFireAnim(scene, x, y) {
 window.onload = function() {
   if (!userId) return;
   getUserData().then(user => {
-    // لا نحمل رصيد الميني غيم القديم أبداً، يبدأ كل جلسة بصفر
     prepareSession();
   });
   showStartBanner();
