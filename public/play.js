@@ -38,7 +38,7 @@ const gameHeight = window.innerHeight;
 
 let player, camera, bg, bgWidth, bgHeight;
 let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
-let enemies = [], enemySpeed1=0, enemySpeed2=0, allowControl=false, allowFire=false, lastFireTime=0;
+let enemies = [], enemySpeed1=0, enemySpeed2=0, lastFireTime=0;
 let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0;
 let enemy1Key='enemy1', enemy2Key='enemy2';
 let enemyBulletGroup;
@@ -81,8 +81,6 @@ class MainScene extends Phaser.Scene {
 
     setBalance(0.00000000);
     balanceValue = 0;
-    allowControl = false;
-    allowFire = false;
     playerHealth = 100;
     setHealth(100);
     waveCount = 1;
@@ -191,7 +189,8 @@ class MainScene extends Phaser.Scene {
     player.setVisible(true);
 
     let vx = 0, vy = 0;
-    if (allowControl && joyActive) {
+    // اللاعب يتحرك دايماً طول ما الجويستك شغال
+    if (joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
     }
     player.setVelocity(vx, vy);
@@ -234,7 +233,8 @@ class MainScene extends Phaser.Scene {
         }
       }
     }
-    if (allowFire && time > lastFireTime + 500) {
+    // اللاعب يضرب دايماً حتى لو مات
+    if (time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
         let enemy = enemyObj.sprite;
@@ -374,7 +374,7 @@ function showCountdown(sec, after) {
   let s = sec;
   let interval = setInterval(() => {
     s--; cd.textContent = (s>0) ? s : "00";
-    if (s<=0) {clearInterval(interval); setTimeout(()=>{cd.style.display='none';allowFire=true;if(after)after();},700);}
+    if (s<=0) {clearInterval(interval); setTimeout(()=>{cd.style.display='none';if(after)after();},700);}
   }, 1000);
 }
 
@@ -534,8 +534,6 @@ window.onload = function() {
     hideStartBanner();
     setTimeout(()=>{
       showCountdown(5, ()=>{
-        allowControl = true; allowFire = true;
-        balanceStopped = false;
         startEnemyWaves();
       });
     }, 440);
