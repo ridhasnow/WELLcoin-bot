@@ -199,12 +199,13 @@ class MainScene extends Phaser.Scene {
     });
   }
   update(time, delta) {
-    // [أُزلْت نهائياً] شرط التوقف عند الموت أو Game Over!
+    // أُزلْت نهائياً شرط التوقف عند الموت أو Game Over!
     // كان هنا: if (gameOver || isGameOverTriggered || playerHealth <= 0) return;
 
     player.setVisible(true);
 
     let vx = 0, vy = 0;
+    // خلي اللاعب دايماً يمشي ويضرب حتى بعد الموت
     if (allowControl && joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
     }
@@ -248,6 +249,7 @@ class MainScene extends Phaser.Scene {
         }
       }
     }
+    // خلي اللاعب يضرب حتى لو مات
     if (allowFire && time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
@@ -525,7 +527,8 @@ function gameoverFireworks() {
 }
 
 function enemyAttackSword(enemyObj, scene, playerObj) {
-  if (enemyObj.dead || gameOver || isGameOverTriggered) return;
+  // ألغي شرط التوقف عند الموت تماماً حتى يبقى اللاعب يتحرك ويضرب
+  if (enemyObj.dead) return;
   let enemy = enemyObj.sprite;
   enemyObj.attacking = true;
   enemy.setTexture(enemy1AttackFrames[enemyObj.attackFrameIndex % 2].replace('.png',''));
