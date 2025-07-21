@@ -199,7 +199,9 @@ class MainScene extends Phaser.Scene {
     });
   }
   update(time, delta) {
-    // حذف أي شرط يمنع الحركة أو إطلاق النار حتى لو مات اللاعب
+    // [أُزلْت نهائياً] شرط التوقف عند الموت أو Game Over!
+    // كان هنا: if (gameOver || isGameOverTriggered || playerHealth <= 0) return;
+
     player.setVisible(true);
 
     let vx = 0, vy = 0;
