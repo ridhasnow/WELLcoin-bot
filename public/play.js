@@ -16,7 +16,6 @@ tg.ready();
 const userId = tg.initDataUnsafe?.user?.id;
 
 let playerHealth = 100;
-let lastPlayerHitTime = 0;
 let balanceStopped = false;
 
 function setHealth(val) {
@@ -101,16 +100,13 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم رصاص الأعداء مع البطل - **الإصلاح هنا**
+    // تصادم رصاص الأعداء مع البطل (كل رصاصة لها منطقها الخاص)
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      const now = Date.now();
-      if (bullet.active) {
-        // نسمح للرصاصة أن تؤذي اللاعب كل مرة بفاصل زمني بسيط (منع "سبام" الإصابات)
-        if ((now - lastPlayerHitTime > 150)) {
-          setHealth(playerHealth-25);
-          lastPlayerHitTime = now;
-        }
-        bullet.destroy();
+      // كل رصاصة لها خاصية hit تمنع تكرار الإصابة المتزامنة
+      if (!bullet.hit) {
+        bullet.hit = true;
+        setHealth(playerHealth-25);
+        bullet.disableBody(true, true);
       }
     });
 
@@ -208,16 +204,14 @@ class MainScene extends Phaser.Scene {
         enemySpeed2 = speed;
         let shootRange = 220;
         if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
-        // منع إطلاق أكثر من رصاصة بنفس اللحظة!
-        if (!enemyObj.lastFireTime) enemyObj.lastFireTime = 0;
+        // منع سبام الرصاص: كل عدو يطلق رصاصة كل 3 ثواني فقط
+        if (!enemyObj.lastEnemyBulletTime) enemyObj.lastEnemyBulletTime = 0;
         if (dist > shootRange) {
           enemy.setVelocity((dx/dist)*speed, (dy/dist)*speed);
-          enemyObj.hasShot = false;
         } else {
           enemy.setVelocity(0,0);
-          // أطلق رصاصة واحدة فقط كل 3 ثواني لكل عدو
-          if (time - enemyObj.lastFireTime > 3000) {
-            enemyObj.lastFireTime = time;
+          if (time - enemyObj.lastEnemyBulletTime > 3000) {
+            enemyObj.lastEnemyBulletTime = time;
             fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
           }
         }
@@ -242,7 +236,7 @@ class MainScene extends Phaser.Scene {
           bullet.x < 0 || bullet.x > bgWidth ||
           bullet.y < 0 || bullet.y > bgHeight
         ) {
-          bullet.destroy();
+          bullet.disableBody(true, true);
         }
       }
     });
@@ -253,7 +247,7 @@ class MainScene extends Phaser.Scene {
           bullet.x < 0 || bullet.x > bgWidth ||
           bullet.y < 0 || bullet.y > bgHeight
         ) {
-          bullet.destroy();
+          bullet.disableBody(true, true);
         }
       }
     });
@@ -269,7 +263,7 @@ function fireBullet(px, py, tx, ty, scene) {
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy), speed = 520;
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
-  setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
+  setTimeout(() => { if (bullet && bullet.active) bullet.disableBody(true, true); }, 1200);
 }
 
 function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
@@ -283,7 +277,7 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
   bullet.rotation = Math.atan2(dy, dx);
-  setTimeout(() => { if (bullet && bullet.active) bullet.destroy(); }, 1200);
+  setTimeout(() => { if (bullet && bullet.active) bullet.disableBody(true, true); }, 1200);
 }
 
 function killEnemy(enemy, scene) {
