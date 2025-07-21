@@ -21,7 +21,7 @@ let currentHearts = maxHearts;
 let lastPlayerHitTime = 0;
 let balanceStopped = false;
 let warningActive = false;
-let gamePaused = false; // New flag
+let gamePaused = false;
 
 // === UI Helpers ===
 function updateHeartsUI() {
@@ -92,13 +92,8 @@ class MainScene extends Phaser.Scene {
     this.input.manager.canvas.addEventListener('contextmenu', e => e.preventDefault());
     setupJoystick();
 
-    setBalance(0.00000000);
-    balanceValue = 0;
-    currentHearts = maxHearts;
-    updateHeartsUI();
-    waveCount = 1;
-    balanceStopped = false;
-    gamePaused = false;
+    // عند بداية اللعبة أو بعد الموت الأول فقط يتم إعادة كل القيم المتعلقة بالحالة المؤقتة (عدا الرصيد)
+    resetGameState();
 
     this.enemyGroup = this.physics.add.group();
     this.bulletsGroup = this.physics.add.group();
@@ -129,7 +124,7 @@ class MainScene extends Phaser.Scene {
 
     // تصادم سيف العدو مع البطل دائمًا
     this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
-      let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !e.dead);
+      let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !obj?.dead);
       if (!obj) return;
       if (!obj.attackTimer) {
         obj.attackTimer = this.time.addEvent({
@@ -288,6 +283,16 @@ class MainScene extends Phaser.Scene {
   }
 }
 
+// === Reset all round variables except balance ===
+function resetGameState() {
+  waveCount = 1;
+  balanceStopped = false;
+  gamePaused = false;
+  lastPlayerHitTime = 0;
+  enemies = [];
+  // You may want to clear old groups if needed, but they are recreated in create() anyway.
+}
+
 function fireBullet(px, py, tx, ty, scene) {
   if (gamePaused) return;
   let gunOffset = {x: 18, y: -8};
@@ -322,7 +327,9 @@ function killEnemy(enemy, scene) {
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
   if (!balanceStopped) {
-    balanceValue += 0.00000100; setBalance(balanceValue); updateBalance(balanceValue);
+    balanceValue += 0.00000050; // تم تغيير قيمة الكوينز لكل عدو
+    setBalance(balanceValue); 
+    updateBalance(balanceValue);
   }
   let obj = enemies.find(e => e.sprite === enemy);
   if (obj) obj.dead = true;
@@ -477,7 +484,6 @@ function showGameOver() {
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
-  // Send coins to main balance, then redirect
   updateBalance(0);
   setTimeout(() => {
     window.location.href = "index.html";
@@ -555,7 +561,7 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
 function handlePlayerHit() {
   if (currentHearts > 0 && !warningActive && !gamePaused) {
     warningActive = true;
-    gamePaused = true; // Pause everything
+    gamePaused = true;
     currentHearts -= 1;
     updateHeartsUI();
     showWarningOverlay();
@@ -568,7 +574,6 @@ function showWarningOverlay() {
   document.getElementById('warning-tryagain-btn').style.display = currentHearts > 0 ? 'block' : 'none';
   document.getElementById('warning-title').innerText = currentHearts > 0 ?
     'You lost a life! Try Again?' : '';
-  // إذا انتهت القلوب أظهر مباشرة واجهة النهاية
   if (currentHearts <= 0) {
     setTimeout(() => {
       document.getElementById('warning-overlay').style.display = 'none';
@@ -582,15 +587,13 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
   document.getElementById('warning-overlay').style.display = 'none';
   warningActive = false;
   if (currentHearts > 0) {
-    // Restart at initial point
+    // Restart at initial point, reset all states except balance
+    resetGameState();
     player.x = bgWidth / 2;
     player.y = bgHeight / 2;
     player.setVelocity(0, 0);
     enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
     updateHeartsUI();
-    waveCount = 1;
-    balanceStopped = false;
-    gamePaused = false;
     startEnemyWaves();
   }
 };
@@ -603,7 +606,6 @@ function checkGameOver() {
   }
 }
 
-// === Gun Fire Pixel Animation ===
 function showGunFireAnim(scene, x, y) {
   if (gamePaused) return;
   let fire = scene.add.sprite(x, y, 'gun_fire').setScale(0.08).setDepth(12);
@@ -630,7 +632,7 @@ window.onload = function() {
     hideStartBanner();
     setTimeout(()=>{
       showCountdown(5, ()=>{
-        gamePaused = false;
+        resetGameState();
         startEnemyWaves();
       });
     }, 440);
