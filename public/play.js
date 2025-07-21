@@ -45,7 +45,6 @@ let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
 
 // دالة تضمن التصادم بين اللاعب ورصاص الأعداء حتى بعد إعادة تعيينهم
 function setupPlayerEnemyBulletCollision(scene) {
-  // حذف أي مصادم قديم مشابه
   scene.physics.world.colliders.getActive().forEach(collider => {
     const isPlayerBulletCollider =
       (collider.object1 === player && collider.object2 === enemyBulletGroup) ||
@@ -54,8 +53,9 @@ function setupPlayerEnemyBulletCollision(scene) {
       collider.destroy();
     }
   });
-  // إعادة تعريف التصادم
-  scene.physics.add.overlap(player, enemyBulletGroup, (bullet, p) => {
+  // استخدم collider بدل overlap
+  scene.physics.add.collider(player, enemyBulletGroup, (bullet, p) => {
+    console.log('رصاصة اصطدمت باللاعب!', bullet, p);
     const now = Date.now();
     if (
       bullet.active &&
@@ -122,7 +122,7 @@ class MainScene extends Phaser.Scene {
     setupPlayerEnemyBulletCollision(this);
 
     // تصادم رصاص البطل مع الأعداء فقط
-    this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
+    this.physics.add.collider(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
       if (bullet.active && enemy.active) {
         bullet.disableBody(true, true);
         killEnemy(enemy, this);
@@ -298,11 +298,11 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
   let fromY = py + gunOffset.y;
   let bullet = scene.enemyBulletGroup.create(fromX, fromY, 'kartoucha');
   bullet.setScale(0.0275).setDepth(10); bullet.body.setAllowGravity(false);
+  bullet.rotation = Math.atan2(ty-fromY, tx-fromX);
 
   let dx = tx-fromX, dy = ty-fromY, dist = Math.sqrt(dx*dx + dy*dy);
   let speed = (isEnemy2 ? enemySpeed2 * 0.5 : enemySpeed2);
   bullet.setVelocity((dx/dist)*speed, (dy/dist)*speed);
-  bullet.rotation = Math.atan2(dy, dx);
 }
 
 function killEnemy(enemy, scene) {
@@ -420,7 +420,6 @@ function addEnemyWave(scene) {
       enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
       enemies.push({sprite: enemy, type: 2, dead: false});
     }
-    // في حال أضفت مجموعة جديدة من الرصاصات أو الأعداء هنا، أعد تعريف التصادم
     setupPlayerEnemyBulletCollision(scene);
   }
 
@@ -436,7 +435,6 @@ function startEnemyWaves() {
   const scene = game.scene.scenes[0];
   lastEnemyWaveTime = 0;
   addEnemyWave(scene);
-  // لو أعدت تعيين player أو enemyBulletGroup هنا أضف: setupPlayerEnemyBulletCollision(scene);
 }
 
 function getUserData() {
@@ -558,7 +556,7 @@ let game = new Phaser.Game({
   width: gameWidth, height: gameHeight,
   backgroundColor: "#101016",
   scene: MainScene,
-  physics: { default: 'arcade', arcade: { debug: false } },
+  physics: { default: 'arcade', arcade: { debug: true } }, // debug مفعّل
   parent: 'game-container',
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
 });
