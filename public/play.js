@@ -16,7 +16,6 @@ tg.ready();
 const userId = tg.initDataUnsafe?.user?.id;
 
 let playerHealth = 100;
-let lastPlayerHitTime = 0;
 let balanceStopped = false;
 
 function setHealth(val) {
@@ -43,9 +42,34 @@ let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
 
-// ========== إصلاح استقبال الرصاص ==========
-let playerBulletCooldown = 0; // تعيين مؤقت تبريد للرصاصة (اللاعب)
-const PLAYER_BULLET_HIT_COOLDOWN = 200; // ms
+// === player invincibility (respawn blink) ===
+let playerInvincible = false;
+let invincibleBlinkTimer = null;
+let invincibleEndTimer = null;
+
+function startPlayerInvincibility(scene) {
+  playerInvincible = true;
+  let blinkOn = true;
+  if (invincibleBlinkTimer) invincibleBlinkTimer.remove();
+  if (invincibleEndTimer) invincibleEndTimer.remove();
+  invincibleBlinkTimer = scene.time.addEvent({
+    delay: 120, // كل 0.12 ثانية يغير حالة الإظهار
+    loop: true,
+    callback: () => {
+      blinkOn = !blinkOn;
+      if (player) player.setVisible(blinkOn);
+    }
+  });
+  invincibleEndTimer = scene.time.addEvent({
+    delay: 2000, // مدة الريسباون ثانيتين
+    callback: () => {
+      playerInvincible = false;
+      if (player) player.setVisible(true);
+      if (invincibleBlinkTimer) invincibleBlinkTimer.remove();
+      invincibleBlinkTimer = null;
+    }
+  });
+}
 
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
@@ -105,13 +129,14 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
+    // تصادم رصاص الأعداء مع البطل مع الريسباون والبلينك
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-  if (bullet.active) {
-    bullet.disableBody(true, true);
-    setHealth(playerHealth - 25);
-  }
-});
+      if (bullet.active && !playerInvincible) {
+        bullet.disableBody(true, true);
+        setHealth(playerHealth-25);
+        startPlayerInvincibility(this); // فعل الريسباون والبلينك
+      }
+    });
 
     // تصادم سيف العدو مع البطل دائمًا
     this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
@@ -214,8 +239,11 @@ class MainScene extends Phaser.Scene {
           enemyObj.hasShot = false;
         } else {
           enemy.setVelocity(0,0);
-
-          // ===== إصلاح إطلاق رصاصة واحدة فقط لكل فترة زمنية =====
+          if (!enemyObj.hasShot) {
+            enemyObj.hasShot = true;
+            enemyObj.lastShotTime = time;
+            fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
+          }
           if (time - enemyObj.lastShotTime > 3000) {
             enemyObj.lastShotTime = time;
             fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
