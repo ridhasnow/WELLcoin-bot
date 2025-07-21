@@ -21,10 +21,10 @@ let currentHearts = maxHearts;
 let lastPlayerHitTime = 0;
 let balanceStopped = false;
 let warningActive = false;
+let gamePaused = false; // New flag
 
 // === UI Helpers ===
 function updateHeartsUI() {
-  // Update hearts UI on both status bar and warning overlay
   let heartsBar = document.getElementById('hearts-bar');
   let warningHearts = document.getElementById('warning-hearts');
   if (!heartsBar || !warningHearts) return;
@@ -47,7 +47,6 @@ function setBalance(val) {
 const gameWidth = window.innerWidth;
 const gameHeight = window.innerHeight;
 
-// === Phaser Main Variables ===
 let player, camera, bg, bgWidth, bgHeight;
 let joystickPointerId = null, joyActive = false, joyOrigin = {x:0,y:0}, joyDelta = {x:0,y:0};
 let enemies = [], enemySpeed1=0, enemySpeed2=0, lastFireTime=0;
@@ -55,27 +54,6 @@ let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWav
 let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
-
-// === Buildings & Cars Collision ===
-let buildingsRects = [
-  // Example: {x:100, y:200, width:70, height:50}
-  // You should fill this with real values from your map
-];
-let carsRects = [
-  // Example: {x:300, y:400, width:40, height:25}
-  // You should fill this with real values from your map
-];
-// Helper for overlap
-function checkRectCollision(sprite, rects) {
-  for (let rect of rects) {
-    let sx = sprite.x, sy = sprite.y;
-    if (
-      sx > rect.x && sx < (rect.x + rect.width) &&
-      sy > rect.y && sy < (rect.y + rect.height)
-    ) return true;
-  }
-  return false;
-}
 
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
@@ -90,7 +68,7 @@ class MainScene extends Phaser.Scene {
     this.load.image('enemy1-attack2', 'assets/enemy1-attack2.png');
     this.load.image('heart_pixel_red', 'assets/heart_pixel_red.png');
     this.load.image('heart_pixel_grey', 'assets/heart_pixel_grey.png');
-    this.load.image('gun_fire', 'assets/gun_fire_pixel.gif'); // simple gun fire pixel sprite
+    this.load.image('gun_fire', 'assets/gun_fire_pixel.gif');
   }
   create() {
     bg = this.add.image(0, 0, 'city');
@@ -120,6 +98,7 @@ class MainScene extends Phaser.Scene {
     updateHeartsUI();
     waveCount = 1;
     balanceStopped = false;
+    gamePaused = false;
 
     this.enemyGroup = this.physics.add.group();
     this.bulletsGroup = this.physics.add.group();
@@ -132,7 +111,7 @@ class MainScene extends Phaser.Scene {
 
     // تصادم رصاص البطل مع الأعداء فقط
     this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
-      if (bullet.active && enemy.active) {
+      if (bullet.active && enemy.active && !gamePaused) {
         bullet.disableBody(true, true);
         killEnemy(enemy, this);
       }
@@ -141,7 +120,7 @@ class MainScene extends Phaser.Scene {
     // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       const now = Date.now();
-      if (bullet.active && (now - lastPlayerHitTime > 200) && !warningActive) {
+      if (bullet.active && (now - lastPlayerHitTime > 200) && !warningActive && !gamePaused) {
         bullet.disableBody(true, true);
         handlePlayerHit();
         lastPlayerHitTime = now;
@@ -169,7 +148,6 @@ class MainScene extends Phaser.Scene {
       }
     }, null, this);
 
-    // Clean up colliders
     this.time.addEvent({
       delay: 100,
       loop: true,
@@ -215,25 +193,16 @@ class MainScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (gamePaused) return; // Pause everything!
+
     player.setVisible(true);
     player.body.enable = true;
 
     let vx = 0, vy = 0;
-    // اللاعب يتحرك دائمًا مع الجويستك مهما صار
     if (joyActive) {
       vx = joyDelta.x * 220; vy = joyDelta.y * 220;
     }
-
-    // ==== COLLISION WITH BUILDINGS & CARS ====
-    let nextX = player.x + vx * (delta/1000);
-    let nextY = player.y + vy * (delta/1000);
-    let fakePlayer = {x: nextX, y: nextY};
-
-    if (!checkRectCollision(fakePlayer, buildingsRects) && !checkRectCollision(fakePlayer, carsRects)) {
-      player.setVelocity(vx, vy);
-    } else {
-      player.setVelocity(0, 0);
-    }
+    player.setVelocity(vx, vy);
 
     for (let enemyObj of enemies) {
       let enemy = enemyObj.sprite;
@@ -241,7 +210,6 @@ class MainScene extends Phaser.Scene {
       let dx = player.x - enemy.x, dy = player.y - enemy.y;
       let dist = Math.sqrt(dx*dx + dy*dy);
 
-      // ==== COLLISION FOR ENEMIES ====
       let evx = 0, evy = 0;
       if (enemyObj.type === 1) {
         let speed = 110;
@@ -249,12 +217,7 @@ class MainScene extends Phaser.Scene {
         if (!enemyObj.attacking) {
           if (dist > 35) {
             evx = (dx/dist)*speed; evy = (dy/dist)*speed;
-            let nextEnemy = {x: enemy.x + evx * (delta/1000), y: enemy.y + evy * (delta/1000)};
-            if (!checkRectCollision(nextEnemy, buildingsRects) && !checkRectCollision(nextEnemy, carsRects)) {
-              enemy.setVelocity(evx, evy);
-            } else {
-              enemy.setVelocity(0,0);
-            }
+            enemy.setVelocity(evx, evy);
           }
           else enemy.setVelocity(0,0);
         } else {
@@ -268,16 +231,10 @@ class MainScene extends Phaser.Scene {
         if (!enemyObj.hasShot) enemyObj.hasShot = false;
         if (dist > shootRange) {
           evx = (dx/dist)*speed; evy = (dy/dist)*speed;
-          let nextEnemy = {x: enemy.x + evx * (delta/1000), y: enemy.y + evy * (delta/1000)};
-          if (!checkRectCollision(nextEnemy, buildingsRects) && !checkRectCollision(nextEnemy, carsRects)) {
-            enemy.setVelocity(evx, evy);
-          } else {
-            enemy.setVelocity(0,0);
-          }
+          enemy.setVelocity(evx, evy);
           enemyObj.hasShot = false;
         } else {
           enemy.setVelocity(0,0);
-          // === Enemy 2 only shoots once per engagement ===
           if (!enemyObj.hasShot) {
             enemyObj.hasShot = true;
             enemyObj.lastShotTime = time;
@@ -291,7 +248,6 @@ class MainScene extends Phaser.Scene {
       }
     }
 
-    // اللاعب يضرب دائمًا بدون توقف
     if (time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
@@ -333,6 +289,7 @@ class MainScene extends Phaser.Scene {
 }
 
 function fireBullet(px, py, tx, ty, scene) {
+  if (gamePaused) return;
   let gunOffset = {x: 18, y: -8};
   let fromX = px + gunOffset.x;
   let fromY = py + gunOffset.y;
@@ -345,6 +302,7 @@ function fireBullet(px, py, tx, ty, scene) {
 }
 
 function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
+  if (gamePaused) return;
   let gunOffset = {x: 18, y: -8};
   let fromX = px + gunOffset.x;
   let fromY = py + gunOffset.y;
@@ -358,6 +316,7 @@ function fireEnemyBullet(px, py, tx, ty, scene, isEnemy2=false) {
 }
 
 function killEnemy(enemy, scene) {
+  if (gamePaused) return;
   enemy.disableBody(true, true);
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
@@ -370,6 +329,7 @@ function killEnemy(enemy, scene) {
 }
 
 function animateCoinToBalance(coin) {
+  if (gamePaused) return;
   let balanceBar = document.getElementById('balance-bar');
   let rect = balanceBar.getBoundingClientRect();
   let gameRect = document.getElementById('game-container').getBoundingClientRect();
@@ -451,6 +411,7 @@ function randomEdgePosition(cityW, cityH) {
 }
 
 function addEnemyWave(scene) {
+  if (gamePaused) return;
   let cityW = bgWidth, cityH = bgHeight;
   let n_enemy1 = 6 + (waveCount-1);
   let n_enemy2 = 4 + (waveCount-1);
@@ -466,6 +427,7 @@ function addEnemyWave(scene) {
     enemy1List.push(enemy);
   }
   function spawnEnemy2Wave() {
+    if (gamePaused) return;
     for(let i=0;i<n_enemy2;i++) {
       let pos = randomEdgePosition(cityW, cityH);
       let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
@@ -483,6 +445,7 @@ function addEnemyWave(scene) {
 }
 
 function startEnemyWaves() {
+  if (gamePaused) return;
   const scene = game.scene.scenes[0];
   lastEnemyWaveTime = 0;
   addEnemyWave(scene);
@@ -506,6 +469,7 @@ function updateBalance(newVal) {
 // === GAME OVER UI ===
 function showGameOver() {
   balanceStopped = true;
+  gamePaused = true;
   setTimeout(()=>{
     document.getElementById('gameover-coins-val').textContent = Number(balanceValue).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
@@ -513,7 +477,11 @@ function showGameOver() {
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
-  window.location.href = "index.html";
+  // Send coins to main balance, then redirect
+  updateBalance(0);
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 300);
 };
 
 function gameoverFireworks() {
@@ -569,7 +537,7 @@ function gameoverFireworks() {
 }
 
 function enemyAttackSword(enemyObj, scene, playerObj) {
-  if (enemyObj.dead) return;
+  if (enemyObj.dead || gamePaused) return;
   let enemy = enemyObj.sprite;
   enemyObj.attacking = true;
   enemy.setTexture(enemy1AttackFrames[enemyObj.attackFrameIndex % 2].replace('.png',''));
@@ -585,8 +553,9 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
 
 // === HEART & WARNING LOGIC ===
 function handlePlayerHit() {
-  if (currentHearts > 0 && !warningActive) {
+  if (currentHearts > 0 && !warningActive && !gamePaused) {
     warningActive = true;
+    gamePaused = true; // Pause everything
     currentHearts -= 1;
     updateHeartsUI();
     showWarningOverlay();
@@ -598,7 +567,15 @@ function showWarningOverlay() {
   updateHeartsUI();
   document.getElementById('warning-tryagain-btn').style.display = currentHearts > 0 ? 'block' : 'none';
   document.getElementById('warning-title').innerText = currentHearts > 0 ?
-    'You lost a life! Try Again?' : 'No lives left!';
+    'You lost a life! Try Again?' : '';
+  // إذا انتهت القلوب أظهر مباشرة واجهة النهاية
+  if (currentHearts <= 0) {
+    setTimeout(() => {
+      document.getElementById('warning-overlay').style.display = 'none';
+      warningActive = false;
+      showGameOver();
+    }, 800);
+  }
 }
 
 document.getElementById('warning-tryagain-btn').onclick = function() {
@@ -611,8 +588,9 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
     player.setVelocity(0, 0);
     enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
     updateHeartsUI();
-    balanceStopped = false;
     waveCount = 1;
+    balanceStopped = false;
+    gamePaused = false;
     startEnemyWaves();
   }
 };
@@ -620,12 +598,14 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
 function checkGameOver() {
   if (currentHearts <= 0 && !balanceStopped) {
     balanceStopped = true;
+    gamePaused = true;
     showGameOver();
   }
 }
 
 // === Gun Fire Pixel Animation ===
 function showGunFireAnim(scene, x, y) {
+  if (gamePaused) return;
   let fire = scene.add.sprite(x, y, 'gun_fire').setScale(0.08).setDepth(12);
   fire.alpha = 1;
   scene.tweens.add({
@@ -643,12 +623,14 @@ window.onload = function() {
     setBalance(mg);
     balanceValue = mg;
     balanceStopped = false;
+    gamePaused = false;
   });
   showStartBanner();
   document.querySelector("#start-banner .banner-btn").onclick = function() {
     hideStartBanner();
     setTimeout(()=>{
       showCountdown(5, ()=>{
+        gamePaused = false;
         startEnemyWaves();
       });
     }, 440);
