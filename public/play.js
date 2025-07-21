@@ -25,7 +25,6 @@ let gamePaused = false;
 
 // === Game Session Logic ===
 let sessionBalance = 0;   // Coins collected in the current 3-heart session
-let roundBalance = 0;     // Coins collected in the current round (1 life lost)
 
 // === UI Helpers ===
 function updateHeartsUI() {
@@ -324,8 +323,7 @@ function killEnemy(enemy, scene) {
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
 
-  // اجمع قيمة العملة في رصيد الجولة فقط
-  roundBalance += COIN_VALUE;
+  // اجمع قيمة العملة في رصيد الجلسة فقط
   sessionBalance += COIN_VALUE;
   setBalance(sessionBalance);
 
@@ -460,26 +458,11 @@ function startEnemyWaves() {
 function prepareSession() {
   currentHearts = maxHearts;
   sessionBalance = 0;
-  roundBalance = 0;
   setBalance(sessionBalance);
   waveCount = 1;
   balanceStopped = false;
   gamePaused = false;
   updateHeartsUI();
-}
-
-// Reset round state for a new round (when a life lost)
-function prepareRound() {
-  // فقط اعد ضبط الأشياء المتعلقة بالجولة وليس القلوب ولا العملات المحفوظة
-  roundBalance = 0;
-  player.x = bgWidth / 2;
-  player.y = bgHeight / 2;
-  player.setVelocity(0, 0);
-  enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
-  waveCount = 1;
-  balanceStopped = false;
-  gamePaused = false;
-  startEnemyWaves();
 }
 
 function getUserData() {
@@ -615,9 +598,16 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
   document.getElementById('warning-overlay').style.display = 'none';
   warningActive = false;
   if (currentHearts > 0) {
-    // إعادة ضبط الجولة فقط (الجولة الثانية أو الثالثة)، العملات تبقى محفوظة في sessionBalance
-    prepareRound();
+    // Restart point & enemies, but preserve sessionBalance & hearts!
+    player.x = bgWidth / 2;
+    player.y = bgHeight / 2;
+    player.setVelocity(0, 0);
+    enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
     updateHeartsUI();
+    waveCount = 1;
+    balanceStopped = false;
+    gamePaused = false;
+    startEnemyWaves();
   }
 };
 
