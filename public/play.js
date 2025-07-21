@@ -22,7 +22,12 @@ let lastPlayerHitTime = 0;
 let warningActive = false;
 
 // === Game Session Logic ===
-let sessionBalance = 0;   // Coins collected in the current 3-heart session
+let sessionBalance = 0;
+
+// =========== استرجاع رصيد العملات من localStorage ===========
+if (localStorage.getItem("sessionBalance") !== null) {
+  sessionBalance = parseFloat(localStorage.getItem("sessionBalance") || "0");
+}
 
 // === UI Helpers ===
 function updateHeartsUI() {
@@ -314,6 +319,7 @@ function killEnemy(enemy, scene) {
 
   sessionBalance += COIN_VALUE;
   setBalance(sessionBalance);
+  localStorage.setItem("sessionBalance", sessionBalance);
 
   let obj = enemies.find(e => e.sprite === enemy);
   if (obj) obj.dead = true;
@@ -445,20 +451,9 @@ function startEnemyWaves() {
 // Reset session state for a new "3 hearts" game
 function prepareSession() {
   currentHearts = maxHearts;
-  sessionBalance = 0;
   setBalance(sessionBalance);
   waveCount = 1;
   updateHeartsUI();
-}
-
-// إعادة دخول جديد بعد كل موتة
-function resetRoundAfterDeath() {
-  player.x = bgWidth / 2;
-  player.y = bgHeight / 2;
-  player.setVelocity(0, 0);
-  enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
-  waveCount = 1;
-  showStartBanner();
 }
 
 function getUserData() {
@@ -482,11 +477,14 @@ function showGameOver() {
     document.getElementById('gameover-coins-val').textContent = Number(sessionBalance).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
     gameoverFireworks();
+    // امسح الرصيد بعد النهاية
+    localStorage.removeItem("sessionBalance");
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
   updateBalance(sessionBalance);
   setTimeout(() => {
+    sessionBalance = 0;
     prepareSession();
     document.getElementById('gameover-overlay').style.display = 'none';
     window.location.href = "index.html";
@@ -566,6 +564,17 @@ function handlePlayerHit() {
     warningActive = true;
     currentHearts -= 1;
     updateHeartsUI();
+
+    // إذا لسه عندك قلوب، احفظ الرصيد و"restart" الصفحة (reload)
+    if (currentHearts > 0) {
+      localStorage.setItem("sessionBalance", sessionBalance);
+      setTimeout(() => {
+        window.location.reload();
+      }, 400);
+      return;
+    }
+
+    // إذا القلوب انتهت، أظهر النهاية
     showWarningOverlay();
   }
 }
@@ -573,10 +582,8 @@ function handlePlayerHit() {
 function showWarningOverlay() {
   document.getElementById('warning-overlay').style.display = 'flex';
   updateHeartsUI();
-  document.getElementById('warning-tryagain-btn').style.display = currentHearts > 0 ? 'block' : 'none';
-  document.getElementById('warning-title').innerText = currentHearts > 0 ?
-    'You lost a life! Try Again?' : '';
-  // إذا انتهت القلوب أظهر مباشرة واجهة النهاية
+  document.getElementById('warning-tryagain-btn').style.display = 'none';
+  document.getElementById('warning-title').innerText = '';
   if (currentHearts <= 0) {
     setTimeout(() => {
       document.getElementById('warning-overlay').style.display = 'none';
@@ -585,16 +592,6 @@ function showWarningOverlay() {
     }, 800);
   }
 }
-
-// عند الضغط على زر المحاولة مرة أخرى بعد الموت
-document.getElementById('warning-tryagain-btn').onclick = function() {
-  document.getElementById('warning-overlay').style.display = 'none';
-  warningActive = false;
-  if (currentHearts > 0) {
-    resetRoundAfterDeath();
-    updateHeartsUI();
-  }
-};
 
 function checkGameOver() {
   if (currentHearts <= 0) {
@@ -629,6 +626,7 @@ window.onload = function() {
     }, 440);
   };
   updateHeartsUI();
+  setBalance(sessionBalance);
   document.getElementById('warning-overlay').style.display = 'none';
 }
 
