@@ -23,6 +23,9 @@ let balanceStopped = false;
 let warningActive = false;
 let gamePaused = false;
 
+// === Game Session Logic ===
+let sessionBalance = 0;   // Coins collected in the current 3-heart session
+
 // === UI Helpers ===
 function updateHeartsUI() {
   let heartsBar = document.getElementById('hearts-bar');
@@ -92,8 +95,8 @@ class MainScene extends Phaser.Scene {
     this.input.manager.canvas.addEventListener('contextmenu', e => e.preventDefault());
     setupJoystick();
 
-    // عند بداية اللعبة أو بعد الموت الأول فقط يتم إعادة كل القيم المتعلقة بالحالة المؤقتة (عدا الرصيد)
-    resetGameState();
+    // Reset for a new session (new 3 hearts round)
+    prepareSession();
 
     this.enemyGroup = this.physics.add.group();
     this.bulletsGroup = this.physics.add.group();
@@ -124,7 +127,7 @@ class MainScene extends Phaser.Scene {
 
     // تصادم سيف العدو مع البطل دائمًا
     this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
-      let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !obj?.dead);
+      let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !e.dead);
       if (!obj) return;
       if (!obj.attackTimer) {
         obj.attackTimer = this.time.addEvent({
@@ -283,16 +286,6 @@ class MainScene extends Phaser.Scene {
   }
 }
 
-// === Reset all round variables except balance ===
-function resetGameState() {
-  waveCount = 1;
-  balanceStopped = false;
-  gamePaused = false;
-  lastPlayerHitTime = 0;
-  enemies = [];
-  // You may want to clear old groups if needed, but they are recreated in create() anyway.
-}
-
 function fireBullet(px, py, tx, ty, scene) {
   if (gamePaused) return;
   let gunOffset = {x: 18, y: -8};
@@ -326,11 +319,11 @@ function killEnemy(enemy, scene) {
   let coin = scene.coinsGroup.create(enemy.x, enemy.y, 'wlc');
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
-  if (!balanceStopped) {
-    balanceValue += 0.00000050; // تم تغيير قيمة الكوينز لكل عدو
-    setBalance(balanceValue); 
-    updateBalance(balanceValue);
-  }
+
+  // Add coin value to sessionBalance, not to user's main balance
+  sessionBalance += 0.00000050;
+  setBalance(sessionBalance);
+
   let obj = enemies.find(e => e.sprite === enemy);
   if (obj) obj.dead = true;
 }
@@ -458,6 +451,17 @@ function startEnemyWaves() {
   addEnemyWave(scene);
 }
 
+// Reset session state for a new "3 hearts" game
+function prepareSession() {
+  currentHearts = maxHearts;
+  sessionBalance = 0;
+  setBalance(sessionBalance);
+  waveCount = 1;
+  balanceStopped = false;
+  gamePaused = false;
+  updateHeartsUI();
+}
+
 function getUserData() {
   return db.ref("users/" + userId).once("value").then(snap => snap.val() || {});
 }
@@ -468,7 +472,7 @@ function updateBalance(newVal) {
     let newTotal = (mainBalance + newVal).toFixed(8);
     db.ref("users/" + userId).update({
       balance: newTotal,
-      minigame_balance: newVal
+      minigame_balance: 0
     });
   });
 }
@@ -478,14 +482,17 @@ function showGameOver() {
   balanceStopped = true;
   gamePaused = true;
   setTimeout(()=>{
-    document.getElementById('gameover-coins-val').textContent = Number(balanceValue).toFixed(8);
+    document.getElementById('gameover-coins-val').textContent = Number(sessionBalance).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
     gameoverFireworks();
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
-  updateBalance(0);
+  // Send coins to main balance, then redirect
+  updateBalance(sessionBalance);
   setTimeout(() => {
+    prepareSession();
+    document.getElementById('gameover-overlay').style.display = 'none';
     window.location.href = "index.html";
   }, 300);
 };
@@ -561,7 +568,7 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
 function handlePlayerHit() {
   if (currentHearts > 0 && !warningActive && !gamePaused) {
     warningActive = true;
-    gamePaused = true;
+    gamePaused = true; // Pause everything
     currentHearts -= 1;
     updateHeartsUI();
     showWarningOverlay();
@@ -574,6 +581,7 @@ function showWarningOverlay() {
   document.getElementById('warning-tryagain-btn').style.display = currentHearts > 0 ? 'block' : 'none';
   document.getElementById('warning-title').innerText = currentHearts > 0 ?
     'You lost a life! Try Again?' : '';
+  // إذا انتهت القلوب أظهر مباشرة واجهة النهاية
   if (currentHearts <= 0) {
     setTimeout(() => {
       document.getElementById('warning-overlay').style.display = 'none';
@@ -587,13 +595,15 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
   document.getElementById('warning-overlay').style.display = 'none';
   warningActive = false;
   if (currentHearts > 0) {
-    // Restart at initial point, reset all states except balance
-    resetGameState();
+    // Restart point & enemies, but preserve sessionBalance & hearts!
     player.x = bgWidth / 2;
     player.y = bgHeight / 2;
     player.setVelocity(0, 0);
     enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
     updateHeartsUI();
+    waveCount = 1;
+    balanceStopped = false;
+    gamePaused = false;
     startEnemyWaves();
   }
 };
@@ -606,6 +616,7 @@ function checkGameOver() {
   }
 }
 
+// === Gun Fire Pixel Animation ===
 function showGunFireAnim(scene, x, y) {
   if (gamePaused) return;
   let fire = scene.add.sprite(x, y, 'gun_fire').setScale(0.08).setDepth(12);
@@ -621,18 +632,15 @@ function showGunFireAnim(scene, x, y) {
 window.onload = function() {
   if (!userId) return;
   getUserData().then(user => {
-    let mg = parseFloat(user.minigame_balance || 0);
-    setBalance(mg);
-    balanceValue = mg;
-    balanceStopped = false;
-    gamePaused = false;
+    // لا نحمل رصيد الميني غيم القديم أبداً، يبدأ كل جلسة بصفر
+    prepareSession();
   });
   showStartBanner();
   document.querySelector("#start-banner .banner-btn").onclick = function() {
     hideStartBanner();
     setTimeout(()=>{
       showCountdown(5, ()=>{
-        resetGameState();
+        gamePaused = false;
         startEnemyWaves();
       });
     }, 440);
