@@ -16,6 +16,7 @@ tg.ready();
 const userId = tg.initDataUnsafe?.user?.id;
 
 let playerHealth = 100;
+let lastPlayerHitTime = 0;
 let balanceStopped = false;
 
 function setHealth(val) {
@@ -42,28 +43,27 @@ let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
 
-// ==== invincibility for player after hit ====
-let playerInvincible = false;
-let playerBlinkTimer = null;
-function startPlayerInvincibility(scene) {
-  playerInvincible = true;
-  let blinkState = true;
-  if (playerBlinkTimer) playerBlinkTimer.remove();
-  playerBlinkTimer = scene.time.addEvent({
-    delay: 120,
-    loop: true,
-    callback: () => {
-      blinkState = !blinkState;
-      if (player) player.setVisible(blinkState);
+// دالة تضمن التصادم بين اللاعب ورصاص الأعداء حتى بعد إعادة تعيينهم
+function setupPlayerEnemyBulletCollision(scene) {
+  // حذف أي مصادم قديم مشابه
+  scene.physics.world.colliders.getActive().forEach(collider => {
+    const isPlayerBulletCollider =
+      (collider.object1 === player && collider.object2 === enemyBulletGroup) ||
+      (collider.object1 === enemyBulletGroup && collider.object2 === player);
+    if (isPlayerBulletCollider) {
+      collider.destroy();
     }
   });
-  scene.time.addEvent({
-    delay: 2000,
-    callback: () => {
-      playerInvincible = false;
-      if (player) player.setVisible(true);
-      if (playerBlinkTimer) playerBlinkTimer.remove();
-      playerBlinkTimer = null;
+  // إعادة تعريف التصادم
+  scene.physics.add.overlap(player, enemyBulletGroup, (bullet, p) => {
+    const now = Date.now();
+    if (
+      bullet.active &&
+      (now - lastPlayerHitTime > 200)
+    ) {
+      bullet.disableBody(true, true);
+      setHealth(playerHealth-25);
+      lastPlayerHitTime = now;
     }
   });
 }
@@ -118,20 +118,14 @@ class MainScene extends Phaser.Scene {
     enemyBulletGroup = this.enemyBulletGroup;
     enemies = [];
 
+    // نعيد تعريف التصادم بعد تعيين اللاعب و enemyBulletGroup
+    setupPlayerEnemyBulletCollision(this);
+
     // تصادم رصاص البطل مع الأعداء فقط
     this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
       if (bullet.active && enemy.active) {
         bullet.disableBody(true, true);
         killEnemy(enemy, this);
-      }
-    });
-
-    // تصادم رصاص الأعداء مع البطل مع invincibility
-    this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      if (bullet.active && !playerInvincible) {
-        bullet.disableBody(true, true);
-        setHealth(playerHealth-25);
-        startPlayerInvincibility(this);
       }
     });
 
@@ -426,6 +420,8 @@ function addEnemyWave(scene) {
       enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
       enemies.push({sprite: enemy, type: 2, dead: false});
     }
+    // في حال أضفت مجموعة جديدة من الرصاصات أو الأعداء هنا، أعد تعريف التصادم
+    setupPlayerEnemyBulletCollision(scene);
   }
 
   setTimeout(spawnEnemy2Wave, 7000);
@@ -440,6 +436,7 @@ function startEnemyWaves() {
   const scene = game.scene.scenes[0];
   lastEnemyWaveTime = 0;
   addEnemyWave(scene);
+  // لو أعدت تعيين player أو enemyBulletGroup هنا أضف: setupPlayerEnemyBulletCollision(scene);
 }
 
 function getUserData() {
