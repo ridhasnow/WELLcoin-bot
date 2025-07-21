@@ -19,7 +19,6 @@ const userId = tg.initDataUnsafe?.user?.id;
 let maxHearts = 3;
 let currentHearts = maxHearts;
 let lastPlayerHitTime = 0;
-let balanceStopped = false;
 let warningActive = false;
 
 // === Game Session Logic ===
@@ -94,7 +93,6 @@ class MainScene extends Phaser.Scene {
     this.input.manager.canvas.addEventListener('contextmenu', e => e.preventDefault());
     setupJoystick();
 
-    // Reset for a new session (new 3 hearts round)
     prepareSession();
 
     this.enemyGroup = this.physics.add.group();
@@ -106,7 +104,6 @@ class MainScene extends Phaser.Scene {
     enemyBulletGroup = this.enemyBulletGroup;
     enemies = [];
 
-    // تصادم رصاص البطل مع الأعداء فقط
     this.physics.add.overlap(this.bulletsGroup, this.enemyGroup, (bullet, enemy) => {
       if (bullet.active && enemy.active) {
         bullet.disableBody(true, true);
@@ -114,7 +111,6 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
       const now = Date.now();
       if (bullet.active && (now - lastPlayerHitTime > 200) && !warningActive) {
@@ -124,7 +120,6 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // تصادم سيف العدو مع البطل دائمًا
     this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
       let obj = enemies.find(e => e.sprite === enemy && e.type === 1 && !e.dead);
       if (!obj) return;
@@ -453,7 +448,6 @@ function prepareSession() {
   sessionBalance = 0;
   setBalance(sessionBalance);
   waveCount = 1;
-  balanceStopped = false;
   updateHeartsUI();
 }
 
@@ -464,8 +458,7 @@ function resetRoundAfterDeath() {
   player.setVelocity(0, 0);
   enemies.forEach(obj => { obj.dead = true; if (obj.sprite && obj.sprite.active) obj.sprite.disableBody(true, true); });
   waveCount = 1;
-  balanceStopped = false;
-  showStartBanner(); // أظهر شاشة البداية من جديد مع كل موتة
+  showStartBanner();
 }
 
 function getUserData() {
@@ -485,7 +478,6 @@ function updateBalance(newVal) {
 
 // === GAME OVER UI ===
 function showGameOver() {
-  balanceStopped = true;
   setTimeout(()=>{
     document.getElementById('gameover-coins-val').textContent = Number(sessionBalance).toFixed(8);
     document.getElementById('gameover-overlay').style.display = 'flex';
@@ -493,7 +485,6 @@ function showGameOver() {
   }, 500);
 }
 document.getElementById('gameover-claim-btn').onclick = function() {
-  // Send coins to main balance, then redirect
   updateBalance(sessionBalance);
   setTimeout(() => {
     prepareSession();
@@ -606,8 +597,7 @@ document.getElementById('warning-tryagain-btn').onclick = function() {
 };
 
 function checkGameOver() {
-  if (currentHearts <= 0 && !balanceStopped) {
-    balanceStopped = true;
+  if (currentHearts <= 0) {
     showGameOver();
   }
 }
