@@ -107,16 +107,11 @@ class MainScene extends Phaser.Scene {
 
     // تصادم رصاص الأعداء مع البطل دائمًا (حتى بعد الموت)
     this.physics.add.overlap(player, this.enemyBulletGroup, (bullet, p) => {
-      const now = Date.now();
-      if (
-        bullet.active &&
-        (now - playerBulletCooldown > PLAYER_BULLET_HIT_COOLDOWN)
-      ) {
-        bullet.disableBody(true, true);
-        setHealth(playerHealth-25);
-        playerBulletCooldown = now;
-      }
-    });
+  if (bullet.active) {
+    bullet.disableBody(true, true);
+    setHealth(playerHealth - 25);
+  }
+});
 
     // تصادم سيف العدو مع البطل دائمًا
     this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
