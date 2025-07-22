@@ -22,6 +22,7 @@ let maxHearts = 3;
 let sessionBalance = 0;
 let currentHearts = maxHearts;
 let sessionActive = true;
+
 // ====== إصلاح localStorage: بداية جلسة نظيفة دائماً =======
 function initSessionStorage() {
   localStorage.setItem("sessionBalance", "0");
@@ -44,22 +45,71 @@ currentHearts = parseInt(localStorage.getItem("currentHearts") || maxHearts);
 let lastPlayerHitTime = 0;
 let warningActive = false;
 
-function cleanAllGameObjects(scene) {
-  // حذف كل الكائنات القديمة لحماية من بقايا الجولات السابقة
-  try {
-    if (scene.enemyGroup) scene.enemyGroup.clear(true, true);
-    if (scene.bulletsGroup) scene.bulletsGroup.clear(true, true);
-    if (scene.enemyBulletGroup) scene.enemyBulletGroup.clear(true, true);
-    if (scene.coinsGroup) scene.coinsGroup.clear(true, true);
-  } catch (e) {}
+// === COOL DOWN نظام الانتظار بعد نهاية الجولة ===
+const GAME_COOLDOWN_HOURS = 5;
+const GAME_COOLDOWN_MS = GAME_COOLDOWN_HOURS * 60 * 60 * 1000;
+const COOLDOWN_KEY = "wellcoinbotgame_cooldowntimestamp";
+
+function getCooldownTimestamp() {
+  return parseInt(localStorage.getItem(COOLDOWN_KEY) || "0");
+}
+function setCooldownTimestamp(ts) {
+  localStorage.setItem(COOLDOWN_KEY, ts);
+}
+function isGameInCooldown() {
+  const now = Date.now();
+  const ts = getCooldownTimestamp();
+  return ts > now;
+}
+function msToHMS(ms) {
+  let totalSeconds = Math.floor(ms / 1000);
+  let h = Math.floor(totalSeconds / 3600);
+  let m = Math.floor((totalSeconds % 3600) / 60);
+  let s = totalSeconds % 60;
+  return (
+    (h < 10 ? "0" : "") + h + ":" +
+    (m < 10 ? "0" : "") + m + ":" +
+    (s < 10 ? "0" : "") + s
+  );
 }
 
-function resetGameCamera(scene) {
-  try {
-    scene.cameras.main.setZoom(1.35);
-    scene.cameras.main.setScroll(0, 0);
-    scene.cameras.main.roundPixels = true;
-  } catch (e) {}
+// --- واجهة الانتظار المنسقة (تظهر إذا لم ينته زمن 5 ساعات)
+function showCooldownOverlay(remainingMs) {
+  let overlay = document.getElementById("cooldown-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "cooldown-overlay";
+    overlay.innerHTML = `
+      <div class="cooldown-box" style="
+        background:rgba(18,14,32,0.98);padding:38px 32px 32px 32px;
+        border-radius: 24px; box-shadow: 0 8px 48px #000a; max-width: 350px; min-width: 260px;">
+        <img src="assets/player1.png" alt="player" style="width:72px;height:72px;display:block;margin:0 auto 20px;">
+        <h2 style="text-align:center;color:#e14b4b;margin:0 0 10px 0;font-family:Pixel,Arial">⏳ الرجاء الانتظار</h2>
+        <div style="text-align:center;font-size:28px;font-family:monospace;color:#fff;margin-bottom:10px;">
+          <span id="cooldown-timer">00:00:00</span>
+        </div>
+        <div style="text-align:center;color:#d5d5d5;font-size:17px;">يمكنك اللعب مرّة أخرى بعد انتهاء العد التنازلي!</div>
+      </div>
+    `;
+    Object.assign(overlay.style, {
+      position: "fixed", left: 0, top: 0, width: "100vw", height: "100vh",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 10000, background: "rgba(20,20,30,0.90)", backdropFilter: "blur(2px)",
+    });
+    document.body.appendChild(overlay);
+  }
+  overlay.style.display = "flex";
+  function updateTimer() {
+    let msLeft = getCooldownTimestamp() - Date.now();
+    if (msLeft <= 0) {
+      overlay.style.display = "none";
+      if (typeof onCooldownEnd === "function") onCooldownEnd();
+    } else {
+      document.getElementById("cooldown-timer").textContent = msToHMS(msLeft);
+      setTimeout(updateTimer, 1000);
+    }
+  }
+  updateTimer();
 }
 
 // === UI Helpers ===
@@ -93,11 +143,7 @@ let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWav
 let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
-// حماية من تكرار انفجار الموت
 let isPlayerDying = false;
-
-// --- إضافة حماية: اللاعب يموت من أول رصاصة تلامسه مهما كان يجري أو يتحرك ---
-// === حل نهائي: تعطيل أي حماية أو "فريم سكِب" أو تأخير بين الاصطدامات، كل رصاصة تلمس اللاعب تقتله فوراً ===
 
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
@@ -116,7 +162,6 @@ class MainScene extends Phaser.Scene {
     this.load.image('player_hit', 'assets/gun_fire_pixel.gif');
   }
   create() {
-    // تنظيف أي بقايا من مشهد سابق
     cleanAllGameObjects(this);
     resetGameCamera(this);
 
@@ -127,16 +172,15 @@ class MainScene extends Phaser.Scene {
     player = this.physics.add.sprite(bgWidth/2, bgHeight/2, 'player').setScale(0.11);
     player.setDepth(2).setCollideWorldBounds(true);
     player.body.enable = true;
-    // إصلاح scale نهائي
     player.setScale(0.11, 0.11);
-    // جسم دائري للاعب
+
     let playerRadius = player.displayWidth / 2.2;
     player.body.setCircle(playerRadius, player.body.width/2 - playerRadius, player.body.height/2 - playerRadius);
 
     this.physics.world.setBounds(0, 0, bgWidth, bgHeight);
     this.cameras.main.setBounds(0, 0, bgWidth, bgHeight);
     this.cameras.main.startFollow(player, true, 0.14, 0.14);
-    // إصلاح zoom/camera
+
     this.cameras.main.setZoom(Math.max(gameWidth/bgWidth, gameHeight/bgHeight)*1.35);
     camera = this.cameras.main;
 
@@ -165,22 +209,17 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // --- تصادم دقيق: يتحقق كل فريم حتى لو اللاعب يتحرك بسرعة ---
-    // حماية: كل رصاصة تلمس اللاعب تقتله فوراً (بدون أي تأخير أو حماية جري)
+    // === تصادم: أول رصاصة تلمس اللاعب تقتله فوراً مهما كان يجري ===
     this.events.on('update', () => {
       if (!player.active || isPlayerDying) return;
       enemyBulletGroup.children.each(bullet => {
         if (!bullet.active) return;
-        // جسم دائري للرصاصة
         let bulletRadius = bullet.displayWidth / 2.2;
         bullet.body.setCircle(bulletRadius, bullet.body.width/2 - bulletRadius, bullet.body.height/2 - bulletRadius);
-        // مركز اللاعب
         let px = player.x, py = player.y;
-        // مركز الرصاصة
         let bx = bullet.x, by = bullet.y;
         let dist = Phaser.Math.Distance.Between(px, py, bx, by);
         if (dist < player.displayWidth / 2.2 + bulletRadius) {
-          // تعديل مهم: لا يوجد "overlapping bullets" ولا حماية جري ولا تخطي لأي رصاصة، أول رصاصة تلامس = موت مؤكد
           if (!isPlayerDying && !warningActive && sessionActive) {
             triggerPlayerHit(this, player, bullet);
           }
@@ -253,7 +292,6 @@ class MainScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // إصلاح scale/camera كل فريم
     if (player && (player.displayWidth > bgWidth*0.2 || player.displayWidth < 10)) {
       player.setScale(0.11, 0.11);
     }
@@ -353,7 +391,23 @@ class MainScene extends Phaser.Scene {
   }
 }
 
-// منطق الضربة والانفجار والموت السريع
+function cleanAllGameObjects(scene) {
+  try {
+    if (scene.enemyGroup) scene.enemyGroup.clear(true, true);
+    if (scene.bulletsGroup) scene.bulletsGroup.clear(true, true);
+    if (scene.enemyBulletGroup) scene.enemyBulletGroup.clear(true, true);
+    if (scene.coinsGroup) scene.coinsGroup.clear(true, true);
+  } catch (e) {}
+}
+
+function resetGameCamera(scene) {
+  try {
+    scene.cameras.main.setZoom(1.35);
+    scene.cameras.main.setScroll(0, 0);
+    scene.cameras.main.roundPixels = true;
+  } catch (e) {}
+}
+
 function triggerPlayerHit(scene, player, bullet) {
   if (isPlayerDying) return;
   isPlayerDying = true;
@@ -534,7 +588,6 @@ function startEnemyWaves() {
   addEnemyWave(scene);
 }
 
-// Reset session state for a new "3 hearts" game
 function prepareSession() {
   setBalance(sessionBalance);
   waveCount = 1;
@@ -564,19 +617,25 @@ function showGameOver() {
     gameoverFireworks();
   }, 500);
 }
+
+// === نقطة التعديل: عند الضغط على claim يتم إرسال العملات للرصيد الرئيسي وتفعيل التبريد والعودة للرئيسية ===
 document.getElementById('gameover-claim-btn').onclick = function() {
+  // تحديث الرصيد الرئيسي
   updateBalance(sessionBalance);
-  setTimeout(() => {
-    sessionBalance = 0;
-    currentHearts = maxHearts;
-    localStorage.setItem("sessionBalance", "0");
-    localStorage.setItem("currentHearts", maxHearts);
-    localStorage.removeItem("sessionStarted");
-    sessionActive = true;
-    prepareSession();
-    document.getElementById('gameover-overlay').style.display = 'none';
-    window.location.href = "index.html";
-  }, 300);
+  // إعادة تعيين الجلسة
+  sessionBalance = 0;
+  currentHearts = maxHearts;
+  localStorage.setItem("sessionBalance", "0");
+  localStorage.setItem("currentHearts", maxHearts);
+  localStorage.removeItem("sessionStarted");
+  sessionActive = true;
+  prepareSession();
+  document.getElementById('gameover-overlay').style.display = 'none';
+  // تفعيل وقت الانتظار
+  let nextTime = Date.now() + GAME_COOLDOWN_MS;
+  setCooldownTimestamp(nextTime);
+  // العودة للواجهة الرئيسية
+  window.location.href = "index.html";
 };
 
 function gameoverFireworks() {
@@ -646,7 +705,6 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
   if (dist < 40 && !warningActive) handlePlayerHit();
 }
 
-// === HEART & WARNING LOGIC ===
 function handlePlayerHit(cb) {
   if (currentHearts > 0 && !warningActive) {
     warningActive = true;
@@ -712,6 +770,16 @@ function showPlayerHitExplosion(scene, playerObj) {
   });
 }
 
+// =============== واجهة الانتظار عند زر play (في الصفحة الرئيسية) ===============
+window.handlePlayButton = function() {
+  if (isGameInCooldown()) {
+    showCooldownOverlay(getCooldownTimestamp() - Date.now());
+    return false;
+  }
+  return true;
+}
+
+// =============== عند تحميل الصفحة، اربط زر play مع التحقق من التبريد ===============
 window.onload = function() {
   if (!userId) return;
   getUserData().then(user => {
@@ -729,7 +797,15 @@ window.onload = function() {
   updateHeartsUI();
   setBalance(sessionBalance);
   document.getElementById('warning-overlay').style.display = 'none';
-}
+
+  // زر play في الصفحة الرئيسية (لو موجود) id="play-btn"
+  let playBtn = document.getElementById("play-btn");
+  if (playBtn) {
+    playBtn.onclick = function(e) {
+      if (!window.handlePlayButton()) e.preventDefault();
+    };
+  }
+};
 
 let game = new Phaser.Game({
   type: Phaser.AUTO,
