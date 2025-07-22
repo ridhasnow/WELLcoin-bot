@@ -23,7 +23,6 @@
       letter-spacing: 0.7px; backdrop-filter: blur(2.5px); user-select: none;
     }
     #balance-bar .wlc {font-size:15px;margin-left:8px;color:gold;font-weight:bold;letter-spacing:1.2px;filter:drop-shadow(0 0 5px #fff70073);}
-    /* HEALTH BAR IS REMOVED, HEARTS BAR ADDED */
     #hearts-bar {
       position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
       min-width: 100px; height: 38px;
@@ -165,6 +164,51 @@
       display: none;
     }
     #warning-tryagain-btn:active {background:#a00;transform:scale(0.97);}
+    /* === COOLDOWN OVERLAY STYLE === */
+    #cooldown-overlay {
+      position: fixed;
+      left: 0; top: 0; width: 100vw; height: 100vh;
+      display: none; align-items: center; justify-content: center;
+      z-index: 10000; 
+      background: rgba(20,20,30,0.92); 
+      backdrop-filter: blur(2.5px);
+    }
+    #cooldown-overlay .cooldown-box {
+      background:rgba(18,14,32,0.98);
+      padding:38px 32px 32px 32px;
+      border-radius: 24px; 
+      box-shadow: 0 8px 48px #000a; 
+      max-width: 350px; min-width: 260px;
+      display: flex; flex-direction: column; align-items: center;
+      border: 2.4px solid #e14b4b;
+    }
+    #cooldown-overlay h2 {
+      text-align:center;color:#e14b4b;margin:0 0 10px 0;
+      font-family:Pixel,Arial;
+      font-size:2rem;
+      text-shadow: 0 2px 14px #000, 0 1px 0 #fff;
+    }
+    #cooldown-timer {
+      text-align:center;
+      font-size:2.2rem;
+      font-family:monospace;
+      color:#fff;
+      margin-bottom:10px;
+      letter-spacing:2.2px;
+      text-shadow:0 2px 14px #000;
+      display:block;
+    }
+    #cooldown-overlay .cooldown-box img {
+      width:72px;height:72px;display:block;margin:0 auto 20px;
+      image-rendering: pixelated;
+      border-radius: 12px;
+      border: 2px solid #e14b4b;
+      background: #300a;
+      box-shadow: 0 2px 18px #a003;
+    }
+    #cooldown-overlay .cooldown-box div {
+      font-family: 'VT323', monospace;
+    }
   </style>
 </head>
 <body>
@@ -200,7 +244,17 @@
       <button id="warning-tryagain-btn">Try Again</button>
     </div>
   </div>
-  <!-- ربط ملف الجافاسكريبت المنفصل -->
+  <!-- COOLDOWN OVERLAY (تظهر عند محاولة اللعب قبل انتهاء 5 ساعات) -->
+  <div id="cooldown-overlay" style="display:none">
+    <div class="cooldown-box">
+      <img src="assets/player1.png" alt="player">
+      <h2>⏳ الرجاء الانتظار</h2>
+      <div>
+        <span id="cooldown-timer">00:00:00</span>
+      </div>
+      <div style="text-align:center;color:#d5d5d5;font-size:17px;">يمكنك اللعب مرّة أخرى بعد انتهاء العد التنازلي!</div>
+    </div>
+  </div>
   <script src="play.js"></script>
 </body>
 </html>
