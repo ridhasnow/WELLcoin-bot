@@ -286,17 +286,6 @@
     <button class="btn" id="play-btn">Play</button>
   </div>
 
-  <div id="cooldown-overlay">
-    <div class="cooldown-box">
-      <img src="assets/player1.png" alt="player">
-      <h2>⏳ Please Wait</h2>
-      <div>
-        <span id="cooldown-timer">00:00:00</span>
-      </div>
-      <div style="text-align:center;color:#d5d5d5;font-size:17px;">Come Back After!</div>
-    </div>
-  </div>
-
   <script>
     // منع الزوم والسكرول باللمس أو الماوس ... (نفس كودك الحالي)
     document.addEventListener('touchmove', function(event) {
@@ -427,9 +416,9 @@ function showCooldownOverlay(remainingMs) {
     overlay = document.createElement("div");
     overlay.id = "cooldown-overlay";
     overlay.innerHTML = `
-      <div class="cooldown-box" style="
+      <div class="cooldown-box" style="position:relative;
         background:rgba(18,14,32,0.98);padding:38px 32px 32px 32px;
-        border-radius: 24px; box-shadow: 0 8px 48px #000a; max-width: 350px; min-width: 260px; position:relative;">
+        border-radius: 24px; box-shadow: 0 8px 48px #000a; max-width: 350px; min-width: 260px;">
         <span id="cooldown-close" style="
           position:absolute;right:18px;top:14px;
           color:#fff;font-size:2.1rem;
@@ -453,15 +442,10 @@ function showCooldownOverlay(remainingMs) {
     document.body.appendChild(overlay);
   }
   overlay.style.display = "flex";
-
-  // Add close button handler
   let closeBtn = overlay.querySelector('#cooldown-close');
-  if (closeBtn) {
-    closeBtn.onclick = function() {
-      overlay.style.display = 'none';
-    };
-  }
-
+  if (closeBtn) closeBtn.onclick = function() {
+    overlay.style.display = 'none';
+  };
   function updateTimer() {
     let msLeft = window.nextPlayTime - Date.now();
     if (msLeft <= 0) {
