@@ -286,6 +286,17 @@
     <button class="btn" id="play-btn">Play</button>
   </div>
 
+  <div id="cooldown-overlay">
+    <div class="cooldown-box">
+      <img src="assets/player1.png" alt="player">
+      <h2>⏳ Please Wait</h2>
+      <div>
+        <span id="cooldown-timer">00:00:00</span>
+      </div>
+      <div style="text-align:center;color:#d5d5d5;font-size:17px;">Come Back After!</div>
+    </div>
+  </div>
+
   <script>
     // منع الزوم والسكرول باللمس أو الماوس ... (نفس كودك الحالي)
     document.addEventListener('touchmove', function(event) {
@@ -398,65 +409,31 @@
     // ============== نظام انتظار الميني جيم بالاعتماد على الفايربيز ===================
     // الحقل المستخدم: nextPlayTime (timestamp بالمللي ثانية) داخل users/userId/nextPlayTime
     function msToHMS(ms) {
-  let totalSeconds = Math.floor(ms / 1000);
-  let h = Math.floor(totalSeconds / 3600);
-  let m = Math.floor((totalSeconds % 3600) / 60);
-  let s = totalSeconds % 60;
-  return (
-    (h < 10 ? "0" : "") + h + ":" +
-    (m < 10 ? "0" : "") + m + ":" +
-    (s < 10 ? "0" : "") + s
-  );
-}
-
-// Show the cooldown overlay with a close [X] button
-function showCooldownOverlay(remainingMs) {
-  let overlay = document.getElementById("cooldown-overlay");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "cooldown-overlay";
-    overlay.innerHTML = `
-      <div class="cooldown-box" style="position:relative;
-        background:rgba(18,14,32,0.98);padding:38px 32px 32px 32px;
-        border-radius: 24px; box-shadow: 0 8px 48px #000a; max-width: 350px; min-width: 260px;">
-        <span id="cooldown-close" style="
-          position:absolute;right:18px;top:14px;
-          color:#fff;font-size:2.1rem;
-          cursor:pointer;font-weight:bold;
-          z-index:1001;
-          user-select:none;
-        " title="Close">&times;</span>
-        <img src="assets/player1.png" alt="player" style="width:72px;height:72px;display:block;margin:0 auto 20px;">
-        <h2 style="text-align:center;color:#e14b4b;margin:0 0 10px 0;font-family:Pixel,Arial">⏳ Please Wait</h2>
-        <div style="text-align:center;font-size:28px;font-family:monospace;color:#fff;margin-bottom:10px;">
-          <span id="cooldown-timer">00:00:00</span>
-        </div>
-        <div style="text-align:center;color:#d5d5d5;font-size:17px;">You can play again after the countdown ends!</div>
-      </div>
-    `;
-    Object.assign(overlay.style, {
-      position: "fixed", left: 0, top: 0, width: "100vw", height: "100vh",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 10000, background: "rgba(20,20,30,0.90)", backdropFilter: "blur(2px)",
-    });
-    document.body.appendChild(overlay);
-  }
-  overlay.style.display = "flex";
-  let closeBtn = overlay.querySelector('#cooldown-close');
-  if (closeBtn) closeBtn.onclick = function() {
-    overlay.style.display = 'none';
-  };
-  function updateTimer() {
-    let msLeft = window.nextPlayTime - Date.now();
-    if (msLeft <= 0) {
-      overlay.style.display = "none";
-    } else {
-      document.getElementById("cooldown-timer").textContent = msToHMS(msLeft);
-      setTimeout(updateTimer, 1000);
+      let totalSeconds = Math.floor(ms / 1000);
+      let h = Math.floor(totalSeconds / 3600);
+      let m = Math.floor((totalSeconds % 3600) / 60);
+      let s = totalSeconds % 60;
+      return (
+        (h < 10 ? "0" : "") + h + ":" +
+        (m < 10 ? "0" : "") + m + ":" +
+        (s < 10 ? "0" : "") + s
+      );
     }
-  }
-  updateTimer();
-}
+    // تحديث واجهة الانتظار
+    function showCooldownOverlay(remainingMs) {
+      let overlay = document.getElementById("cooldown-overlay");
+      overlay.style.display = "flex";
+      function updateTimer() {
+        let msLeft = window.nextPlayTime - Date.now();
+        if (msLeft <= 0) {
+          overlay.style.display = "none";
+        } else {
+          document.getElementById("cooldown-timer").textContent = msToHMS(msLeft);
+          setTimeout(updateTimer, 1000);
+        }
+      }
+      updateTimer();
+    }
 
     // عند الضغط على زر Play
     document.getElementById("play-btn").onclick = async function(e) {
