@@ -96,6 +96,9 @@ let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
 // حماية من تكرار انفجار الموت
 let isPlayerDying = false;
 
+// --- إضافة حماية: اللاعب يموت من أول رصاصة تلامسه مهما كان يجري أو يتحرك ---
+// === حل نهائي: تعطيل أي حماية أو "فريم سكِب" أو تأخير بين الاصطدامات، كل رصاصة تلمس اللاعب تقتله فوراً ===
+
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
   preload() {
@@ -163,16 +166,11 @@ class MainScene extends Phaser.Scene {
     });
 
     // --- تصادم دقيق: يتحقق كل فريم حتى لو اللاعب يتحرك بسرعة ---
-    // *** إصلاح نهائي: رصاصة واحدة تقتل اللاعب مهما كان ***
-    this.playerOverlappingBullets = new Set();
+    // حماية: كل رصاصة تلمس اللاعب تقتله فوراً (بدون أي تأخير أو حماية جري)
     this.events.on('update', () => {
       if (!player.active || isPlayerDying) return;
-      let killedThisFrame = false;
       enemyBulletGroup.children.each(bullet => {
-        if (!bullet.active) {
-          this.playerOverlappingBullets.delete(bullet);
-          return;
-        }
+        if (!bullet.active) return;
         // جسم دائري للرصاصة
         let bulletRadius = bullet.displayWidth / 2.2;
         bullet.body.setCircle(bulletRadius, bullet.body.width/2 - bulletRadius, bullet.body.height/2 - bulletRadius);
@@ -182,16 +180,10 @@ class MainScene extends Phaser.Scene {
         let bx = bullet.x, by = bullet.y;
         let dist = Phaser.Math.Distance.Between(px, py, bx, by);
         if (dist < player.displayWidth / 2.2 + bulletRadius) {
-          if (!this.playerOverlappingBullets.has(bullet) && !killedThisFrame) {
-            this.playerOverlappingBullets.add(bullet);
-            // *** هنا نجبر الموت الفوري ***
-            if (!isPlayerDying && sessionActive) {
-              killedThisFrame = true;
-              forceKillPlayer(this, player, bullet); // إصلاح قوي ومحترف: لا يمكن النجاة من أول رصاصة
-            }
+          // تعديل مهم: لا يوجد "overlapping bullets" ولا حماية جري ولا تخطي لأي رصاصة، أول رصاصة تلامس = موت مؤكد
+          if (!isPlayerDying && !warningActive && sessionActive) {
+            triggerPlayerHit(this, player, bullet);
           }
-        } else {
-          this.playerOverlappingBullets.delete(bullet);
         }
       });
     });
@@ -361,26 +353,7 @@ class MainScene extends Phaser.Scene {
   }
 }
 
-// إصلاح احترافي: موت فوري عند أول رصاصة تلامس اللاعب مهما كان
-function forceKillPlayer(scene, player, bullet) {
-  if (isPlayerDying) return;
-  isPlayerDying = true;
-  showPlayerHitExplosion(scene, player);
-  bullet.disableBody(true, true);
-
-  // *** موت فوري مهما كان عدد القلوب ***
-  currentHearts = 0;
-  localStorage.setItem("currentHearts", currentHearts);
-  updateHeartsUI();
-
-  setTimeout(() => {
-    isPlayerDying = false;
-    warningActive = false;
-    showGameOver();
-  }, 700); // وقت قصير لانفجار الموت ثم نهاية الجولة
-}
-
-// منطق الضربة والانفجار والموت السريع (بقي للاعداء بالسيف فقط)
+// منطق الضربة والانفجار والموت السريع
 function triggerPlayerHit(scene, player, bullet) {
   if (isPlayerDying) return;
   isPlayerDying = true;
