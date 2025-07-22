@@ -48,32 +48,16 @@ let warningActive = false;
 // === COOL DOWN نظام الانتظار بعد نهاية الجولة ===
 const GAME_COOLDOWN_HOURS = 5;
 const GAME_COOLDOWN_MS = GAME_COOLDOWN_HOURS * 60 * 60 * 1000;
-const COOLDOWN_KEY = "wellcoinbotgame_cooldowntimestamp";
+// فايربيز فقط: لا تستعمل localStorage بعد الآن
+const COOLDOWN_KEY_FIREBASE = "nextPlayTime";
 
-function getCooldownTimestamp() {
-  return parseInt(localStorage.getItem(COOLDOWN_KEY) || "0");
+// Firebase: احصل على توقيت نهاية الانتظار من حساب اللاعب
+async function getCooldownTimestampFirebase() {
+  if (!userId) return 0;
+  const snap = await db.ref("users/" + userId + "/" + COOLDOWN_KEY_FIREBASE).get();
+  return parseInt(snap.val() || "0");
 }
-function setCooldownTimestamp(ts) {
-  localStorage.setItem(COOLDOWN_KEY, ts);
-}
-function isGameInCooldown() {
-  const now = Date.now();
-  const ts = getCooldownTimestamp();
-  return ts > now;
-}
-function msToHMS(ms) {
-  let totalSeconds = Math.floor(ms / 1000);
-  let h = Math.floor(totalSeconds / 3600);
-  let m = Math.floor((totalSeconds % 3600) / 60);
-  let s = totalSeconds % 60;
-  return (
-    (h < 10 ? "0" : "") + h + ":" +
-    (m < 10 ? "0" : "") + m + ":" +
-    (s < 10 ? "0" : "") + s
-  );
-}
-
-// --- واجهة الانتظار المنسقة (تظهر إذا لم ينته زمن 5 ساعات)
+// Firebase: عداد الواجهة
 function showCooldownOverlay(remainingMs) {
   let overlay = document.getElementById("cooldown-overlay");
   if (!overlay) {
@@ -100,16 +84,26 @@ function showCooldownOverlay(remainingMs) {
   }
   overlay.style.display = "flex";
   function updateTimer() {
-    let msLeft = getCooldownTimestamp() - Date.now();
+    let msLeft = window._nextPlayTime - Date.now();
     if (msLeft <= 0) {
       overlay.style.display = "none";
-      if (typeof onCooldownEnd === "function") onCooldownEnd();
     } else {
       document.getElementById("cooldown-timer").textContent = msToHMS(msLeft);
       setTimeout(updateTimer, 1000);
     }
   }
   updateTimer();
+}
+function msToHMS(ms) {
+  let totalSeconds = Math.floor(ms / 1000);
+  let h = Math.floor(totalSeconds / 3600);
+  let m = Math.floor((totalSeconds % 3600) / 60);
+  let s = totalSeconds % 60;
+  return (
+    (h < 10 ? "0" : "") + h + ":" +
+    (m < 10 ? "0" : "") + m + ":" +
+    (s < 10 ? "0" : "") + s
+  );
 }
 
 // === UI Helpers ===
@@ -619,9 +613,10 @@ function showGameOver() {
 }
 
 // === نقطة التعديل: عند الضغط على claim يتم إرسال العملات للرصيد الرئيسي وتفعيل التبريد والعودة للرئيسية ===
-document.getElementById('gameover-claim-btn').onclick = function() {
+document.getElementById('gameover-claim-btn').onclick = async function() {
   // تحديث الرصيد الرئيسي
   updateBalance(sessionBalance);
+
   // إعادة تعيين الجلسة
   sessionBalance = 0;
   currentHearts = maxHearts;
@@ -631,12 +626,17 @@ document.getElementById('gameover-claim-btn').onclick = function() {
   sessionActive = true;
   prepareSession();
   document.getElementById('gameover-overlay').style.display = 'none';
-  // تفعيل وقت الانتظار
+
+  // تفعيل وقت الانتظار (في فايربيز وليس localStorage)
   let nextTime = Date.now() + GAME_COOLDOWN_MS;
-  setCooldownTimestamp(nextTime);
+  if (userId) {
+    await db.ref("users/" + userId + "/nextPlayTime").set(nextTime);
+  }
   // العودة للواجهة الرئيسية
   window.location.href = "index.html";
 };
+
+// باقي الكود كما هو...
 
 function gameoverFireworks() {
   let canvas = document.getElementById('gameover-fireworks');
@@ -771,9 +771,13 @@ function showPlayerHitExplosion(scene, playerObj) {
 }
 
 // =============== واجهة الانتظار عند زر play (في الصفحة الرئيسية) ===============
-window.handlePlayButton = function() {
-  if (isGameInCooldown()) {
-    showCooldownOverlay(getCooldownTimestamp() - Date.now());
+window.handlePlayButton = async function() {
+  // تحقق من التبريد عبر فايربيز وليس localStorage
+  if (!userId) return true;
+  const nextPlayTime = await getCooldownTimestampFirebase();
+  window._nextPlayTime = nextPlayTime;
+  if (nextPlayTime > Date.now()) {
+    showCooldownOverlay(nextPlayTime - Date.now());
     return false;
   }
   return true;
@@ -798,11 +802,12 @@ window.onload = function() {
   setBalance(sessionBalance);
   document.getElementById('warning-overlay').style.display = 'none';
 
-  // زر play في الصفحة الرئيسية (لو موجود) id="play-btn"
   let playBtn = document.getElementById("play-btn");
   if (playBtn) {
-    playBtn.onclick = function(e) {
-      if (!window.handlePlayButton()) e.preventDefault();
+    playBtn.onclick = async function(e) {
+      // تحقق من التبريد عبر فايربيز وليس localStorage
+      const allowed = await window.handlePlayButton();
+      if (!allowed) e.preventDefault();
     };
   }
 };
