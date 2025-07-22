@@ -27,7 +27,6 @@
       overflow: hidden;
       position: relative;
     }
-
     header {
       height: 59px;
       background-color: rgba(0, 0, 0, 0.0);
@@ -35,7 +34,6 @@
       z-index: 5;
       position: relative;
     }
-
     #ranked {
       position: fixed;
       top: 20px;
@@ -51,7 +49,6 @@
       transform: scale(1.15);
       filter: drop-shadow(0 0 6px gold);
     }
-
     .balance-box {
       position: absolute;
       top: 10px;
@@ -73,13 +70,11 @@
       animation: glow 2s infinite ease-in-out;
       backdrop-filter: blur(5px);
     }
-
     .coin-icon {
       width: 26px;
       height: 26px;
       filter: drop-shadow(0 0 3px gold);
     }
-
     @keyframes glow {
       0%, 100% {
         box-shadow: 0 0 10px rgba(255, 215, 0, 0.4), inset 0 0 6px rgba(255, 255, 255, 0.05);
@@ -88,14 +83,12 @@
         box-shadow: 0 0 18px rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.08);
       }
     }
-
     #balance-amount {
       color: #ffd700;
       font-size: 16px;
       font-weight: bold;
       text-shadow: 0 0 6px #fff799, 0 0 10px #ffdc73;
     }
-
     .character-container {
       flex-grow: 1;
       display: flex;
@@ -107,7 +100,6 @@
       overflow: hidden;
       touch-action: none;
     }
-
     .character {
       max-height: 100%;
       max-width: 100%;
@@ -116,7 +108,6 @@
       -webkit-user-drag: none;
       pointer-events: auto;
     }
-
     .mining-bar {
       position: absolute;
       bottom: 10px;
@@ -135,7 +126,6 @@
       white-space: nowrap;
       z-index: 3;
     }
-
     .timer {
       position: absolute;
       bottom: 44px;
@@ -151,7 +141,6 @@
       font-weight: bold;
       z-index: 4;
     }
-
     .bottom-buttons {
       display: flex;
       justify-content: space-between;
@@ -165,7 +154,6 @@
       box-sizing: border-box;
       position: relative;
     }
-
     .btn {
       flex: 1;
       text-align: center;
@@ -183,7 +171,6 @@
       box-shadow: 0 4px 6px rgba(255, 215, 0, 0.15);
       min-width: 0;
     }
-
     .username-frame {
       position: absolute;
       top: 4px;
@@ -193,7 +180,6 @@
       height: 60px;
       z-index: 3;
     }
-
     .dragon-frame-img {
       position: absolute;
       width: 100%;
@@ -203,7 +189,6 @@
       z-index: 1;
       filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 10px rgba(255, 255, 200, 0.3));
     }
-
     #username-inside {
       position: absolute;
       top: 20px;
@@ -217,23 +202,65 @@
       padding: 4px 8px;
       text-shadow: 0 0 6px gold;
     }
-
     .btn:hover {
       background-color: #1a1a1a;
       color: #ffd700;
       box-shadow: 0 6px 10px rgba(255, 215, 0, 0.25);
     }
-
     .btn:active {
       transform: scale(0.97);
       background-color: #111;
+    }
+    /* Cooldown overlay style */
+    #cooldown-overlay {
+      position: fixed;
+      left: 0; top: 0; width: 100vw; height: 100vh;
+      display: none; align-items: center; justify-content: center;
+      z-index: 10000; 
+      background: rgba(20,20,30,0.92); 
+      backdrop-filter: blur(2.5px);
+    }
+    #cooldown-overlay .cooldown-box {
+      background:rgba(18,14,32,0.98);
+      padding:38px 32px 32px 32px;
+      border-radius: 24px; 
+      box-shadow: 0 8px 48px #000a; 
+      max-width: 350px; min-width: 260px;
+      display: flex; flex-direction: column; align-items: center;
+      border: 2.4px solid #e14b4b;
+    }
+    #cooldown-overlay h2 {
+      text-align:center;color:#e14b4b;margin:0 0 10px 0;
+      font-family:Pixel,Arial;
+      font-size:2rem;
+      text-shadow: 0 2px 14px #000, 0 1px 0 #fff;
+    }
+    #cooldown-timer {
+      text-align:center;
+      font-size:2.2rem;
+      font-family:monospace;
+      color:#fff;
+      margin-bottom:10px;
+      letter-spacing:2.2px;
+      text-shadow:0 2px 14px #000;
+      display:block;
+    }
+    #cooldown-overlay .cooldown-box img {
+      width:72px;height:72px;display:block;margin:0 auto 20px;
+      image-rendering: pixelated;
+      border-radius: 12px;
+      border: 2px solid #e14b4b;
+      background: #300a;
+      box-shadow: 0 2px 18px #a003;
+    }
+    #cooldown-overlay .cooldown-box div {
+      font-family: 'VT323', monospace;
     }
   </style>
 </head>
 <body>
   <header></header>
 
-  <!-- ✅ زر الرانكد كعنصر مستقل -->
   <img src="ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
 
   <div class="balance-box">
@@ -256,45 +283,33 @@
     <button class="btn">Me</button>
     <button class="btn" onclick="window.location.href='shop.html'">Shop</button>
     <button class="btn" onclick="window.location.href='missions.html'">Missions</button>
-    <button class="btn" onclick="window.location.href='play.html'">Play</button>
+    <button class="btn" id="play-btn">Play</button>
+  </div>
+
+  <div id="cooldown-overlay">
+    <div class="cooldown-box">
+      <img src="assets/player1.png" alt="player">
+      <h2>⏳ الرجاء الانتظار</h2>
+      <div>
+        <span id="cooldown-timer">00:00:00</span>
+      </div>
+      <div style="text-align:center;color:#d5d5d5;font-size:17px;">يمكنك اللعب مرّة أخرى بعد انتهاء العد التنازلي!</div>
+    </div>
   </div>
 
   <script>
-    // منع الزوم والسكرول باللمس أو الماوس
+    // منع الزوم والسكرول باللمس أو الماوس ... (نفس كودك الحالي)
     document.addEventListener('touchmove', function(event) {
       if (event.scale !== 1) { event.preventDefault(); }
     }, { passive: false });
-
-    document.addEventListener('gesturestart', function (e) {
-      e.preventDefault();
-    }, { passive: false });
-
-    document.addEventListener('gesturechange', function (e) {
-      e.preventDefault();
-    }, { passive: false });
-
-    document.addEventListener('gestureend', function (e) {
-      e.preventDefault();
-    }, { passive: false });
-
-    // تعطيل سكرول اليمين واليسار بالأسهم أو التراكباد
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
     window.addEventListener('keydown', function(e) {
-      if(["ArrowLeft", "ArrowRight", " "].includes(e.key)) {
-        e.preventDefault();
-      }
+      if(["ArrowLeft", "ArrowRight", " "].includes(e.key)) { e.preventDefault(); }
     }, { passive: false });
-
-    // تعطيل سكرول بالماوس
-    window.addEventListener('wheel', function(e) {
-      e.preventDefault();
-    }, { passive: false });
-
-    // تعطيل سحب الشاشة يمين ويسار
-    window.addEventListener('scroll', function() {
-      window.scrollTo(0, 0);
-    });
-
-    // تأكيد عدم وجود سكرول نهائيًا
+    window.addEventListener('wheel', function(e) { e.preventDefault(); }, { passive: false });
+    window.addEventListener('scroll', function() { window.scrollTo(0, 0); });
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
 
@@ -308,13 +323,10 @@
       messagingSenderId: "108640533638",
       appId: "1:108640533638:web:ed07516d96ac38f47f6507"
     });
-
     const db = firebase.database(app);
     const tg = window.Telegram.WebApp;
     tg.ready();
-
     const userId = tg.initDataUnsafe?.user?.id;
-
     const usernameBox = document.getElementById("username-inside");
     const balanceDisplay = document.getElementById("balance-amount");
     const coinDisplay = document.getElementById("coin-count");
@@ -343,19 +355,15 @@
       clearInterval(interval);
       interval = setInterval(() => {
         if (countdown <= 0) return;
-
         coinCount += miningRatePerSecond;
         balance += miningRatePerSecond;
         countdown--;
-
         updateDisplay();
-
         db.ref("users/" + userId).update({
           balance,
           coinCount,
           countdown
         });
-
         if (countdown <= 0) {
           clearInterval(interval);
         }
@@ -384,7 +392,6 @@
         }
 
         const userData = snapshot.val();
-        console.log("بيانات اللاعب:", userData);
         usernameBox.textContent = userData.username || "Unknown Player";
         balance = parseFloat(userData.balance || 0);
         coinCount = parseFloat(userData.coinCount || 0);
@@ -398,6 +405,51 @@
       // ✅ بعد تحميل كل شيء
       document.querySelector(".character").addEventListener("click", restartMiningTimer);
     });
+
+    // ============== نظام انتظار الميني جيم بالاعتماد على الفايربيز ===================
+    // الحقل المستخدم: nextPlayTime (timestamp بالمللي ثانية) داخل users/userId/nextPlayTime
+    function msToHMS(ms) {
+      let totalSeconds = Math.floor(ms / 1000);
+      let h = Math.floor(totalSeconds / 3600);
+      let m = Math.floor((totalSeconds % 3600) / 60);
+      let s = totalSeconds % 60;
+      return (
+        (h < 10 ? "0" : "") + h + ":" +
+        (m < 10 ? "0" : "") + m + ":" +
+        (s < 10 ? "0" : "") + s
+      );
+    }
+    // تحديث واجهة الانتظار
+    function showCooldownOverlay(remainingMs) {
+      let overlay = document.getElementById("cooldown-overlay");
+      overlay.style.display = "flex";
+      function updateTimer() {
+        let msLeft = window.nextPlayTime - Date.now();
+        if (msLeft <= 0) {
+          overlay.style.display = "none";
+        } else {
+          document.getElementById("cooldown-timer").textContent = msToHMS(msLeft);
+          setTimeout(updateTimer, 1000);
+        }
+      }
+      updateTimer();
+    }
+
+    // عند الضغط على زر Play
+    document.getElementById("play-btn").onclick = async function(e) {
+      e.preventDefault();
+      if (!userId) return;
+      // اقرأ الوقت من الفايربيز
+      const userRef = db.ref("users/" + userId + "/nextPlayTime");
+      const snap = await userRef.get();
+      const nextPlayTime = parseInt(snap.val() || "0");
+      window.nextPlayTime = nextPlayTime;
+      if (nextPlayTime > Date.now()) {
+        showCooldownOverlay(nextPlayTime - Date.now());
+        return false;
+      }
+      window.location.href = "play.html";
+    };
   </script>
 </body>
-</html>
+</html>ج
