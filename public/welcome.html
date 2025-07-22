@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -124,7 +125,8 @@
 <body>
   <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
     <source src="background.mp4" type="video/mp4" />
-  </video>  <div class="overlay">
+  </video>
+  <div class="overlay">
     <div class="top-text">
       <div class="animated-text">
         Welcome, You Are Now On The Edge Of A New Gaming Realm. Soon, Your Skills Will Become A Source Of Real Wealth.<br />
@@ -134,22 +136,23 @@
     <div class="bottom-btn">
       <button class="agree-btn" onclick="showPopup()">I'm Ready</button>
     </div>
-  </div>  <div class="popup" id="usernamePopup">
+  </div>
+  <div class="popup" id="usernamePopup">
     <span class="close-btn" onclick="closePopup()">×</span>
     <input type="text" id="usernameInput" placeholder="Enter your username" readonly />
     <button id="saveBtn" onclick="handleSaveOrReturn()">Save</button>
-  </div>  <script>
+  </div>
+  <script>
     const firebaseConfig = {
-  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-  authDomain: "wellcoinbotgame.firebaseapp.com",
-  databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app", // ✅ أضف هذا السطر
-  projectId: "wellcoinbotgame",
-  storageBucket: "wellcoinbotgame.appspot.com",
-  messagingSenderId: "108640533638",
-  appId: "1:108640533638:web:ed07516d96ac38f47f6507",
-  measurementId: "G-3H07CXT2PF"
-};
-
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507",
+      measurementId: "G-3H07CXT2PF"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -188,27 +191,33 @@
     }
 
     function handleSaveOrReturn() {
-  console.log("🔵 محاولة حفظ البيانات...");
-
-  db.ref("users/" + userId).set({
-    username: tgUsername,
-    balance: 0,
-    coinCount: 0,
-    countdown: 10800,
-    lastPlayed: Date.now(),
-    joinedAt: new Date().toISOString()
-  })
-  .then(() => {
-    console.log("✅ تم حفظ البيانات في Firebase بنجاح!");
-    window.location.href = "index.html";
-  })
-  .catch((error) => {
-    console.error("❌ فشل في حفظ البيانات:", error);
-    alert("حدث خطأ أثناء الحفظ. تحقق من الاتصال أو من إعدادات Firebase.");
-  });
-}
-
+      // تحقق أولاً إذا كان المستخدم موجود فعلاً (احتياطاً)
+      db.ref("users/" + userId).get()
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            // مستخدم قديم: لا تعيد كتابة أي شيء! فقط توجهه للرئيسية
+            window.location.href = "index.html";
+          } else {
+            // مستخدم جديد: أنشئ السجل بالبيانات الافتراضية
+            db.ref("users/" + userId).set({
+              username: tgUsername,
+              balance: 0,
+              coinCount: 0,
+              countdown: 10800,
+              lastPlayed: Date.now(),
+              joinedAt: new Date().toISOString()
+            })
+            .then(() => {
+              window.location.href = "index.html";
+            })
+            .catch((error) => {
+              alert("Error saving data: " + error.message);
+            });
+          }
+        });
+    }
 
     window.addEventListener("load", checkIfUserExists);
-  </script></body>
+  </script>
+</body>
 </html>
