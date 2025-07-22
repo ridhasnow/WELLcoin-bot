@@ -41,10 +41,11 @@ if (
 sessionBalance = parseFloat(localStorage.getItem("sessionBalance") || "0");
 currentHearts = parseInt(localStorage.getItem("currentHearts") || maxHearts);
 
+let lastPlayerHitTime = 0;
 let warningActive = false;
-let isPlayerDying = false;
 
 function cleanAllGameObjects(scene) {
+  // حذف كل الكائنات القديمة لحماية من بقايا الجولات السابقة
   try {
     if (scene.enemyGroup) scene.enemyGroup.clear(true, true);
     if (scene.bulletsGroup) scene.bulletsGroup.clear(true, true);
@@ -92,6 +93,8 @@ let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWav
 let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
 let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
+// حماية من تكرار انفجار الموت
+let isPlayerDying = false;
 
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
@@ -110,6 +113,7 @@ class MainScene extends Phaser.Scene {
     this.load.image('player_hit', 'assets/gun_fire_pixel.gif');
   }
   create() {
+    // تنظيف أي بقايا من مشهد سابق
     cleanAllGameObjects(this);
     resetGameCamera(this);
 
@@ -120,13 +124,16 @@ class MainScene extends Phaser.Scene {
     player = this.physics.add.sprite(bgWidth/2, bgHeight/2, 'player').setScale(0.11);
     player.setDepth(2).setCollideWorldBounds(true);
     player.body.enable = true;
+    // إصلاح scale نهائي
     player.setScale(0.11, 0.11);
+    // جسم دائري للاعب
     let playerRadius = player.displayWidth / 2.2;
     player.body.setCircle(playerRadius, player.body.width/2 - playerRadius, player.body.height/2 - playerRadius);
 
     this.physics.world.setBounds(0, 0, bgWidth, bgHeight);
     this.cameras.main.setBounds(0, 0, bgWidth, bgHeight);
     this.cameras.main.startFollow(player, true, 0.14, 0.14);
+    // إصلاح zoom/camera
     this.cameras.main.setZoom(Math.max(gameWidth/bgWidth, gameHeight/bgHeight)*1.35);
     camera = this.cameras.main;
 
@@ -155,13 +162,38 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // --- تصادم فوري: كل رصاصة تؤثر مرة واحدة فقط ---
-    this.physics.add.overlap(player, this.enemyBulletGroup, (player, bullet) => {
-      if (bullet.active && !bullet.hasHit && !isPlayerDying && sessionActive && !warningActive) {
-        bullet.hasHit = true; // حماية من التأثير المكرر
-        bullet.disableBody(true, true);
-        triggerPlayerHit(this, player, bullet);
-      }
+    // --- تصادم دقيق: يتحقق كل فريم حتى لو اللاعب يتحرك بسرعة ---
+    // *** إصلاح نهائي: رصاصة واحدة تقتل اللاعب مهما كان ***
+    this.playerOverlappingBullets = new Set();
+    this.events.on('update', () => {
+      if (!player.active || isPlayerDying) return;
+      let killedThisFrame = false;
+      enemyBulletGroup.children.each(bullet => {
+        if (!bullet.active) {
+          this.playerOverlappingBullets.delete(bullet);
+          return;
+        }
+        // جسم دائري للرصاصة
+        let bulletRadius = bullet.displayWidth / 2.2;
+        bullet.body.setCircle(bulletRadius, bullet.body.width/2 - bulletRadius, bullet.body.height/2 - bulletRadius);
+        // مركز اللاعب
+        let px = player.x, py = player.y;
+        // مركز الرصاصة
+        let bx = bullet.x, by = bullet.y;
+        let dist = Phaser.Math.Distance.Between(px, py, bx, by);
+        if (dist < player.displayWidth / 2.2 + bulletRadius) {
+          if (!this.playerOverlappingBullets.has(bullet) && !killedThisFrame) {
+            this.playerOverlappingBullets.add(bullet);
+            // *** هنا نجبر الموت الفوري ***
+            if (!isPlayerDying && sessionActive) {
+              killedThisFrame = true;
+              forceKillPlayer(this, player, bullet); // إصلاح قوي ومحترف: لا يمكن النجاة من أول رصاصة
+            }
+          }
+        } else {
+          this.playerOverlappingBullets.delete(bullet);
+        }
+      });
     });
 
     this.physics.add.overlap(player, this.enemyGroup, (playerObj, enemy) => {
@@ -229,6 +261,7 @@ class MainScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // إصلاح scale/camera كل فريم
     if (player && (player.displayWidth > bgWidth*0.2 || player.displayWidth < 10)) {
       player.setScale(0.11, 0.11);
     }
@@ -328,11 +361,31 @@ class MainScene extends Phaser.Scene {
   }
 }
 
+// إصلاح احترافي: موت فوري عند أول رصاصة تلامس اللاعب مهما كان
+function forceKillPlayer(scene, player, bullet) {
+  if (isPlayerDying) return;
+  isPlayerDying = true;
+  showPlayerHitExplosion(scene, player);
+  bullet.disableBody(true, true);
+
+  // *** موت فوري مهما كان عدد القلوب ***
+  currentHearts = 0;
+  localStorage.setItem("currentHearts", currentHearts);
+  updateHeartsUI();
+
+  setTimeout(() => {
+    isPlayerDying = false;
+    warningActive = false;
+    showGameOver();
+  }, 700); // وقت قصير لانفجار الموت ثم نهاية الجولة
+}
+
+// منطق الضربة والانفجار والموت السريع (بقي للاعداء بالسيف فقط)
 function triggerPlayerHit(scene, player, bullet) {
   if (isPlayerDying) return;
   isPlayerDying = true;
   showPlayerHitExplosion(scene, player);
-  player.setVelocity(0, 0);
+  bullet.disableBody(true, true);
   handlePlayerHit(() => {
     setTimeout(() => {
       isPlayerDying = false;
@@ -508,6 +561,7 @@ function startEnemyWaves() {
   addEnemyWave(scene);
 }
 
+// Reset session state for a new "3 hearts" game
 function prepareSession() {
   setBalance(sessionBalance);
   waveCount = 1;
@@ -619,6 +673,7 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
   if (dist < 40 && !warningActive) handlePlayerHit();
 }
 
+// === HEART & WARNING LOGIC ===
 function handlePlayerHit(cb) {
   if (currentHearts > 0 && !warningActive) {
     warningActive = true;
