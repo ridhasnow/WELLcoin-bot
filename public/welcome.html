@@ -120,7 +120,49 @@
       font-weight: bold;
       z-index: 1000;
     }
+    .block-access {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #111;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.4rem;
+      z-index: 99999;
+    }
+    .block-access a {
+      background: #007bff;
+      color: #fff;
+      padding: 12px 32px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 35px;
+      font-size: 1.1rem;
+      box-shadow: 0 0 10px #007bff;
+      transition: background 0.2s;
+    }
+    .block-access a:hover { background: #0056b3; }
   </style>
+  <script>
+    // Block any access not from Telegram WebApp
+    window.addEventListener('DOMContentLoaded', function() {
+      let tg = window.Telegram?.WebApp;
+      if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
+        document.body.innerHTML =
+          '<div class="block-access">' +
+          'Access denied.<br>Please open WELLcoin from Telegram app.<br>' +
+          '<a href="https://t.me/WELLcoinGameBot?start=play" target="_blank">Open in Telegram</a>' +
+          '</div>';
+        throw new Error("Access blocked: must open from Telegram.");
+      }
+    });
+  </script>
 </head>
 <body>
   <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
@@ -191,14 +233,11 @@
     }
 
     function handleSaveOrReturn() {
-      // تحقق أولاً إذا كان المستخدم موجود فعلاً (احتياطاً)
       db.ref("users/" + userId).get()
         .then(snapshot => {
           if (snapshot.exists()) {
-            // مستخدم قديم: لا تعيد كتابة أي شيء! فقط توجهه للرئيسية
             window.location.href = "index.html";
           } else {
-            // مستخدم جديد: أنشئ السجل بالبيانات الافتراضية
             db.ref("users/" + userId).set({
               username: tgUsername,
               balance: 0,
