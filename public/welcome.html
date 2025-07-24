@@ -208,17 +208,6 @@
     const usernameField = document.getElementById("usernameInput");
     const saveBtn = document.getElementById("saveBtn");
 
-    // ----- Helper: Fetch player from backend API -----
-    async function getPlayerDataFromAPI(userId) {
-      try {
-        const res = await fetch(`/api/player/${userId}`);
-        if (!res.ok) return null;
-        return await res.json();
-      } catch (e) {
-        return null;
-      }
-    }
-
     // ----- Helper: Fetch player from Firebase -----
     async function getPlayerDataFromFirebase(userId) {
       try {
@@ -245,21 +234,16 @@
     async function checkIfUserExists() {
       if (!userId) return;
 
-      // 1. جرب تجيب بيانات اللاعب من Firebase (الأساس)
+      // جلب بيانات اللاعب من Firebase فقط
       let playerData = await getPlayerDataFromFirebase(userId);
 
-      // 2. إذا لم يوجد في Firebase، جرب من API السيرفر (players.json)
-      if (!playerData) {
-        playerData = await getPlayerDataFromAPI(userId);
-      }
-
-      // 3. إذا وجدته في أي قاعدة، اعرض الاسم بشكل صحيح (ولا تظهر unknown)
+      // إذا وجدته في القاعدة، اعرض الاسم بشكل صحيح (ولا تظهر unknown)
       if (playerData) {
         usernameField.value = playerData.username || tgUsername || "Unknown";
         saveBtn.textContent = "I'm Back";
         saveBtn.onclick = () => window.location.href = "index.html";
       } else {
-        // 4. إذا لم يوجد في أي قاعدة، اعتبره مستخدم جديد تمامًا وسجله في Firebase
+        // إذا لم يوجد، اعتبره مستخدم جديد تمامًا وسجله في Firebase
         usernameField.value = tgUsername;
         saveBtn.textContent = "Save";
         saveBtn.onclick = handleSaveOrReturn;
