@@ -9,6 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
+    /* ... (نفس الستايل السابق) ... */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body, html {
       height: 100%;
@@ -203,15 +204,13 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     const tgUser = tg.initDataUnsafe?.user;
-    // منطق احترافي لجلب اسم اللاعب من تيليجرام
+    // جلب اسم اللاعب بشكل كامل (username أو الاسم الكامل)
     let tgUsername = "Player";
     if (tgUser) {
       if (tgUser.username && tgUser.username.trim() !== "") {
         tgUsername = tgUser.username;
-      } else if (tgUser.first_name && tgUser.first_name.trim() !== "") {
-        tgUsername = tgUser.first_name;
-      } else if (tgUser.last_name && tgUser.last_name.trim() !== "") {
-        tgUsername = tgUser.last_name;
+      } else if ((tgUser.first_name && tgUser.first_name.trim() !== "") || (tgUser.last_name && tgUser.last_name.trim() !== "")) {
+        tgUsername = `${tgUser.first_name ? tgUser.first_name : ""}${tgUser.last_name ? " " + tgUser.last_name : ""}`.trim();
       }
     }
     const userId = tgUser?.id ? tgUser.id.toString() : null;
