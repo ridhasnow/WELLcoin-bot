@@ -285,9 +285,10 @@
     .block-access a:hover { background: #0056b3; }
   </style>
   <script>
-    // Block any access not from Telegram WebApp
+    // Prevent entry unless redirected from welcome.html and with Telegram session
     window.addEventListener('DOMContentLoaded', function() {
       let tg = window.Telegram?.WebApp;
+      // Must be inside Telegram WebApp and must have user info
       if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
         document.body.innerHTML =
           '<div class="block-access">' +
@@ -296,6 +297,12 @@
           '</div>';
         throw new Error("Access blocked: must open from Telegram.");
       }
+      // Optional: prevent direct entry by checking sessionStorage for a flag set by welcome.html
+      // (Uncomment if you want even tighter chaining)
+      // if (!sessionStorage.getItem('passed_welcome')) {
+      //   window.location.href = "welcome.html";
+      //   throw new Error("Must enter via welcome.html first.");
+      // }
     });
   </script>
 </head>
