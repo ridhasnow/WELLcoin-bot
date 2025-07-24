@@ -203,8 +203,18 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     const tgUser = tg.initDataUnsafe?.user;
+    // منطق احترافي لجلب اسم اللاعب من تيليجرام
+    let tgUsername = "Player";
+    if (tgUser) {
+      if (tgUser.username && tgUser.username.trim() !== "") {
+        tgUsername = tgUser.username;
+      } else if (tgUser.first_name && tgUser.first_name.trim() !== "") {
+        tgUsername = tgUser.first_name;
+      } else if (tgUser.last_name && tgUser.last_name.trim() !== "") {
+        tgUsername = tgUser.last_name;
+      }
+    }
     const userId = tgUser?.id ? tgUser.id.toString() : null;
-    const tgUsername = tgUser?.username || "Unknown";
     const usernameField = document.getElementById("usernameInput");
     const saveBtn = document.getElementById("saveBtn");
 
@@ -239,7 +249,7 @@
 
       // إذا وجدته في القاعدة، اعرض الاسم بشكل صحيح (ولا تظهر unknown)
       if (playerData) {
-        usernameField.value = playerData.username || tgUsername || "Unknown";
+        usernameField.value = playerData.username || tgUsername;
         saveBtn.textContent = "I'm Back";
         saveBtn.onclick = () => window.location.href = "index.html";
       } else {
