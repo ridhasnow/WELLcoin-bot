@@ -185,6 +185,7 @@
     <button id="saveBtn" onclick="handleSaveOrReturn()">Save</button>
   </div>
   <script>
+    // ----- Firebase Config -----
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -195,31 +196,77 @@
       appId: "1:108640533638:web:ed07516d96ac38f47f6507",
       measurementId: "G-3H07CXT2PF"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ----- Telegram WebApp Integration -----
     const tg = window.Telegram.WebApp;
     tg.ready();
-
-    const usernameField = document.getElementById("usernameInput");
     const tgUser = tg.initDataUnsafe?.user;
+    const userId = tgUser?.id ? tgUser.id.toString() : null;
     const tgUsername = tgUser?.username || "Unknown";
-    const userId = tgUser?.id || Date.now();
-    usernameField.value = tgUsername;
+    const usernameField = document.getElementById("usernameInput");
+    const saveBtn = document.getElementById("saveBtn");
 
+    // ----- Helper: Fetch player from backend API -----
+    async function getPlayerDataFromAPI(userId) {
+      try {
+        const res = await fetch(`/api/player/${userId}`);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ----- Helper: Fetch player from Firebase -----
+    async function getPlayerDataFromFirebase(userId) {
+      try {
+        const snapshot = await db.ref("users/" + userId).get();
+        return snapshot.exists() ? snapshot.val() : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    // ----- Register user in Firebase -----
+    async function registerNewUserInFirebase() {
+      return db.ref("users/" + userId).set({
+        username: tgUsername,
+        balance: 0,
+        coinCount: 0,
+        countdown: 10800,
+        lastPlayed: Date.now(),
+        joinedAt: new Date().toISOString()
+      });
+    }
+
+    // ----- Main Logic -----
     async function checkIfUserExists() {
-      const snapshot = await db.ref("users/" + userId).get();
-      const saveBtn = document.getElementById("saveBtn");
-      if (snapshot.exists()) {
+      if (!userId) return;
+
+      // 1. جرب تجيب بيانات اللاعب من Firebase (الأساس)
+      let playerData = await getPlayerDataFromFirebase(userId);
+
+      // 2. إذا لم يوجد في Firebase، جرب من API السيرفر (players.json)
+      if (!playerData) {
+        playerData = await getPlayerDataFromAPI(userId);
+      }
+
+      // 3. إذا وجدته في أي قاعدة، اعرض الاسم بشكل صحيح (ولا تظهر unknown)
+      if (playerData) {
+        usernameField.value = playerData.username || tgUsername || "Unknown";
         saveBtn.textContent = "I'm Back";
         saveBtn.onclick = () => window.location.href = "index.html";
       } else {
+        // 4. إذا لم يوجد في أي قاعدة، اعتبره مستخدم جديد تمامًا وسجله في Firebase
+        usernameField.value = tgUsername;
         saveBtn.textContent = "Save";
         saveBtn.onclick = handleSaveOrReturn;
       }
     }
 
+    // ----- Show/Hide Popup -----
     function showPopup() {
       const video = document.getElementById("bg-video");
       video.muted = false;
@@ -227,35 +274,28 @@
       video.play();
       document.getElementById("usernamePopup").style.display = "flex";
     }
-
     function closePopup() {
       document.getElementById("usernamePopup").style.display = "none";
     }
 
-    function handleSaveOrReturn() {
-      db.ref("users/" + userId).get()
-        .then(snapshot => {
-          if (snapshot.exists()) {
-            window.location.href = "index.html";
-          } else {
-            db.ref("users/" + userId).set({
-              username: tgUsername,
-              balance: 0,
-              coinCount: 0,
-              countdown: 10800,
-              lastPlayed: Date.now(),
-              joinedAt: new Date().toISOString()
-            })
-            .then(() => {
-              window.location.href = "index.html";
-            })
-            .catch((error) => {
-              alert("Error saving data: " + error.message);
-            });
-          }
-        });
+    // ----- Handle Save/Return -----
+    async function handleSaveOrReturn() {
+      if (!userId) return;
+      const existsInFirebase = await getPlayerDataFromFirebase(userId);
+      if (existsInFirebase) {
+        window.location.href = "index.html";
+      } else {
+        // سجل المستخدم الجديد في Firebase
+        try {
+          await registerNewUserInFirebase();
+          window.location.href = "index.html";
+        } catch (error) {
+          alert("Error saving data: " + error.message);
+        }
+      }
     }
 
+    // ----- Initialize -----
     window.addEventListener("load", checkIfUserExists);
   </script>
 </body>
