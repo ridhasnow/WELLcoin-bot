@@ -23,7 +23,6 @@ if (fs.existsSync(playersFilePath)) {
 }
 
 // أمر start - يرسل زر Play Now فقط
-// أمر start - يرسل زر Play Now فقط
 bot.start((ctx) => {
   const userId = ctx.from.id.toString();
   const username = ctx.from.username || "Unknown";
@@ -48,7 +47,16 @@ bot.start((ctx) => {
   });
 });
 
-// ❌ حذفنا الـ callback_query لأنه ماعاد نحتاجه مع Web App فقط
+// Endpoint API لجلب بيانات اللاعب حسب userId
+app.get("/api/player/:id", (req, res) => {
+  const userId = req.params.id;
+  const player = players[userId];
+  if (player) {
+    res.json(player);
+  } else {
+    res.status(404).json({ error: "User not found" });
+  }
+});
 
 // ربط Webhook
 app.use(bot.webhookCallback("/telegraf"));
