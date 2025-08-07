@@ -107,9 +107,9 @@
       user-select: none;
       -webkit-user-drag: none;
       pointer-events: auto;
-      transition: transform 0.08s cubic-bezier(.22,1.36,.71,1.17);
+      /* اهتزاز أخف بكثير */
+      transition: transform 0.07s cubic-bezier(.22,1.09,.71,1.01);
     }
-    /* --- حذف شريط التعدين القديم والمؤقت --- */
     .bottom-buttons {
       display: flex;
       justify-content: space-between;
@@ -200,31 +200,32 @@
       position: absolute;
       left: 0;
       right: 0;
-      bottom: 62px;
+      bottom: 52px; /* نزوله 10px إضافية */
       margin: 0 auto;
       width: 92vw;
       max-width: 470px;
-      height: 16px;
+      height: 17px;
       z-index: 90;
-      border-radius: 9px;
-      box-shadow: 0 2px 12px #222a;
-      background: linear-gradient(90deg, #1a1a18 60%, #2a220c 110%);
-      border: 2px solid #303030;
+      border-radius: 11px;
+      box-shadow: 0 2px 18px #4bff2d44, 0 2px 12px #222a;
+      background: linear-gradient(90deg, #1c1c1b 50%, #28220c 110%);
+      border: 2.3px solid #252525;
       overflow: hidden;
       display: flex;
       align-items: center;
     }
     .energy-bar-inner {
       height: 100%;
-      border-radius: 9px 0 0 9px;
-      transition: width 0.13s cubic-bezier(.42,1.7,.36,.98), background 0.13s;
-      box-shadow: 0 0 18px 2px #fff2, 0 0 14px #9fff00bb inset;
+      border-radius: 11px 0 0 11px;
+      transition: width 0.12s cubic-bezier(.32,1.3,.44,.94), background 0.20s;
+      box-shadow: 0 0 18px 2px #e8ffd2bb, 0 0 14px #a7f69a99 inset;
       display: flex;
       align-items: center;
       justify-content: flex-end;
       position: relative;
-      /* لمعة LED متدرجة */
-      background: linear-gradient(90deg, #21ff32 0%, #8dff00 60%, #ffe100 82%, #ff9800 95%, #ff2200 100%);
+      /* تدرج لوني احترافي متدرج حقيقي */
+      background: linear-gradient(90deg, #2afb66 0%, #8dff00 45%, #ffe100 75%, #ff9800 90%, #ff2200 100%);
+      filter: brightness(1);
     }
     .energy-bar-led {
       position: absolute;
@@ -233,12 +234,12 @@
       bottom: 0;
       width: 18px;
       border-radius: 50%;
-      background: radial-gradient(circle, #fff 80%, #00ff44ad 100%);
-      filter: blur(2px) brightness(1.6);
+      background: radial-gradient(circle, #fff 85%, #00ff44ad 100%);
+      filter: blur(2px) brightness(1.7);
       pointer-events: none;
-      opacity: 0.75;
+      opacity: 0.77;
       z-index: 2;
-      transition: right 0.15s;
+      transition: right 0.15s, background .13s, opacity .13s;
     }
     .energy-bar-label {
       position: absolute;
@@ -246,29 +247,86 @@
       left: 0;
       top: 0;
       text-align: center;
-      font-size: 11.5px;
+      font-size: 12px;
       color: #fff;
-      letter-spacing: 0.9px;
+      letter-spacing: 1.2px;
       font-family: 'Segoe UI', monospace;
       font-weight: bold;
-      text-shadow: 0 0 4px #000e, 0 0 6px #0f0, 0 0 4px #fff;
+      text-shadow: 0 0 8px #00ffbe99, 0 0 8px #fff, 0 0 4px #000e;
       z-index: 3;
       pointer-events: none;
-      line-height: 16px;
+      line-height: 17px;
+      user-select: none;
     }
-    /* --- أنميشن النقرات --- */
+    /* --- أنميشن النقرات: دخان خفيف و+1 يطير --- */
     .tap-effect {
       position: absolute;
       pointer-events: none;
       z-index: 100;
-      animation: tap-pop 0.45s cubic-bezier(.68,-0.55,.27,1.55);
-      opacity: 0.95;
+      width: 72px;
+      height: 72px;
+      left: 0;
+      top: 0;
+      opacity: 0.85;
+      animation: tap-smoke 1s cubic-bezier(.27,.84,.61,1) forwards;
     }
-    @keyframes tap-pop {
-      0% { transform: scale(0.5) translateY(0); opacity: 0.6;}
-      30% { transform: scale(1.14) translateY(-10px); opacity: 1; }
-      70% { transform: scale(1.07) translateY(-14px); opacity: 0.88;}
-      100% { transform: scale(0.95) translateY(0); opacity: 0; }
+    @keyframes tap-smoke {
+      0% {
+        opacity: 0.8;
+        transform: scale(0.83) translateY(0) rotate(-5deg);
+        filter: blur(0.7px) brightness(1.2);
+      }
+      55% {
+        opacity: 0.92;
+        filter: blur(2.3px) brightness(1.04);
+        transform: scale(1.12) translateY(-30px) rotate(2deg);
+      }
+      85% {
+        opacity: 0.74;
+        filter: blur(2.6px) brightness(1.08);
+        transform: scale(1.17) translateY(-45px) rotate(-2deg);
+      }
+      100% {
+        opacity: 0;
+        filter: blur(5px) brightness(0.8);
+        transform: scale(1.28) translateY(-62px) rotate(-7deg);
+      }
+    }
+    .tap-plus {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-weight: bold;
+      font-size: 22px;
+      text-shadow: 0 0 7px #0f0, 0 0 5px #fff, 0 0 3px #000b;
+      pointer-events: none;
+      opacity: 0.92;
+      animation: tap-plus-pop 1s cubic-bezier(.27,.84,.61,1) forwards;
+      user-select: none;
+    }
+    @keyframes tap-plus-pop {
+      0% {
+        opacity: 0.92;
+        transform: translate(-50%, -50%) scale(1) rotate(-6deg);
+        filter: blur(0.5px) brightness(1.1);
+      }
+      40% {
+        opacity: 1;
+        filter: blur(0.7px) brightness(1.3);
+        transform: translate(-50%, -95%) scale(1.17) rotate(0deg);
+      }
+      80% {
+        opacity: 0.8;
+        filter: blur(1.1px) brightness(1.2);
+        transform: translate(-50%, -150%) scale(1.22) rotate(9deg);
+      }
+      100% {
+        opacity: 0;
+        filter: blur(3.5px) brightness(0.8);
+        transform: translate(-50%, -185%) scale(1.28) rotate(-5deg);
+      }
     }
     /* --- */
     .block-access {
@@ -301,7 +359,6 @@
     .block-access a:hover { background: #0056b3; }
   </style>
   <script>
-    // منع الدخول إلا من التليجرام
     window.addEventListener('DOMContentLoaded', function() {
       let tg = window.Telegram?.WebApp;
       if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
@@ -344,7 +401,7 @@
     <button class="btn" id="play-btn">Play</button>
   </div>
   <script>
-    // منع الزوم والسكرول باللمس أو الماوس ... (نفس كودك الحالي)
+    // --- منع الزوم والسكرول ---
     document.addEventListener('touchmove', function(event) {
       if (event.scale !== 1) { event.preventDefault(); }
     }, { passive: false });
@@ -359,7 +416,7 @@
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
 
-    // Firebase & Telegram
+    // -------------- Firebase & Telegram --------------
     const app = firebase.initializeApp({
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -376,17 +433,21 @@
     const usernameBox = document.getElementById("username-inside");
     const balanceDisplay = document.getElementById("balance-amount");
 
-    // قيم التعدين الجديد
+    // ------ قيم التعدين الجديد ------
     let balance = 0;
     let energyTaps = 300;
     let maxTaps = 300;
     let tapValue = 0.0000000001;
-    let lastTapTimestamp = Date.now();
     let replenishInterval = null;
     let tapReplenishTime = 20000; // كل 20 ثانية ترجع نقرة واحدة
     let tapCooldown = 6000; // بعد 6 ثواني من آخر نقرة، ترسل التحديث للداتا بيز
     let lastSentBalance = 0;
     let tapTimeoutId = null;
+    let tapSaveTimeoutId = null;
+    let tapLastSave = 0;
+
+    let lastEnergyTapsDB = 0;
+    let lastEnergySaveTime = 0; // ميلي ثانية
 
     // عناصر الواجهة الجديدة
     const energyBarContainer = document.getElementById("energy-bar-container");
@@ -394,54 +455,14 @@
     const energyBarLabel = document.getElementById("energy-bar-label");
     const tapCharacter = document.getElementById("tap-character");
 
-    // تأثير اهتزاز الهاتف (web vibration API)
-    function vibrate(ms = 18) {
-      if (window.navigator?.vibrate) window.navigator.vibrate(ms);
+    // --- حفظ الطاقة (progress) في قاعدة البيانات ---
+    function saveEnergyToDB() {
+      db.ref("users/" + userId).update({ energyTaps: energyTaps, lastEnergySaveTime: Date.now() });
+      lastEnergyTapsDB = energyTaps;
+      lastEnergySaveTime = Date.now();
     }
 
-    // أنميشن جميل عند النقر
-    function showTapEffect(x, y) {
-      const tapEl = document.createElement("div");
-      tapEl.className = "tap-effect";
-      tapEl.style.left = `${x - 32}px`;
-      tapEl.style.top = `${y - 32}px`;
-      tapEl.innerHTML = `
-        <svg width="64" height="64"><circle cx="32" cy="32" r="18" fill="url(#g)" opacity="0.9"/>
-        <defs><radialGradient id="g"><stop offset="0%" stop-color="#fffa"/><stop offset="80%" stop-color="#fff5"/><stop offset="100%" stop-color="#fff0"/></radialGradient></defs></svg>
-      `;
-      document.body.appendChild(tapEl);
-      setTimeout(() => tapEl.remove(), 420);
-    }
-
-    // تحديث شريط الطاقة
-    function updateEnergyBar() {
-      let percentage = energyTaps / maxTaps;
-      let color = "#21ff32";
-      if (percentage > 0.75) color = "#21ff32";
-      else if (percentage > 0.5) color = "#ffe100";
-      else if (percentage > 0.25) color = "#ff9800";
-      else color = "#ff2200";
-      energyBarInner.style.width = (percentage * 100) + "%";
-      // تدرج لوني جميل حسب الطاقة
-      energyBarInner.style.background = `linear-gradient(90deg, #21ff32 0%, #8dff00 60%, #ffe100 82%, #ff9800 95%, #ff2200 100%)`;
-      energyBarInner.style.filter = `drop-shadow(0 0 10px ${color}aa)`;
-      energyBarLabel.textContent = `${energyTaps}/${maxTaps} Taps`;
-      // لمعة LED مكان نهاية الشريط
-      let barWidth = energyBarContainer.offsetWidth || 1;
-      let led = energyBarInner.querySelector('.energy-bar-led');
-      if (led) {
-        led.style.right = (energyTaps === 0 ? barWidth - 18 : 0) + "px";
-        led.style.background = `radial-gradient(circle, ${color} 70%, #fff0 100%)`;
-        led.style.opacity = percentage > 0.07 ? 0.8 : 0.25;
-      }
-    }
-
-    // تحديث الرصيد
-    function updateBalanceDisplay() {
-      balanceDisplay.textContent = balance.toFixed(10);
-    }
-
-    // عند دخول الصفحة
+    // --- جلب الطاقة ووقتها (عند الدخول) ---
     window.addEventListener("load", () => {
       if (!userId) {
         window.location.href = "welcome.html";
@@ -458,44 +479,126 @@
         usernameBox.textContent = userData.username || "Unknown Player";
         balance = parseFloat(userData.balance || 0);
         lastSentBalance = balance;
+
+        // استرجاع الطاقة بدقة مع الوقت:
+        if (userData.energyTaps !== undefined && userData.lastEnergySaveTime !== undefined) {
+          let prevTaps = parseInt(userData.energyTaps);
+          let prevSave = parseInt(userData.lastEnergySaveTime);
+          let now = Date.now();
+          let tapsRecovered = Math.floor((now - prevSave) / tapReplenishTime);
+          let tapsNow = Math.min(maxTaps, prevTaps + tapsRecovered);
+          energyTaps = tapsNow;
+          // عدل وقت الحفظ للطاقة
+          lastEnergyTapsDB = energyTaps;
+          lastEnergySaveTime = prevSave + tapsRecovered * tapReplenishTime;
+          // إذا لم تمتلئ الطاقة، احفظ الوقت الجديد
+          if (energyTaps < maxTaps) saveEnergyToDB();
+        } else {
+          // أول دخول
+          energyTaps = maxTaps;
+          saveEnergyToDB();
+        }
+
         updateBalanceDisplay();
+        updateEnergyBar();
+        startEnergyReplenish();
       });
-      updateEnergyBar();
-      startEnergyReplenish();
     });
 
-    // إعادة تعبئة الطاقة تدريجياً
+    // --- إعادة تعبئة الطاقة تدريجياً وحفظها ---
     function startEnergyReplenish() {
       if (replenishInterval) clearInterval(replenishInterval);
       replenishInterval = setInterval(() => {
         if (energyTaps < maxTaps) {
           energyTaps += 1;
           updateEnergyBar();
+          saveEnergyToDB();
         }
       }, tapReplenishTime);
     }
 
-    // منطق النقر للتعدين
+    // --- تحديث شريط الطاقة ---
+    function updateEnergyBar() {
+      let percentage = energyTaps / maxTaps;
+      let color = "#2afb66";
+      if (percentage > 0.75) color = "#2afb66";
+      else if (percentage > 0.5) color = "#ffe100";
+      else if (percentage > 0.25) color = "#ff9800";
+      else color = "#ff2200";
+      energyBarInner.style.width = (percentage * 100) + "%";
+      // تدرج لوني متدرج
+      energyBarInner.style.background = `linear-gradient(90deg, #2afb66 0%, #8dff00 45%, #ffe100 75%, #ff9800 90%, #ff2200 100%)`;
+      energyBarInner.style.filter = `drop-shadow(0 0 10px ${color}a6)`;
+      energyBarLabel.textContent = `${energyTaps}/${maxTaps} Taps`;
+      // لمعة LED مكان نهاية الشريط
+      let barWidth = energyBarContainer.offsetWidth || 1;
+      let led = energyBarInner.querySelector('.energy-bar-led');
+      if (led) {
+        led.style.right = (energyTaps === 0 ? barWidth - 18 : 0) + "px";
+        led.style.background = `radial-gradient(circle, ${color} 85%, #fff0 100%)`;
+        led.style.opacity = percentage > 0.07 ? 0.77 : 0.16;
+      }
+    }
+
+    // --- تحديث الرصيد ---
+    function updateBalanceDisplay() {
+      balanceDisplay.textContent = balance.toFixed(10);
+    }
+
+    // --- تأثير الاهتزاز الأخف ---
+    function vibrate(ms = 15) {
+      if (window.navigator?.vibrate) window.navigator.vibrate(ms);
+    }
+
+    // --- أنميشن دخان و+1 ---
+    function showTapEffect(x, y) {
+      // دخان SVG
+      const tapEl = document.createElement("div");
+      tapEl.className = "tap-effect";
+      tapEl.style.left = `${x - 36}px`;
+      tapEl.style.top = `${y - 36}px`;
+      tapEl.innerHTML = `
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+          <ellipse cx="36" cy="38" rx="19" ry="13" fill="url(#smokeGrad)" opacity="0.31"/>
+          <ellipse cx="36" cy="31" rx="12" ry="7" fill="url(#smokeGrad2)" opacity="0.23"/>
+          <defs>
+            <radialGradient id="smokeGrad" cx="0.5" cy="0.5" r="0.7">
+              <stop offset="0%" stop-color="#fff"/>
+              <stop offset="80%" stop-color="#fff" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="smokeGrad2" cx="0.5" cy="0.5" r="0.7">
+              <stop offset="0%" stop-color="#fff"/>
+              <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+        </svg>
+      `;
+      document.body.appendChild(tapEl);
+
+      // +1 وسط الدخان
+      const plus = document.createElement("div");
+      plus.className = "tap-plus";
+      plus.innerHTML = "+1";
+      tapEl.appendChild(plus);
+
+      setTimeout(() => tapEl.remove(), 1000);
+    }
+
+    // --- منطق النقر للتعدين ---
     tapCharacter.addEventListener("pointerdown", function(e) {
-      // السماح بالنقر فقط إذا عنده طاقة
       if (energyTaps <= 0) return;
-      // احتساب مكان النقر
       let rect = tapCharacter.getBoundingClientRect();
       let x = (e.touches ? e.touches[0].clientX : e.clientX);
       let y = (e.touches ? e.touches[0].clientY : e.clientY);
+      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return;
 
-      // لا بد أن يكون النقر داخل الصورة
-      if (
-        x < rect.left || x > rect.right || y < rect.top || y > rect.bottom
-      ) return;
-
-      // تأثير النقر
       showTapEffect(x, y);
-      vibrate(18);
+      vibrate(13);
 
-      // اهتزاز الصورة
-      tapCharacter.style.transform = "scale(0.94) rotate(" + (Math.random()*2-1) + "deg)";
-      setTimeout(() => { tapCharacter.style.transform = ""; }, 90);
+      // اهتزاز بسيط جدا
+      tapCharacter.style.transform = "scale(0.985) rotate(" + (Math.random()*1.7-0.85) + "deg)";
+      setTimeout(() => { tapCharacter.style.transform = ""; }, 70);
 
       // تحديث الطاقة والرصيد
       energyTaps -= 1;
@@ -503,12 +606,18 @@
       updateBalanceDisplay();
       updateEnergyBar();
 
-      // إعادة المؤقت لإرسال الرصيد بعد 6 ثواني من آخر نقرة
+      // حفظ الطاقة فوراً بعد كل نقرة (حتى لا تضيع)
+      saveEnergyToDB();
+
+      // إعادة مؤقت إرسال الرصيد
       if (tapTimeoutId) clearTimeout(tapTimeoutId);
       tapTimeoutId = setTimeout(sendBalanceToDB, tapCooldown);
+
+      // أيضاً: حفظ الرصيد فوراً في متغير global (حتى لو أغلق بسرعة)
+      window.__lastBalanceToSave = balance;
     });
 
-    // إرسال الرصيد إلى الداتا بيز
+    // --- إرسال الرصيد إلى الداتا بيز ---
     function sendBalanceToDB() {
       if (balance !== lastSentBalance) {
         db.ref("users/" + userId).update({ balance: balance });
@@ -516,10 +625,16 @@
       }
     }
 
-    // عند الخروج من الصفحة أو الإغلاق، أرسل الرصيد فوراً
-    window.addEventListener("beforeunload", sendBalanceToDB);
+    // --- عند الخروج من الصفحة: أرسل الرصيد فوراً ---
+    window.addEventListener("beforeunload", function() {
+      if (window.__lastBalanceToSave !== undefined) {
+        db.ref("users/" + userId).update({ balance: window.__lastBalanceToSave });
+        lastSentBalance = window.__lastBalanceToSave;
+      }
+      saveEnergyToDB();
+    });
 
-    // زر اللعب ونافذة الكول داون كما هي
+    // --- زر اللعب ونافذة الكول داون كما هي ---
     function msToHMS(ms) {
       let totalSeconds = Math.floor(ms / 1000);
       let h = Math.floor(totalSeconds / 3600);
