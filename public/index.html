@@ -107,40 +107,9 @@
       user-select: none;
       -webkit-user-drag: none;
       pointer-events: auto;
+      transition: transform 0.08s cubic-bezier(.22,1.36,.71,1.17);
     }
-    .mining-bar {
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.5);
-      padding: 6px 18px;
-      border-radius: 16px;
-      font-size: 14px;
-      color: gold;
-      font-weight: 600;
-      font-family: 'Segoe UI Semibold', sans-serif;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
-      border: 1px solid #ffd700;
-      text-align: center;
-      white-space: nowrap;
-      z-index: 3;
-    }
-    .timer {
-      position: absolute;
-      bottom: 44px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: radial-gradient(circle, rgba(255,215,0,0.4), rgba(0,0,0,0.6));
-      color: #90ff90;
-      font-size: 13px;
-      padding: 6px 14px;
-      border-radius: 50px;
-      border: 2px solid #ffd700;
-      box-shadow: 0 0 6px rgba(255, 215, 0, 0.6), inset 0 0 3px #fff, 0 0 8px #00ff0077;
-      font-weight: bold;
-      z-index: 4;
-    }
+    /* --- حذف شريط التعدين القديم والمؤقت --- */
     .bottom-buttons {
       display: flex;
       justify-content: space-between;
@@ -190,25 +159,25 @@
       filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 10px rgba(255, 255, 200, 0.3));
     }
     #username-inside {
-  position: absolute;
-  top: 20px;
-  left: 42%;
-  transform: translateX(-50%);
-  z-index: 2;
-  text-align: center;
-  color: #fff;
-  font-weight: bold;
-  font-size: 14px;
-  padding: 4px 8px;
-  text-shadow: 0 0 6px gold;
-  max-width: 167px; 
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  line-height: 1.2em;
-  max-height: 1.2em; 
-  box-sizing: border-box;
-}
+      position: absolute;
+      top: 20px;
+      left: 42%;
+      transform: translateX(-50%);
+      z-index: 2;
+      text-align: center;
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px;
+      padding: 4px 8px;
+      text-shadow: 0 0 6px gold;
+      max-width: 167px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      line-height: 1.2em;
+      max-height: 1.2em;
+      box-sizing: border-box;
+    }
     .btn:hover {
       background-color: #1a1a1a;
       color: #ffd700;
@@ -226,42 +195,82 @@
       background: rgba(20,20,30,0.92); 
       backdrop-filter: blur(2.5px);
     }
-    #cooldown-overlay .cooldown-box {
-      background:rgba(18,14,32,0.98);
-      padding:38px 32px 32px 32px;
-      border-radius: 24px; 
-      box-shadow: 0 8px 48px #000a; 
-      max-width: 350px; min-width: 260px;
-      display: flex; flex-direction: column; align-items: center;
-      border: 2.4px solid #e14b4b;
+    /* --- الشريط الجديد للطاقة (النقرات) --- */
+    .energy-bar-container {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 62px;
+      margin: 0 auto;
+      width: 92vw;
+      max-width: 470px;
+      height: 16px;
+      z-index: 90;
+      border-radius: 9px;
+      box-shadow: 0 2px 12px #222a;
+      background: linear-gradient(90deg, #1a1a18 60%, #2a220c 110%);
+      border: 2px solid #303030;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
     }
-    #cooldown-overlay h2 {
-      text-align:center;color:#e14b4b;margin:0 0 10px 0;
-      font-family:Pixel,Arial;
-      font-size:2rem;
-      text-shadow: 0 2px 14px #000, 0 1px 0 #fff;
+    .energy-bar-inner {
+      height: 100%;
+      border-radius: 9px 0 0 9px;
+      transition: width 0.13s cubic-bezier(.42,1.7,.36,.98), background 0.13s;
+      box-shadow: 0 0 18px 2px #fff2, 0 0 14px #9fff00bb inset;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      position: relative;
+      /* لمعة LED متدرجة */
+      background: linear-gradient(90deg, #21ff32 0%, #8dff00 60%, #ffe100 82%, #ff9800 95%, #ff2200 100%);
     }
-    #cooldown-timer {
-      text-align:center;
-      font-size:2.2rem;
-      font-family:monospace;
-      color:#fff;
-      margin-bottom:10px;
-      letter-spacing:2.2px;
-      text-shadow:0 2px 14px #000;
-      display:block;
+    .energy-bar-led {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff 80%, #00ff44ad 100%);
+      filter: blur(2px) brightness(1.6);
+      pointer-events: none;
+      opacity: 0.75;
+      z-index: 2;
+      transition: right 0.15s;
     }
-    #cooldown-overlay .cooldown-box img {
-      width:72px;height:72px;display:block;margin:0 auto 20px;
-      image-rendering: pixelated;
-      border-radius: 12px;
-      border: 2px solid #e14b4b;
-      background: #300a;
-      box-shadow: 0 2px 18px #a003;
+    .energy-bar-label {
+      position: absolute;
+      width: 100%;
+      left: 0;
+      top: 0;
+      text-align: center;
+      font-size: 11.5px;
+      color: #fff;
+      letter-spacing: 0.9px;
+      font-family: 'Segoe UI', monospace;
+      font-weight: bold;
+      text-shadow: 0 0 4px #000e, 0 0 6px #0f0, 0 0 4px #fff;
+      z-index: 3;
+      pointer-events: none;
+      line-height: 16px;
     }
-    #cooldown-overlay .cooldown-box div {
-      font-family: 'VT323', monospace;
+    /* --- أنميشن النقرات --- */
+    .tap-effect {
+      position: absolute;
+      pointer-events: none;
+      z-index: 100;
+      animation: tap-pop 0.45s cubic-bezier(.68,-0.55,.27,1.55);
+      opacity: 0.95;
     }
+    @keyframes tap-pop {
+      0% { transform: scale(0.5) translateY(0); opacity: 0.6;}
+      30% { transform: scale(1.14) translateY(-10px); opacity: 1; }
+      70% { transform: scale(1.07) translateY(-14px); opacity: 0.88;}
+      100% { transform: scale(0.95) translateY(0); opacity: 0; }
+    }
+    /* --- */
     .block-access {
       position: fixed;
       top: 0;
@@ -292,10 +301,9 @@
     .block-access a:hover { background: #0056b3; }
   </style>
   <script>
-    // Prevent entry unless redirected from welcome.html and with Telegram session
+    // منع الدخول إلا من التليجرام
     window.addEventListener('DOMContentLoaded', function() {
       let tg = window.Telegram?.WebApp;
-      // Must be inside Telegram WebApp and must have user info
       if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
         document.body.innerHTML =
           '<div class="block-access">' +
@@ -304,12 +312,6 @@
           '</div>';
         throw new Error("Access blocked: must open from Telegram.");
       }
-      // Optional: prevent direct entry by checking sessionStorage for a flag set by welcome.html
-      // (Uncomment if you want even tighter chaining)
-      // if (!sessionStorage.getItem('passed_welcome')) {
-      //   window.location.href = "welcome.html";
-      //   throw new Error("Must enter via welcome.html first.");
-      // }
     });
   </script>
 </head>
@@ -325,9 +327,15 @@
     <div id="username-inside">Loading...</div>
   </div>
   <div class="character-container">
-    <img src="character.png" class="character" alt="Player Character" />
-    <div class="mining-bar">⛏️ Mining: <span id="coin-count">0.0000000000</span> WELLcoin / 24h</div>
-    <div class="timer" id="countdown">3:00:00</div>
+    <img src="character.png" class="character" alt="Player Character" id="tap-character" />
+    <!-- mining-bar والtimer تم حذفهم -->
+    <!-- شريط الطاقة الجديد -->
+    <div class="energy-bar-container" id="energy-bar-container">
+      <div class="energy-bar-inner" id="energy-bar-inner" style="width: 100%;">
+        <div class="energy-bar-led"></div>
+      </div>
+      <div class="energy-bar-label" id="energy-bar-label">300/300 Taps</div>
+    </div>
   </div>
   <div class="bottom-buttons">
     <button class="btn">Me</button>
@@ -367,81 +375,151 @@
     const userId = tg.initDataUnsafe?.user?.id;
     const usernameBox = document.getElementById("username-inside");
     const balanceDisplay = document.getElementById("balance-amount");
-    const coinDisplay = document.getElementById("coin-count");
-    const countdownDisplay = document.getElementById("countdown");
 
+    // قيم التعدين الجديد
     let balance = 0;
-    let coinCount = 0;
-    let countdown = 10800;
-    const miningRatePerSecond = 0.0000001157;
-    let interval;
+    let energyTaps = 300;
+    let maxTaps = 300;
+    let tapValue = 0.0000000001;
+    let lastTapTimestamp = Date.now();
+    let replenishInterval = null;
+    let tapReplenishTime = 20000; // كل 20 ثانية ترجع نقرة واحدة
+    let tapCooldown = 6000; // بعد 6 ثواني من آخر نقرة، ترسل التحديث للداتا بيز
+    let lastSentBalance = 0;
+    let tapTimeoutId = null;
 
-    function formatTime(seconds) {
-      const h = Math.floor(seconds / 3600).toString().padStart(1, '0');
-      const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-      const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-      return `${h}:${m}:${s}`;
+    // عناصر الواجهة الجديدة
+    const energyBarContainer = document.getElementById("energy-bar-container");
+    const energyBarInner = document.getElementById("energy-bar-inner");
+    const energyBarLabel = document.getElementById("energy-bar-label");
+    const tapCharacter = document.getElementById("tap-character");
+
+    // تأثير اهتزاز الهاتف (web vibration API)
+    function vibrate(ms = 18) {
+      if (window.navigator?.vibrate) window.navigator.vibrate(ms);
     }
 
-    function updateDisplay() {
-      coinDisplay.textContent = coinCount.toFixed(10);
+    // أنميشن جميل عند النقر
+    function showTapEffect(x, y) {
+      const tapEl = document.createElement("div");
+      tapEl.className = "tap-effect";
+      tapEl.style.left = `${x - 32}px`;
+      tapEl.style.top = `${y - 32}px`;
+      tapEl.innerHTML = `
+        <svg width="64" height="64"><circle cx="32" cy="32" r="18" fill="url(#g)" opacity="0.9"/>
+        <defs><radialGradient id="g"><stop offset="0%" stop-color="#fffa"/><stop offset="80%" stop-color="#fff5"/><stop offset="100%" stop-color="#fff0"/></radialGradient></defs></svg>
+      `;
+      document.body.appendChild(tapEl);
+      setTimeout(() => tapEl.remove(), 420);
+    }
+
+    // تحديث شريط الطاقة
+    function updateEnergyBar() {
+      let percentage = energyTaps / maxTaps;
+      let color = "#21ff32";
+      if (percentage > 0.75) color = "#21ff32";
+      else if (percentage > 0.5) color = "#ffe100";
+      else if (percentage > 0.25) color = "#ff9800";
+      else color = "#ff2200";
+      energyBarInner.style.width = (percentage * 100) + "%";
+      // تدرج لوني جميل حسب الطاقة
+      energyBarInner.style.background = `linear-gradient(90deg, #21ff32 0%, #8dff00 60%, #ffe100 82%, #ff9800 95%, #ff2200 100%)`;
+      energyBarInner.style.filter = `drop-shadow(0 0 10px ${color}aa)`;
+      energyBarLabel.textContent = `${energyTaps}/${maxTaps} Taps`;
+      // لمعة LED مكان نهاية الشريط
+      let barWidth = energyBarContainer.offsetWidth || 1;
+      let led = energyBarInner.querySelector('.energy-bar-led');
+      if (led) {
+        led.style.right = (energyTaps === 0 ? barWidth - 18 : 0) + "px";
+        led.style.background = `radial-gradient(circle, ${color} 70%, #fff0 100%)`;
+        led.style.opacity = percentage > 0.07 ? 0.8 : 0.25;
+      }
+    }
+
+    // تحديث الرصيد
+    function updateBalanceDisplay() {
       balanceDisplay.textContent = balance.toFixed(10);
-      countdownDisplay.textContent = formatTime(countdown);
     }
 
-    function startMining() {
-      clearInterval(interval);
-      interval = setInterval(() => {
-        if (countdown <= 0) return;
-        coinCount += miningRatePerSecond;
-        balance += miningRatePerSecond;
-        countdown--;
-        updateDisplay();
-        db.ref("users/" + userId).update({
-          balance,
-          coinCount,
-          countdown
-        });
-        if (countdown <= 0) {
-          clearInterval(interval);
-        }
-      }, 1000);
-    }
-
-    function restartMiningTimer() {
-      countdown = 10800;
-      db.ref("users/" + userId).update({ countdown });
-      startMining();
-    }
-
+    // عند دخول الصفحة
     window.addEventListener("load", () => {
       if (!userId) {
         window.location.href = "welcome.html";
         return;
       }
-
+      // جلب بيانات اللاعب
       const userRef = db.ref("users/" + userId);
       userRef.once("value").then((snapshot) => {
         if (!snapshot.exists()) {
           window.location.href = "welcome.html";
           return;
         }
-
         const userData = snapshot.val();
         usernameBox.textContent = userData.username || "Unknown Player";
         balance = parseFloat(userData.balance || 0);
-        coinCount = parseFloat(userData.coinCount || 0);
-        countdown = parseInt(userData.countdown || 10800);
-
-        updateDisplay();
-
-        if (countdown > 0 && !interval) startMining();
+        lastSentBalance = balance;
+        updateBalanceDisplay();
       });
-
-      document.querySelector(".character").addEventListener("click", restartMiningTimer);
+      updateEnergyBar();
+      startEnergyReplenish();
     });
 
-    // ============== نظام انتظار الميني جيم بالاعتماد على الفايربيز ===================
+    // إعادة تعبئة الطاقة تدريجياً
+    function startEnergyReplenish() {
+      if (replenishInterval) clearInterval(replenishInterval);
+      replenishInterval = setInterval(() => {
+        if (energyTaps < maxTaps) {
+          energyTaps += 1;
+          updateEnergyBar();
+        }
+      }, tapReplenishTime);
+    }
+
+    // منطق النقر للتعدين
+    tapCharacter.addEventListener("pointerdown", function(e) {
+      // السماح بالنقر فقط إذا عنده طاقة
+      if (energyTaps <= 0) return;
+      // احتساب مكان النقر
+      let rect = tapCharacter.getBoundingClientRect();
+      let x = (e.touches ? e.touches[0].clientX : e.clientX);
+      let y = (e.touches ? e.touches[0].clientY : e.clientY);
+
+      // لا بد أن يكون النقر داخل الصورة
+      if (
+        x < rect.left || x > rect.right || y < rect.top || y > rect.bottom
+      ) return;
+
+      // تأثير النقر
+      showTapEffect(x, y);
+      vibrate(18);
+
+      // اهتزاز الصورة
+      tapCharacter.style.transform = "scale(0.94) rotate(" + (Math.random()*2-1) + "deg)";
+      setTimeout(() => { tapCharacter.style.transform = ""; }, 90);
+
+      // تحديث الطاقة والرصيد
+      energyTaps -= 1;
+      balance += tapValue;
+      updateBalanceDisplay();
+      updateEnergyBar();
+
+      // إعادة المؤقت لإرسال الرصيد بعد 6 ثواني من آخر نقرة
+      if (tapTimeoutId) clearTimeout(tapTimeoutId);
+      tapTimeoutId = setTimeout(sendBalanceToDB, tapCooldown);
+    });
+
+    // إرسال الرصيد إلى الداتا بيز
+    function sendBalanceToDB() {
+      if (balance !== lastSentBalance) {
+        db.ref("users/" + userId).update({ balance: balance });
+        lastSentBalance = balance;
+      }
+    }
+
+    // عند الخروج من الصفحة أو الإغلاق، أرسل الرصيد فوراً
+    window.addEventListener("beforeunload", sendBalanceToDB);
+
+    // زر اللعب ونافذة الكول داون كما هي
     function msToHMS(ms) {
       let totalSeconds = Math.floor(ms / 1000);
       let h = Math.floor(totalSeconds / 3600);
@@ -453,7 +531,6 @@
         (s < 10 ? "0" : "") + s
       );
     }
-
     function showCooldownOverlay(remainingMs) {
       let overlay = document.getElementById("cooldown-overlay");
       if (!overlay) {
@@ -503,7 +580,6 @@
       }
       updateTimer();
     }
-
     document.getElementById("play-btn").onclick = async function(e) {
       e.preventDefault();
       if (!userId) return;
