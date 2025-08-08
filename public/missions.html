@@ -391,7 +391,7 @@
       let elapsed = now - lastClaim;
       let dailyAvailable = elapsed > 86400000;
       let remaining = 86400000 - elapsed;
-      const iconDaily = "daily-icon.png";
+      const iconDaily = "assets/daily-icon.png";
       let dailyDesc = dailyAvailable
         ? "Claim your 1 WLC!"
         : `<span id="daily-timer">Time left: ${formatTime(remaining)}</span>`;
@@ -433,9 +433,9 @@
 
       // Invite Friends Missions
       const invites = [
-        { id: "invite5", icon: "invit1.png", label: "Invite 5 Friends", target: 5, reward: 0.5 },
-        { id: "invite20", icon: "invit2.png", label: "Invite 20 Friends", target: 20, reward: 2 },
-        { id: "invite100", icon: "invit3.png", label: "Invite 100 Friends", target: 100, reward: 10 }
+        { id: "invite5", icon: "assets/invit1.png", label: "Invite 5 Friends", target: 5, reward: 0.5 },
+        { id: "invite20", icon: "assets/invit2.png", label: "Invite 20 Friends", target: 20, reward: 2 },
+        { id: "invite100", icon: "assets/invit3.png", label: "Invite 100 Friends", target: 100, reward: 10 }
       ];
 
       const refCount = user.referrals || 0;
