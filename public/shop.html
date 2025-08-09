@@ -50,6 +50,8 @@
       align-items: center;
       color: #e6d8a3;
       box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
     }
 
     .item-box img {
@@ -111,257 +113,174 @@
       transition: 0.2s;
     }
 
-    .buy-btn:hover {
+    .buy-btn[disabled], .buy-btn.disabled {
+      background-color: #444 !important;
+      color: #aaa !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+    }
+
+    .buy-btn:hover:not([disabled]):not(.disabled) {
       background-color: #00cc00;
     }
+
+    .shop-timer-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+      gap: 5px;
+    }
+
+    .shop-timer {
+      background: #181818;
+      color: #ffd700;
+      font-size: 14px;
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-family: monospace;
+      font-weight: bold;
+      box-shadow: 0 0 4px #ffd70077;
+      letter-spacing: 1px;
+    }
+
+    .shop-mining {
+      background: #222;
+      color: #0cf;
+      font-size: 14px;
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-family: monospace;
+      font-weight: bold;
+      box-shadow: 0 0 4px #0cf7;
+      letter-spacing: 1px;
+      margin-left: 2px;
+    }
+
+    .claim-btn {
+      background: linear-gradient(90deg, #ffd700 60%, #fffbe1 100%);
+      color: #333;
+      border: none;
+      padding: 2px 10px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: bold;
+      margin-left: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 12px #ffd70077;
+      transition: 0.16s;
+      opacity: 1;
+    }
+    .claim-btn.disabled, .claim-btn[disabled] {
+      background: #333;
+      color: #aaa;
+      cursor: not-allowed;
+      opacity: 0.6;
+      box-shadow: none;
+    }
+
+    /* Popup / Modal */
+    .popup-modal {
+      position: fixed;
+      left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(20,20,30,0.82);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+      animation: fadeIn 0.2s;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .popup-box {
+      background: #181818;
+      color: #fff;
+      border-radius: 18px;
+      min-width: 300px;
+      max-width: 94vw;
+      box-shadow: 0 8px 44px #000b, 0 0 0 1.5px #ffd70099;
+      padding: 22px 26px 18px 26px;
+      position: relative;
+      text-align: center;
+      animation: popupAppear 0.14s;
+    }
+    @keyframes popupAppear { from { transform: scale(0.91); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .popup-close {
+      position: absolute;
+      right: 13px;
+      top: 13px;
+      font-size: 1.9rem;
+      color: #ffd700;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 5;
+      user-select: none;
+      transition: color 0.2s;
+    }
+    .popup-close:hover { color: #fff; }
+    .popup-title {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #ffd700;
+      margin-bottom: 10px;
+    }
+    .popup-desc {
+      color: #fff7cc;
+      font-size: 1.08rem;
+      margin-bottom: 20px;
+      margin-top: 6px;
+    }
+    .popup-btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .popup-action-btn {
+      background: linear-gradient(90deg, #ffd700 60%, #fffbe1 100%);
+      color: #333;
+      border: none;
+      padding: 7px 25px;
+      border-radius: 9px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 12px #ffd70077;
+      transition: 0.16s;
+    }
+    .popup-action-btn:active { transform: scale(0.98); }
+    .popup-action-btn:disabled {
+      background: #444;
+      color: #aaa;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .popup-okey-btn {
+      background: #222;
+      color: #ffd700;
+      border: none;
+      border-radius: 9px;
+      font-size: 15px;
+      padding: 7px 22px;
+      cursor: pointer;
+      margin-top: 14px;
+      font-weight: bold;
+      box-shadow: 0 0 8px #ffd70033;
+      transition: background 0.16s;
+    }
+    .popup-okey-btn:active { background: #333; }
   </style>
 </head>
 <body>
   <button class="back-button" onclick="window.location.href='index.html'">←</button>
-
-  <div class="shop-container">
-    <div class="item-box">
-      <img src="assets/suit.png" alt="Elegant suit" />
-      <div class="divider"></div>
-      <div class="item-name">Elegant Suit</div>
-      <div class="divider-bottom"></div>
-      <div class="item-details">
-        <span>10 WLC</span>
-        <div class="vertical-line"></div>
-        <span>+0.000001/day</span>
-      </div>
-      <button class="buy-btn">Buy</button>
-    </div>
-
-    <!-- باقي المنتجات مكانها محفوظ -->
-    <div class="item-box">
-  <img src="assets/house.png" alt="House Decoration" />
-  <div class="divider"></div>
-  <div class="item-name">House Decoration</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>15 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000002/day</span>
+  <div class="shop-container" id="shop-container">
+    <!-- Items will be rendered by JS -->
   </div>
-  <button class="buy-btn" onclick="buyItem(15, 0.000002)">Buy</button>
-</div>
-
-    <div class="item-box">
-  <img src="assets/fitness.jpg" alt="Fitness Equipment" />
-  <div class="divider"></div>
-  <div class="item-name">Fitness Equipment</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>20 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000003/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/computer.png" alt="Computer" />
-  <div class="divider"></div>
-  <div class="item-name">Computer</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>15 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000003/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/iphone15.jpg" alt="iPhone 15" />
-  <div class="divider"></div>
-  <div class="item-name">iPhone 15</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>15 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000003/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/shop.jpg" alt="Business Property" />
-  <div class="divider"></div>
-  <div class="item-name">Business Property</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>70 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000007/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/bmwcar.jpg" alt="BMW Car" />
-  <div class="divider"></div>
-  <div class="item-name">BMW Car</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>100 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000009/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/gangsterhat.jpg" alt="Gangster Hat" />
-  <div class="divider"></div>
-  <div class="item-name">Gangster Hat</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>18 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.0000025/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/royalthrone.jpg" alt="Royal Throne" />
-  <div class="divider"></div>
-  <div class="item-name">Royal Throne</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>200 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.00001/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/wife.jpg" alt="Get a Wife" />
-  <div class="divider"></div>
-  <div class="item-name">Get a Wife</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>500 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000025/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/clock.jpg" alt="Luxury Wall Clock" />
-  <div class="divider"></div>
-  <div class="item-name">Luxury Wall Clock</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>80 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000008/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/pitbull.jpg" alt="Pitbull Dog" />
-  <div class="divider"></div>
-  <div class="item-name">Pitbull Dog</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>400 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000025/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/ak.jpg" alt="AK Weapon" />
-  <div class="divider"></div>
-  <div class="item-name">AK Weapon</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>700 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000037/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/bodyguards.jpg" alt="Bodyguards" />
-  <div class="divider"></div>
-  <div class="item-name">Bodyguards</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>900 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000050/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/yacht.jpg" alt="Yacht" />
-  <div class="divider"></div>
-  <div class="item-name">Yacht</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>1000 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000060/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/helicopter.jpg" alt="Private Helicopter" />
-  <div class="divider"></div>
-  <div class="item-name">Private Helicopter</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>1200 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.000073/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <img src="assets/palace.png" alt="Palace" />
-  <div class="divider"></div>
-  <div class="item-name">Palace</div>
-  <div class="divider-bottom"></div>
-  <div class="item-details">
-    <span>3000 WLC</span>
-    <div class="vertical-line"></div>
-    <span>+0.001/day</span>
-  </div>
-  <button class="buy-btn">Buy</button>
-</div>
-    
-    <div class="item-box">
-  <div style="text-align: center; padding-top: 40px;">
-    <div style="font-size: 17px; font-weight: bold; color: #fff; text-shadow: 0 0 6px rgba(255,255,255,0.4);">
-      More Items Coming Soon
-    </div>
-    <div style="width: 60%; height: 1px; background-color: #888; margin: 8px auto;"></div>
-    <div style="font-size: 13px; color: #e6d8a3; text-shadow: 0 0 4px rgba(255, 215, 0, 0.3); line-height: 1.6;">
-      - Football Stadium<br>
-      - Football Players<br>
-      - Combat Room<br>
-      - Street Fight Arena<br>
-      - Police<br>
-      - Military Equipment<br>
-      - Islands<br>
-      - Nightclubs<br>
-      - Supercars...
-    </div>
-  </div>
-</div>
-    
-  </div>
+  <div id="popup-modal-root"></div>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="shop.js"></script>
 </body>
 </html>
