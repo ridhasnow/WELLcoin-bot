@@ -47,6 +47,35 @@ const energyBarInner = document.getElementById("energy-bar-inner");
 const energyBarLabel = document.getElementById("energy-bar-label");
 const tapCharacter = document.getElementById("tap-character");
 
+// ====== SHOP ICONS & CHARACTER IMAGE LOGIC ======
+
+// Floating products configuration (same order as shop.js)
+const FLOATING_PRODUCTS = [
+  // id, image, mining, displayName
+  { id: "shop",       img: "assets/shop.jpg",      mining: 0.000007, displayName: "Business Property" },
+  { id: "bmwcar",     img: "assets/bmwcar.jpg",    mining: 0.000009, displayName: "BMW Car" },
+  { id: "yacht",      img: "assets/yacht.jpg",     mining: 0.000060, displayName: "Yacht" },
+  { id: "helicopter", img: "assets/helicopter.jpg",mining: 0.000073, displayName: "Helicopter" },
+];
+
+const CHARACTER_PRODUCTS = [
+  // index matches shop.js: suit, house, fitness, computer, iphone15, gangsterhat, royalthrone, wife, clock, pitbull, ak, bodyguards, palace
+  { id: "suit",        img: "assets/character1.png" },
+  { id: "house",       img: "assets/character2.png" },
+  { id: "fitness",     img: "assets/character3.png" },
+  { id: "computer",    img: "assets/character4.png" },
+  { id: "iphone15",    img: "assets/character5.png" },
+  { id: "gangsterhat", img: "assets/character6.png" },
+  { id: "royalthrone", img: "assets/character7.png" },
+  { id: "wife",        img: "assets/character8.png" },
+  { id: "clock",       img: "assets/character9.png" },
+  { id: "pitbull",     img: "assets/character10.png" },
+  { id: "ak",          img: "assets/character11.png" },
+  { id: "bodyguards",  img: "assets/character12.png" },
+  { id: "palace",      img: "assets/character13.png" }
+];
+
+// ========== ENERGY/BALANCE FUNCTIONS ==========
 function saveEnergyToDB() {
   db.ref("users/" + userId).update({ energyTaps: energyTaps, lastEnergySaveTime: Date.now() });
   lastEnergyTapsDB = energyTaps;
@@ -94,6 +123,7 @@ window.addEventListener("load", () => {
     updateBalanceDisplay();
     updateEnergyBar();
     startEnergyReplenish();
+    setupShopLogic(); // <-- IMPORTANT: Initialize shop icons & character logic after load
   });
 });
 
@@ -283,3 +313,134 @@ document.getElementById("play-btn").onclick = async function(e) {
   }
   window.location.href = "play.html";
 };
+
+// ========== SHOP FLOATING ICONS & CHARACTER MAIN LOGIC ==========
+
+// Utility
+function formatWLC(val) {
+  return parseFloat(val).toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+}
+function formatTimeLeft(ms) {
+  if (ms < 0) ms = 0;
+  let s = Math.floor(ms/1000) % 60;
+  let m = Math.floor(ms/60000) % 60;
+  let h = Math.floor(ms/3600000);
+  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+const MINING_DURATION = 24 * 60 * 60 * 1000; // 24h in ms
+
+function getMiningStatus(product, data) {
+  if (!data?.bought) return { timeLeft: 0, mined: 0 };
+  const now = Date.now();
+  const start = data.startTime || now;
+  let elapsed = Math.min(now - start, MINING_DURATION);
+  let mined = product.mining * (elapsed / MINING_DURATION);
+  if (data.claimed) mined = 0;
+  let timeLeft = Math.max(0, (start + MINING_DURATION) - now);
+  return { timeLeft, mined };
+}
+function isClaimable(data) {
+  if (!data?.bought) return false;
+  const now = Date.now();
+  return !data.claimed && (now - data.startTime >= MINING_DURATION);
+}
+
+// Main logic
+function setupShopLogic() {
+  // Listen to all shopItems
+  db.ref("users/" + userId + "/shopItems").on("value", snap => {
+    const shopData = snap.val() || {};
+    renderFloatingIcons(shopData);
+    updateCharacterImage(shopData);
+  });
+}
+
+function renderFloatingIcons(shopData) {
+  const area = document.getElementById("floating-icons-area");
+  if (!area) return;
+  area.innerHTML = "";
+  FLOATING_PRODUCTS.forEach(prod => {
+    const data = shopData[prod.id];
+    if (data && data.bought) {
+      // Timer and mining calculation
+      const { timeLeft, mined } = getMiningStatus(prod, data);
+      const claimable = isClaimable(data);
+      const iconId = `floating-claim-${prod.id}`;
+      area.innerHTML += `
+        <div class="floating-icon-outer" id="floating-${prod.id}" title="${prod.displayName}">
+          <img class="floating-icon-img" src="${prod.img}" alt="${prod.displayName}" />
+          <div class="floating-icon-timer" id="floating-timer-${prod.id}">${timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00"}</div>
+          <button class="floating-claim-btn${claimable ? "" : " disabled"}" id="${iconId}" ${claimable ? "" : "disabled"}>Claim</button>
+        </div>
+      `;
+      setTimeout(() => {
+        const claimBtn = document.getElementById(iconId);
+        if (claimBtn) {
+          claimBtn.onclick = () => floatingClaimHandler(prod, data);
+        }
+      }, 50);
+    }
+  });
+}
+
+// Update main character image if any special item is bought
+function updateCharacterImage(shopData) {
+  let updated = false;
+  // Traverse in reverse order for priority (last bought has priority)
+  for (let i = CHARACTER_PRODUCTS.length - 1; i >= 0; --i) {
+    const prod = CHARACTER_PRODUCTS[i];
+    if (shopData[prod.id] && shopData[prod.id].bought) {
+      tapCharacter.src = prod.img;
+      updated = true;
+      break;
+    }
+  }
+  if (!updated) tapCharacter.src = "assets/character.png";
+}
+
+// Floating claim handler
+async function floatingClaimHandler(prod, data) {
+  // Re-read data live
+  const snap = await db.ref("users/" + userId + "/shopItems/" + prod.id).once("value");
+  const current = snap.val();
+  const { timeLeft } = getMiningStatus(prod, current);
+  if (timeLeft > 0 || current.claimed) {
+    // Not claimable, show notification (optional: feel free to add a popup)
+    alert(`You can claim after ${formatTimeLeft(timeLeft)}.`);
+    return;
+  }
+  // Do claim
+  let userBalance = 0;
+  const balSnap = await db.ref("users/" + userId + "/balance").once("value");
+  if (typeof balSnap.val() === "number") userBalance = balSnap.val();
+  await db.ref().update({
+    [`users/${userId}/balance`]: userBalance + prod.mining,
+    [`users/${userId}/shopItems/${prod.id}/claimed`]: true
+  });
+}
+
+// Floating icons live update
+setInterval(() => {
+  const area = document.getElementById("floating-icons-area");
+  if (!area) return;
+  FLOATING_PRODUCTS.forEach(prod => {
+    const timerEl = document.getElementById(`floating-timer-${prod.id}`);
+    const claimBtn = document.getElementById(`floating-claim-${prod.id}`);
+    db.ref("users/" + userId + "/shopItems/" + prod.id).once("value").then(snap => {
+      const data = snap.val();
+      if (data && data.bought) {
+        const { timeLeft } = getMiningStatus(prod, data);
+        if (timerEl) timerEl.textContent = timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00";
+        if (claimBtn) {
+          if (isClaimable(data)) {
+            claimBtn.disabled = false;
+            claimBtn.classList.remove("disabled");
+          } else {
+            claimBtn.disabled = true;
+            claimBtn.classList.add("disabled");
+          }
+        }
+      }
+    });
+  });
+}, 1000);
