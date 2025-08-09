@@ -9,7 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* All your CSS remains here as in the original file */
     html, body {
       margin: 0;
       padding: 0;
@@ -367,6 +366,98 @@
       transition: background 0.2s;
     }
     .block-access a:hover { background: #0056b3; }
+
+    /* Floating icons zone */
+    .floating-icons-area {
+      position: fixed;
+      top: 68px;
+      left: 8px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      pointer-events: none;
+      width: 72px;
+      min-height: 50px;
+    }
+    .floating-icon-outer {
+      position: relative;
+      pointer-events: auto;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 0;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(255,215,0,0.14) 60%,rgba(70,70,70,0.18) 100%);
+      backdrop-filter: blur(2.5px);
+      box-shadow: 0 0 18px #ffd70099, 0 3px 22px #000c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      border: 2.7px solid #ffd700;
+      overflow: visible;
+      transition: box-shadow 0.18s;
+      cursor: pointer;
+    }
+    .floating-icon-outer:hover {
+      box-shadow: 0 0 32px #ffd700ee, 0 0 12px #fff9;
+      border-color: #fffbe1;
+      background: linear-gradient(135deg, #fffbe1 70%, #ffd700 100%);
+    }
+    .floating-icon-img {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      margin-top: 3px;
+      object-fit: cover;
+      box-shadow: 0 0 14px #ffd70077;
+      border: 2px solid #ffd700;
+      background: #fffbe1;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .floating-icon-timer {
+      width: 92%;
+      margin: 0 auto 3px auto;
+      padding: 2px 0;
+      background: linear-gradient(90deg,#222 70%,#ffd70022 100%);
+      color: #ffd700;
+      text-align: center;
+      font-size: 12px;
+      font-family: monospace;
+      border-radius: 8px;
+      font-weight: bold;
+      box-shadow: 0 0 6px #ffd70066;
+      margin-top: 2px;
+      letter-spacing: 1px;
+    }
+    .floating-claim-btn {
+      display: block;
+      width: 76%;
+      margin: 3px auto 6px auto;
+      background: linear-gradient(90deg,#ffd700 80%,#fffbe1 100%);
+      color: #222;
+      border: none;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 4px 0;
+      cursor: pointer;
+      box-shadow: 0 0 14px #ffd70077;
+      transition: 0.16s;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .floating-claim-btn:disabled,
+    .floating-claim-btn.disabled {
+      background: #333;
+      color: #aaa;
+      cursor: not-allowed;
+      opacity: 0.62;
+      box-shadow: none;
+      pointer-events: none;
+    }
   </style>
   <script>
     window.addEventListener('DOMContentLoaded', function() {
@@ -393,6 +484,7 @@
     <img src="assets/dragon-frame.png" class="dragon-frame-img" alt="Username Frame" />
     <div id="username-inside">Loading...</div>
   </div>
+  <div class="floating-icons-area" id="floating-icons-area"></div>
   <div class="character-container">
     <img src="assets/character.png" class="character" alt="Player Character" id="tap-character" />
     <div class="energy-bar-container" id="energy-bar-container">
