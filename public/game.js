@@ -33,7 +33,7 @@ const balanceDisplay = document.getElementById("balance-amount");
 let balance = 0;
 let energyTaps = 300;
 let maxTaps = 300;
-let tapValue = 1000;
+let tapValue = 0.0000000001; // يمكنك تعديلها إلى 100 كما رغبت
 let replenishInterval = null;
 let tapReplenishTime = 20000;
 let tapCooldown = 6000;
@@ -48,10 +48,7 @@ const energyBarLabel = document.getElementById("energy-bar-label");
 const tapCharacter = document.getElementById("tap-character");
 
 // ====== SHOP ICONS & CHARACTER IMAGE LOGIC ======
-
-// Floating products configuration (same order as shop.js)
 const FLOATING_PRODUCTS = [
-  // id, image, mining, displayName
   { id: "shop",       img: "assets/shop.jpg",      mining: 0.000007, displayName: "Business Property" },
   { id: "bmwcar",     img: "assets/bmwcar.jpg",    mining: 0.000009, displayName: "BMW Car" },
   { id: "yacht",      img: "assets/yacht.jpg",     mining: 0.000060, displayName: "Yacht" },
@@ -59,7 +56,6 @@ const FLOATING_PRODUCTS = [
 ];
 
 const CHARACTER_PRODUCTS = [
-  // index matches shop.js: suit, house, fitness, computer, iphone15, gangsterhat, royalthrone, wife, clock, pitbull, ak, bodyguards, palace
   { id: "suit",        img: "assets/character1.png" },
   { id: "house",       img: "assets/character2.png" },
   { id: "fitness",     img: "assets/character3.png" },
@@ -82,7 +78,6 @@ function saveEnergyToDB() {
   lastEnergySaveTime = Date.now();
 }
 
-// --- حل فقدان الرصيد عند الخروج المفاجئ: حفظ الرصيد دائمًا في كل نقرة وليس فقط عند الخمول أو الخروج
 function sendBalanceToDB() {
   if (balance !== lastSentBalance) {
     db.ref("users/" + userId).update({ balance: balance });
@@ -105,7 +100,6 @@ window.addEventListener("load", () => {
     usernameBox.textContent = userData.username || "Unknown Player";
     balance = parseFloat(userData.balance || 0);
     lastSentBalance = balance;
-    // استرجاع الطاقة مع الوقت
     if (userData.energyTaps !== undefined && userData.lastEnergySaveTime !== undefined) {
       let prevTaps = parseInt(userData.energyTaps);
       let prevSave = parseInt(userData.lastEnergySaveTime);
@@ -123,7 +117,7 @@ window.addEventListener("load", () => {
     updateBalanceDisplay();
     updateEnergyBar();
     startEnergyReplenish();
-    setupShopLogic(); // <-- IMPORTANT: Initialize shop icons & character logic after load
+    setupShopLogic();
   });
 });
 
@@ -163,7 +157,7 @@ function vibrate(ms = 10) {
   if (window.navigator?.vibrate) window.navigator.vibrate(ms);
 }
 
-// دخان واقعي و+1 واضحة جدا
+// دخان واقعي و+1
 function showTapEffect(x, y) {
   const tapEl = document.createElement("div");
   tapEl.className = "tap-effect";
@@ -194,7 +188,6 @@ function showTapEffect(x, y) {
   `;
   document.body.appendChild(tapEl);
 
-  // +1 واضحة جدا فوق الدخان
   const plus = document.createElement("div");
   plus.className = "tap-plus";
   plus.innerHTML = "+1";
@@ -227,19 +220,7 @@ window.addEventListener("beforeunload", function() {
   saveEnergyToDB();
 });
 
-// شحن الطاقة التلقائي
-function startEnergyReplenish() {
-  if (replenishInterval) clearInterval(replenishInterval);
-  replenishInterval = setInterval(() => {
-    if (energyTaps < maxTaps) {
-      energyTaps += 1;
-      updateEnergyBar();
-      saveEnergyToDB();
-    }
-  }, tapReplenishTime);
-}
-
-// زر اللعب ونافذة الكول داون كما هي
+// زر اللعب ونافذة الكول داون
 function msToHMS(ms) {
   let totalSeconds = Math.floor(ms / 1000);
   let h = Math.floor(totalSeconds / 3600);
@@ -261,12 +242,7 @@ function showCooldownOverlay(remainingMs) {
         background:rgba(18,14,32,0.98);padding:38px 32px 32px 32px;
         border-radius: 24px; box-shadow: 0 8px 48px #000a; max-width: 350px; min-width: 260px; position:relative;">
         <span id="cooldown-close" style="
-          position:absolute;right:18px;top:14px;
-          color:#fff;font-size:2.1rem;
-          cursor:pointer;font-weight:bold;
-          z-index:1001;
-          user-select:none;
-        " title="Close">&times;</span>
+          position:absolute;right:18px;top:14px;color:#fff;font-size:2.1rem;cursor:pointer;font-weight:bold;z-index:1001;user-select:none;">&times;</span>
         <img src="assets/player1.png" alt="player" style="width:72px;height:72px;display:block;margin:0 auto 20px;">
         <h2 style="text-align:center;color:#e14b4b;margin:0 0 10px 0;font-family:Pixel,Arial">⏳ Please Wait</h2>
         <div style="text-align:center;font-size:28px;font-family:monospace;color:#fff;margin-bottom:10px;">
@@ -285,9 +261,7 @@ function showCooldownOverlay(remainingMs) {
   overlay.style.display = "flex";
   let closeBtn = overlay.querySelector('#cooldown-close');
   if (closeBtn) {
-    closeBtn.onclick = function() {
-      overlay.style.display = 'none';
-    };
+    closeBtn.onclick = function() { overlay.style.display = 'none'; };
   }
   function updateTimer() {
     let msLeft = window.nextPlayTime - Date.now();
@@ -314,9 +288,64 @@ document.getElementById("play-btn").onclick = async function(e) {
   window.location.href = "play.html";
 };
 
-// ========== SHOP FLOATING ICONS & CHARACTER MAIN LOGIC ==========
+// ========== POPUP for INDEX (same style as shop) ==========
+function ensurePopupStyles() {
+  if (document.getElementById("popup-styles-injected")) return;
+  const style = document.createElement("style");
+  style.id = "popup-styles-injected";
+  style.textContent = `
+    .popup-modal{position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(20,20,30,0.82);display:flex;align-items:center;justify-content:center;z-index:10000;backdrop-filter:blur(2px);animation:fadeIn .2s}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .popup-box{background:#181818;color:#fff;border-radius:18px;min-width:300px;max-width:94vw;box-shadow:0 8px 44px #000b,0 0 0 1.5px #ffd70099;padding:22px 26px 18px 26px;position:relative;text-align:center;animation:popupAppear .14s}
+    @keyframes popupAppear{from{transform:scale(.91);opacity:0}to{transform:scale(1);opacity:1}}
+    .popup-close{position:absolute;right:13px;top:13px;font-size:1.9rem;color:#ffd700;cursor:pointer;font-weight:bold;z-index:5;user-select:none;transition:color .2s}
+    .popup-close:hover{color:#fff}
+    .popup-title{font-size:1.4rem;font-weight:bold;color:#ffd700;margin-bottom:10px}
+    .popup-desc{color:#fff7cc;font-size:1.08rem;margin-bottom:20px;margin-top:6px}
+    .popup-action-btn{background:linear-gradient(90deg,#ffd700 60%,#fffbe1 100%);color:#333;border:none;padding:7px 25px;border-radius:9px;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:0 0 12px #ffd70077;transition:.16s}
+    .popup-action-btn:disabled{background:#444;color:#aaa;cursor:not-allowed;box-shadow:none}
+    .popup-okey-btn{background:#222;color:#ffd700;border:none;border-radius:9px;font-size:15px;padding:7px 22px;cursor:pointer;margin-top:14px;font-weight:bold;box-shadow:0 0 8px #ffd70033;transition:background .16s}
+    .popup-okey-btn:active{background:#333}
+  `;
+  document.head.appendChild(style);
+}
+function ensurePopupRoot() {
+  let root = document.getElementById("popup-modal-root");
+  if (!root) {
+    root = document.createElement("div");
+    root.id = "popup-modal-root";
+    document.body.appendChild(root);
+  }
+  return root;
+}
+function closePopup() {
+  const root = ensurePopupRoot();
+  root.innerHTML = "";
+}
+function showPopup({title, desc, actions}) {
+  ensurePopupStyles();
+  const root = ensurePopupRoot();
+  root.innerHTML = `
+    <div class="popup-modal">
+      <div class="popup-box">
+        <span class="popup-close" id="popup-close">&times;</span>
+        <div class="popup-title">${title || ""}</div>
+        <div class="popup-desc">${desc || ""}</div>
+        ${actions || ""}
+      </div>
+    </div>
+  `;
+  document.getElementById("popup-close").onclick = closePopup;
+}
+function showOkeyPopup({title, desc}) {
+  showPopup({
+    title, desc,
+    actions: `<button class="popup-okey-btn" id="popup-okey-btn">Okey</button>`
+  });
+  document.getElementById("popup-okey-btn").onclick = closePopup;
+}
 
-// Utility
+// ========== SHOP FLOATING ICONS & CHARACTER MAIN LOGIC ==========
 function formatWLC(val) {
   return parseFloat(val).toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 6 });
 }
@@ -327,7 +356,7 @@ function formatTimeLeft(ms) {
   let h = Math.floor(ms/3600000);
   return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
-const MINING_DURATION = 24 * 60 * 60 * 1000; // 24h in ms
+const MINING_DURATION = 24 * 60 * 60 * 1000;
 
 function getMiningStatus(product, data) {
   if (!data?.bought) return { timeLeft: 0, mined: 0 };
@@ -335,19 +364,16 @@ function getMiningStatus(product, data) {
   const start = data.startTime || now;
   let elapsed = Math.min(now - start, MINING_DURATION);
   let mined = product.mining * (elapsed / MINING_DURATION);
-  if (data.claimed) mined = 0;
   let timeLeft = Math.max(0, (start + MINING_DURATION) - now);
   return { timeLeft, mined };
 }
 function isClaimable(data) {
   if (!data?.bought) return false;
   const now = Date.now();
-  return !data.claimed && (now - data.startTime >= MINING_DURATION);
+  return now - data.startTime >= MINING_DURATION;
 }
 
-// Main logic
 function setupShopLogic() {
-  // Listen to all shopItems
   db.ref("users/" + userId + "/shopItems").on("value", snap => {
     const shopData = snap.val() || {};
     renderFloatingIcons(shopData);
@@ -362,8 +388,7 @@ function renderFloatingIcons(shopData) {
   FLOATING_PRODUCTS.forEach(prod => {
     const data = shopData[prod.id];
     if (data && data.bought) {
-      // Timer and mining calculation
-      const { timeLeft, mined } = getMiningStatus(prod, data);
+      const { timeLeft } = getMiningStatus(prod, data);
       const claimable = isClaimable(data);
       const iconId = `floating-claim-${prod.id}`;
       area.innerHTML += `
@@ -375,18 +400,14 @@ function renderFloatingIcons(shopData) {
       `;
       setTimeout(() => {
         const claimBtn = document.getElementById(iconId);
-        if (claimBtn) {
-          claimBtn.onclick = () => floatingClaimHandler(prod, data);
-        }
-      }, 50);
+        if (claimBtn) claimBtn.onclick = () => floatingClaimHandler(prod);
+      }, 0);
     }
   });
 }
 
-// Update main character image if any special item is bought
 function updateCharacterImage(shopData) {
   let updated = false;
-  // Traverse in reverse order for priority (last bought has priority)
   for (let i = CHARACTER_PRODUCTS.length - 1; i >= 0; --i) {
     const prod = CHARACTER_PRODUCTS[i];
     if (shopData[prod.id] && shopData[prod.id].bought) {
@@ -398,47 +419,61 @@ function updateCharacterImage(shopData) {
   if (!updated) tapCharacter.src = "assets/character.png";
 }
 
-// Floating claim handler
-async function floatingClaimHandler(prod, data) {
-  // Re-read data live
-  const snap = await db.ref("users/" + userId + "/shopItems/" + prod.id).once("value");
-  const current = snap.val();
-  const { timeLeft } = getMiningStatus(prod, current);
-  if (timeLeft > 0 || current.claimed) {
-    // Not claimable, show notification (optional: feel free to add a popup)
-    alert(`You can claim after ${formatTimeLeft(timeLeft)}.`);
+// Floating claim with popup + restart mining
+async function floatingClaimHandler(prod) {
+  // re-read item to be safe
+  const snap = await db.ref(`users/${userId}/shopItems/${prod.id}`).once("value");
+  const data = snap.val();
+  if (!data || !data.bought) return;
+
+  const { timeLeft } = getMiningStatus(prod, data);
+  if (timeLeft > 0) {
+    showOkeyPopup({
+      title: "Cannot Claim Yet",
+      desc: `You can claim after <b style="color:#ffd700">${formatTimeLeft(timeLeft)}</b>.`
+    });
     return;
   }
-  // Do claim
-  let userBalance = 0;
-  const balSnap = await db.ref("users/" + userId + "/balance").once("value");
-  if (typeof balSnap.val() === "number") userBalance = balSnap.val();
-  await db.ref().update({
-    [`users/${userId}/balance`]: userBalance + prod.mining,
-    [`users/${userId}/shopItems/${prod.id}/claimed`]: true
+
+  showPopup({
+    title: "Claim Mining Reward",
+    desc: `You will claim <b style="color:#0cf">+${formatWLC(prod.mining)} WLC</b> into your balance and mining will restart.`,
+    actions: `<button class="popup-action-btn" id="popup-claim-confirm">Claim</button>`
   });
+  document.getElementById("popup-claim-confirm").onclick = async () => {
+    closePopup();
+    // read balance
+    const balSnap = await db.ref("users/" + userId + "/balance").once("value");
+    const currentBal = typeof balSnap.val() === "number" ? balSnap.val() : 0;
+    const now = Date.now();
+    await db.ref().update({
+      [`users/${userId}/balance`]: currentBal + prod.mining,
+      [`users/${userId}/shopItems/${prod.id}/startTime`]: now,
+      [`users/${userId}/shopItems/${prod.id}/claimed`]: false
+    });
+    showOkeyPopup({
+      title: "Claimed!",
+      desc: `You received <b style="color:#0cf">+${formatWLC(prod.mining)} WLC</b>.<br>Mining restarted for the next 24 hours.`
+    });
+  };
 }
 
-// Floating icons live update
+// Live refresh for floating timers/claim state
 setInterval(() => {
   const area = document.getElementById("floating-icons-area");
   if (!area) return;
   FLOATING_PRODUCTS.forEach(prod => {
     const timerEl = document.getElementById(`floating-timer-${prod.id}`);
     const claimBtn = document.getElementById(`floating-claim-${prod.id}`);
-    db.ref("users/" + userId + "/shopItems/" + prod.id).once("value").then(snap => {
+    db.ref(`users/${userId}/shopItems/${prod.id}`).once("value").then(snap => {
       const data = snap.val();
       if (data && data.bought) {
         const { timeLeft } = getMiningStatus(prod, data);
         if (timerEl) timerEl.textContent = timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00";
         if (claimBtn) {
-          if (isClaimable(data)) {
-            claimBtn.disabled = false;
-            claimBtn.classList.remove("disabled");
-          } else {
-            claimBtn.disabled = true;
-            claimBtn.classList.add("disabled");
-          }
+          const can = isClaimable(data);
+          claimBtn.disabled = !can;
+          claimBtn.classList.toggle("disabled", !can);
         }
       }
     });
