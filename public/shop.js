@@ -64,6 +64,39 @@ function hasBought(entry) {
   return !!(entry && (entry === true || entry.bought === true));
 }
 
+// تخزين/قراءة الشخصية النشطة محلياً لعرضها فوراً
+function setActiveCharacterLocal(src) {
+  try { localStorage.setItem('activeCharacterSrc', src); } catch (e) {}
+}
+function computeActiveCharacterFromData() {
+  for (let i = SHOP_PRODUCTS.length - 1; i >= 0; i--) {
+    const p = SHOP_PRODUCTS[i];
+    if (p.character && hasBought(userShopData[p.id])) {
+      const path = p.character.startsWith('assets/') ? p.character : ('assets/' + p.character);
+      return path;
+    }
+  }
+  return null;
+}
+
+// كاش فوري لحالة المستخدم (يلغي انتظار الشبكة)
+const CACHE = {
+  keys(uid) { return { bal: `wlc:${uid}:balance`, shop: `wlc:${uid}:shopItems` }; },
+  read(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } },
+  write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
+};
+function hydrateFromCache() {
+  const k = CACHE.keys(userId);
+  const cb = CACHE.read(k.bal);
+  if (typeof cb === 'number') userBalance = cb;
+  const cs = CACHE.read(k.shop);
+  if (cs && typeof cs === 'object') {
+    userShopData = cs || {};
+    shopDataReady = true; // نسمح بالاعتماد على الحالة المحلية مباشرة
+  }
+  renderShop();
+}
+
 // ========== POPUP MODAL LOGIC ==========
 const popupRoot = document.getElementById("popup-modal-root");
 function closePopup() { if (popupRoot) popupRoot.innerHTML = ""; }
@@ -184,7 +217,6 @@ async function onBuyPressed(product) {
       }
     }
   } else {
-    // الداتا جاهزة محلياً: استخدم الفحص السريع
     if (!ensureOrderOrPopup(product)) return;
   }
 
@@ -261,6 +293,18 @@ async function handleBuy(product) {
   // تحديث محلي
   userBalance = liveBalance - product.price;
   userShopData[product.id] = { bought: true, startTime: now, claimed: false };
+
+  // حدّث الشخصية المحلية فوراً لو هذا المنتج يغيّر الشخصية
+  if (product.character) {
+    const path = product.character.startsWith('assets/') ? product.character : ('assets/' + product.character);
+    setActiveCharacterLocal(path);
+  }
+
+  // اكتب الكاش فوراً لتجنّب أي فلاش في الزيارات القادمة
+  const k = CACHE.keys(userId);
+  CACHE.write(k.bal, userBalance);
+  CACHE.write(k.shop, userShopData);
+
   renderShop();
 }
 
@@ -320,6 +364,12 @@ async function handleClaim(product) {
   if (!userShopData[product.id]) userShopData[product.id] = { bought: true };
   userShopData[product.id].startTime = now;
   userShopData[product.id].claimed = false;
+
+  // حدّث الكاش فوراً
+  const k = CACHE.keys(userId);
+  CACHE.write(k.bal, currentBal + product.mining);
+  CACHE.write(k.shop, userShopData);
+
   renderShop();
 
   showOkeyPopup({
@@ -331,25 +381,42 @@ async function handleClaim(product) {
 // ========== LOAD USER DATA & LIVE UPDATE ==========
 function listenForChanges() {
   balanceRef.on("value", snap => {
-    if (typeof snap.val() === "number") userBalance = snap.val();
+    const val = typeof snap.val() === "number" ? snap.val() : 0;
+    userBalance = val;
+    // اكتب الكاش فور وصول بيانات حية
+    const k = CACHE.keys(userId);
+    CACHE.write(k.bal, val);
   });
+
   shopDataRef.on("value", async snap => {
     userShopData = snap.val() || {};
+
     // تهيئة startTime لأي عنصر قديم مشتري لكنه بدون startTime
     const now = Date.now();
     const updates = {};
     for (const [id, entry] of Object.entries(userShopData)) {
       if (hasBought(entry) && !entry.startTime) {
         updates[`users/${userId}/shopItems/${id}/startTime`] = now;
-        // نضمن أن الشكل يكون كائن وليس true فقط
         if (entry === true) {
-          updates[`users/${userId}/shopItems/${id}/bought`] = true;
+          updates[`users/${userId}/shopItems/${id}/bought`] = true; // توحيد الشكل
         }
+        // حدث النسخة المحلية أيضاً
+        if (userShopData[id] === true) userShopData[id] = { bought: true, startTime: now, claimed: false };
+        else userShopData[id].startTime = now;
       }
     }
     if (Object.keys(updates).length > 0) {
       try { await db.ref().update(updates); } catch (e) { /* ignore */ }
     }
+
+    // حدّث الشخصية المحلية بناءً على أعلى شخصية مشتراة
+    const active = computeActiveCharacterFromData();
+    if (active) setActiveCharacterLocal(active);
+
+    // اكتب الكاش فور وصول بيانات حية
+    const k = CACHE.keys(userId);
+    CACHE.write(k.shop, userShopData);
+
     shopDataReady = true;
     renderShop();
   });
@@ -377,5 +444,7 @@ setInterval(() => {
 }, 1000);
 
 // ========== INIT ==========
+// ارسم فوراً من الكاش لتجنّب أي إحساس بالتحميل
+hydrateFromCache();
+// ثم استمع للبيانات الحية لتحديث هادئ
 listenForChanges();
-renderShop();
