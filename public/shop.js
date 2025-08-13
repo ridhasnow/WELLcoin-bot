@@ -42,8 +42,10 @@ if (!userId) {
 // ========== GLOBAL DATA ==========
 let userBalance = 0;
 let userShopData = {};
-let balanceRef = db.ref("users/" + userId + "/balance");
-let shopDataRef = db.ref("users/" + userId + "/shopItems");
+let shopDataReady = false;
+
+const balanceRef = db.ref("users/" + userId + "/balance");
+const shopDataRef = db.ref("users/" + userId + "/shopItems");
 
 // ========== UTILS ==========
 function formatWLC(val) {
@@ -51,9 +53,9 @@ function formatWLC(val) {
 }
 function formatTimeLeft(ms) {
   if (ms < 0) ms = 0;
-  let s = Math.floor(ms/1000) % 60;
-  let m = Math.floor(ms/60000) % 60;
-  let h = Math.floor(ms/3600000);
+  let s = Math.floor(ms / 1000) % 60;
+  let m = Math.floor(ms / 60000) % 60;
+  let h = Math.floor(ms / 3600000);
   return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
 
@@ -64,8 +66,9 @@ function hasBought(entry) {
 
 // ========== POPUP MODAL LOGIC ==========
 const popupRoot = document.getElementById("popup-modal-root");
-function closePopup() { popupRoot.innerHTML = ""; }
-function showPopup({title, desc, actions, onClose}) {
+function closePopup() { if (popupRoot) popupRoot.innerHTML = ""; }
+function showPopup({ title, desc, actions, onClose }) {
+  if (!popupRoot) return;
   popupRoot.innerHTML = `
     <div class="popup-modal">
       <div class="popup-box">
@@ -76,15 +79,17 @@ function showPopup({title, desc, actions, onClose}) {
       </div>
     </div>
   `;
-  document.getElementById("popup-close").onclick = () => { closePopup(); onClose && onClose(); };
+  const x = document.getElementById("popup-close");
+  if (x) x.onclick = () => { closePopup(); onClose && onClose(); };
 }
-function showOkeyPopup({title, desc}) {
+function showOkeyPopup({ title, desc }) {
   showPopup({
     title,
     desc,
     actions: `<button class="popup-okey-btn" id="popup-okey-btn">Okey</button>`
   });
-  document.getElementById("popup-okey-btn").onclick = closePopup;
+  const ok = document.getElementById("popup-okey-btn");
+  if (ok) ok.onclick = closePopup;
 }
 
 // ========== ORDER ENFORCEMENT ==========
@@ -111,6 +116,7 @@ function ensureOrderOrPopup(product) {
 // ========== RENDER SHOP ==========
 function renderShop() {
   const container = document.getElementById("shop-container");
+  if (!container) return;
   container.innerHTML = "";
   for (let i = 0; i < SHOP_PRODUCTS.length; ++i) {
     const p = SHOP_PRODUCTS[i];
@@ -129,7 +135,7 @@ function renderShop() {
     `;
 
     if (hasBought(data)) {
-      const {timeLeft, mined} = getMiningStatus(p, data);
+      const { timeLeft, mined } = getMiningStatus(p, data);
       const can = isClaimable(data);
       html += `
         <div class="shop-stats-row">
@@ -146,23 +152,41 @@ function renderShop() {
     html += "</div>";
     container.innerHTML += html;
   }
+
   // Connect events
   for (let i = 0; i < SHOP_PRODUCTS.length; ++i) {
     const p = SHOP_PRODUCTS[i];
     if (!hasBought(userShopData[p.id])) {
-      let btn = document.getElementById(`buy-${p.id}`);
+      const btn = document.getElementById(`buy-${p.id}`);
       if (btn) btn.onclick = () => onBuyPressed(p);
     } else {
-      let btn = document.getElementById(`claim-${p.id}`);
+      const btn = document.getElementById(`claim-${p.id}`);
       if (btn) btn.onclick = () => onClaimPressed(p, userShopData[p.id]);
     }
   }
 }
 
 // ========== BUY LOGIC ==========
-function onBuyPressed(product) {
-  // فحص الترتيب سريع + Popup
-  if (!ensureOrderOrPopup(product)) return;
+async function onBuyPressed(product) {
+  // لو الداتا المحلية لسه ما جهزت، نفحص الترتيب من الـ DB مباشرة حتى لا نمنع المستخدم بالخطأ
+  if (!shopDataReady) {
+    const prev = getPrevProduct(product);
+    if (prev) {
+      const prevNode = await db.ref(`users/${userId}/shopItems/${prev.id}`).once("value");
+      const prevBought = hasBought(prevNode.val());
+      if (!prevBought) {
+        showOkeyPopup({
+          title: "Purchase Order Required",
+          desc: `You must buy <b>${prev.name}</b> first.<br>
+                 <img src="${prev.img}" alt="${prev.name}" style="width:220px;height:auto;margin-top:12px;border-radius:10px;box-shadow:0 0 12px #000, 0 0 6px #ffd70088;">`
+        });
+        return;
+      }
+    }
+  } else {
+    // الداتا جاهزة محلياً: استخدم الفحص السريع
+    if (!ensureOrderOrPopup(product)) return;
+  }
 
   if (userBalance < product.price) {
     showOkeyPopup({
@@ -171,19 +195,33 @@ function onBuyPressed(product) {
     });
     return;
   }
+
   showPopup({
     title: "Confirm Purchase",
     desc: `You are about to spend <b style="color:#ffd700">${product.price} WLC</b> from your balance to buy <b>${product.name}</b>.<br>You will start mining <b style="color:#0cf">+${formatWLC(product.mining)} WLC/day</b>.`,
     actions: `<button class="popup-action-btn" id="popup-buy-confirm">Buy</button>`
   });
-  document.getElementById("popup-buy-confirm").onclick = async () => {
-    closePopup();
-    await handleBuy(product);
-  };
+  const confirmBtn = document.getElementById("popup-buy-confirm");
+  if (confirmBtn) {
+    confirmBtn.onclick = async () => {
+      closePopup();
+      await handleBuy(product);
+    };
+  }
 }
 
 async function handleBuy(product) {
-  // إعادة فحص الترتيب ضد الداتا الحية لمنع أي تجاوز
+  // لا تسمح بإعادة الشراء لو العنصر نفسه مشتَرى أصلاً
+  const currentNode = await db.ref(`users/${userId}/shopItems/${product.id}`).once("value");
+  if (hasBought(currentNode.val())) {
+    showOkeyPopup({
+      title: "Already Purchased",
+      desc: `You already own <b>${product.name}</b>.`
+    });
+    return;
+  }
+
+  // إعادة فحص ترتيب الشراء ضد الداتا الحية
   const prev = getPrevProduct(product);
   if (prev) {
     const prevNode = await db.ref(`users/${userId}/shopItems/${prev.id}`).once("value");
@@ -198,7 +236,7 @@ async function handleBuy(product) {
     }
   }
 
-  // رصيد لحظي
+  // فحص الرصيد من الـ DB
   const balSnap = await db.ref("users/" + userId + "/balance").once("value");
   const liveBalance = typeof balSnap.val() === "number" ? balSnap.val() : 0;
   if (liveBalance < product.price) {
@@ -211,7 +249,7 @@ async function handleBuy(product) {
 
   // تنفيذ الشراء
   const now = Date.now();
-  let updates = {};
+  const updates = {};
   updates[`users/${userId}/balance`] = liveBalance - product.price;
   updates[`users/${userId}/shopItems/${product.id}`] = {
     bought: true,
@@ -260,17 +298,20 @@ function onClaimPressed(product, data) {
     desc: `You will claim <b style="color:#0cf">+${formatWLC(product.mining)} WLC</b> into your balance and mining will restart.`,
     actions: `<button class="popup-action-btn" id="popup-claim-confirm">Claim</button>`
   });
-  document.getElementById("popup-claim-confirm").onclick = async () => {
-    closePopup();
-    await handleClaim(product);
-  };
+  const claimBtn = document.getElementById("popup-claim-confirm");
+  if (claimBtn) {
+    claimBtn.onclick = async () => {
+      closePopup();
+      await handleClaim(product);
+    };
+  }
 }
 
 async function handleClaim(product) {
   const balSnap = await db.ref("users/" + userId + "/balance").once("value");
   const currentBal = typeof balSnap.val() === "number" ? balSnap.val() : 0;
   const now = Date.now();
-  let updates = {};
+  const updates = {};
   updates[`users/${userId}/balance`] = currentBal + product.mining;
   updates[`users/${userId}/shopItems/${product.id}/startTime`] = now; // restart mining
   updates[`users/${userId}/shopItems/${product.id}/claimed`] = false;
@@ -292,8 +333,24 @@ function listenForChanges() {
   balanceRef.on("value", snap => {
     if (typeof snap.val() === "number") userBalance = snap.val();
   });
-  shopDataRef.on("value", snap => {
+  shopDataRef.on("value", async snap => {
     userShopData = snap.val() || {};
+    // تهيئة startTime لأي عنصر قديم مشتري لكنه بدون startTime
+    const now = Date.now();
+    const updates = {};
+    for (const [id, entry] of Object.entries(userShopData)) {
+      if (hasBought(entry) && !entry.startTime) {
+        updates[`users/${userId}/shopItems/${id}/startTime`] = now;
+        // نضمن أن الشكل يكون كائن وليس true فقط
+        if (entry === true) {
+          updates[`users/${userId}/shopItems/${id}/bought`] = true;
+        }
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      try { await db.ref().update(updates); } catch (e) { /* ignore */ }
+    }
+    shopDataReady = true;
     renderShop();
   });
 }
@@ -305,9 +362,9 @@ setInterval(() => {
     const data = userShopData[p.id];
     if (hasBought(data)) {
       const { timeLeft, mined } = getMiningStatus(p, data);
-      let timerEl = document.getElementById(`timer-${p.id}`);
-      let miningEl = document.getElementById(`mining-${p.id}`);
-      let claimBtn = document.getElementById(`claim-${p.id}`);
+      const timerEl = document.getElementById(`timer-${p.id}`);
+      const miningEl = document.getElementById(`mining-${p.id}`);
+      const claimBtn = document.getElementById(`claim-${p.id}`);
       if (timerEl) timerEl.textContent = timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00";
       if (miningEl) miningEl.textContent = formatWLC(mined);
       if (claimBtn) {
