@@ -57,6 +57,11 @@ function formatTimeLeft(ms) {
   return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
 
+// بعض الداتا القديمة قد تكون shopItems/itemId = true وليس {bought:true}
+function hasBought(entry) {
+  return !!(entry && (entry === true || entry.bought === true));
+}
+
 // ========== POPUP MODAL LOGIC ==========
 const popupRoot = document.getElementById("popup-modal-root");
 function closePopup() { popupRoot.innerHTML = ""; }
@@ -82,6 +87,27 @@ function showOkeyPopup({title, desc}) {
   document.getElementById("popup-okey-btn").onclick = closePopup;
 }
 
+// ========== ORDER ENFORCEMENT ==========
+function getIndexById(id) {
+  return SHOP_PRODUCTS.findIndex(x => x.id === id);
+}
+function getPrevProduct(product) {
+  const idx = getIndexById(product.id);
+  if (idx > 0) return SHOP_PRODUCTS[idx - 1];
+  return null;
+}
+function ensureOrderOrPopup(product) {
+  const prev = getPrevProduct(product);
+  if (!prev) return true; // أول عنصر مسموح
+  if (hasBought(userShopData[prev.id])) return true;
+  showOkeyPopup({
+    title: "Purchase Order Required",
+    desc: `You must buy <b>${prev.name}</b> first.<br>
+           <img src="${prev.img}" alt="${prev.name}" style="width:220px;height:auto;margin-top:12px;border-radius:10px;box-shadow:0 0 12px #000, 0 0 6px #ffd70088;">`
+  });
+  return false;
+}
+
 // ========== RENDER SHOP ==========
 function renderShop() {
   const container = document.getElementById("shop-container");
@@ -102,16 +128,16 @@ function renderShop() {
         </div>
     `;
 
-    if (data.bought) {
-      const claimable = isClaimable(data);
+    if (hasBought(data)) {
       const {timeLeft, mined} = getMiningStatus(p, data);
+      const can = isClaimable(data);
       html += `
         <div class="shop-stats-row">
           <span class="shop-timer" id="timer-${p.id}">${timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00"}</span>
           <span class="shop-mining" id="mining-${p.id}">${formatWLC(mined)}</span>
         </div>
         <div class="shop-claim-row">
-          <button class="claim-btn${claimable ? "" : " disabled"}" id="claim-${p.id}" ${claimable ? "" : "disabled"}>Claim</button>
+          <button class="claim-btn${can ? "" : " disabled"}" id="claim-${p.id}" ${can ? "" : "disabled"}>Claim</button>
         </div>
       `;
     } else {
@@ -123,7 +149,7 @@ function renderShop() {
   // Connect events
   for (let i = 0; i < SHOP_PRODUCTS.length; ++i) {
     const p = SHOP_PRODUCTS[i];
-    if (!userShopData[p.id]?.bought) {
+    if (!hasBought(userShopData[p.id])) {
       let btn = document.getElementById(`buy-${p.id}`);
       if (btn) btn.onclick = () => onBuyPressed(p);
     } else {
@@ -135,6 +161,9 @@ function renderShop() {
 
 // ========== BUY LOGIC ==========
 function onBuyPressed(product) {
+  // فحص الترتيب سريع + Popup
+  if (!ensureOrderOrPopup(product)) return;
+
   if (userBalance < product.price) {
     showOkeyPopup({
       title: "Insufficient Balance",
@@ -154,23 +183,45 @@ function onBuyPressed(product) {
 }
 
 async function handleBuy(product) {
-  if (userBalance < product.price) {
+  // إعادة فحص الترتيب ضد الداتا الحية لمنع أي تجاوز
+  const prev = getPrevProduct(product);
+  if (prev) {
+    const prevNode = await db.ref(`users/${userId}/shopItems/${prev.id}`).once("value");
+    const prevBought = hasBought(prevNode.val());
+    if (!prevBought) {
+      showOkeyPopup({
+        title: "Purchase Order Required",
+        desc: `You must buy <b>${prev.name}</b> first.<br>
+               <img src="${prev.img}" alt="${prev.name}" style="width:220px;height:auto;margin-top:12px;border-radius:10px;box-shadow:0 0 12px #000, 0 0 6px #ffd70088;">`
+      });
+      return;
+    }
+  }
+
+  // رصيد لحظي
+  const balSnap = await db.ref("users/" + userId + "/balance").once("value");
+  const liveBalance = typeof balSnap.val() === "number" ? balSnap.val() : 0;
+  if (liveBalance < product.price) {
     showOkeyPopup({
       title: "Insufficient Balance",
-      desc: `You do not have enough WLC to buy this product.<br>Your balance: <span style="color:#ffd700">${formatWLC(userBalance)} WLC</span><br>Required: <span style="color:#ff6666">${product.price} WLC</span>`
+      desc: `You do not have enough WLC to buy this product.<br>Your balance: <span style="color:#ffd700">${formatWLC(liveBalance)} WLC</span><br>Required: <span style="color:#ff6666">${product.price} WLC</span>`
     });
     return;
   }
+
+  // تنفيذ الشراء
   const now = Date.now();
   let updates = {};
-  updates[`users/${userId}/balance`] = userBalance - product.price;
+  updates[`users/${userId}/balance`] = liveBalance - product.price;
   updates[`users/${userId}/shopItems/${product.id}`] = {
     bought: true,
     startTime: now,
     claimed: false
   };
   await db.ref().update(updates);
-  userBalance -= product.price;
+
+  // تحديث محلي
+  userBalance = liveBalance - product.price;
   userShopData[product.id] = { bought: true, startTime: now, claimed: false };
   renderShop();
 }
@@ -179,18 +230,20 @@ async function handleBuy(product) {
 const MINING_DURATION = 24 * 60 * 60 * 1000; // 24h
 
 function getMiningStatus(product, data) {
-  if (!data?.bought) return { timeLeft: 0, mined: 0 };
+  const entry = data || {};
+  if (!hasBought(entry)) return { timeLeft: 0, mined: 0 };
   const now = Date.now();
-  const start = data.startTime || now;
+  const start = entry.startTime || now;
   const elapsed = Math.min(now - start, MINING_DURATION);
   const mined = product.mining * (elapsed / MINING_DURATION);
   const timeLeft = Math.max(0, (start + MINING_DURATION) - now);
   return { timeLeft, mined };
 }
 function isClaimable(data) {
-  if (!data?.bought) return false;
+  const entry = data || {};
+  if (!hasBought(entry)) return false;
   const now = Date.now();
-  return now - data.startTime >= MINING_DURATION;
+  return now - (entry.startTime || 0) >= MINING_DURATION;
 }
 
 function onClaimPressed(product, data) {
@@ -214,18 +267,15 @@ function onClaimPressed(product, data) {
 }
 
 async function handleClaim(product) {
-  // read current balance
   const balSnap = await db.ref("users/" + userId + "/balance").once("value");
   const currentBal = typeof balSnap.val() === "number" ? balSnap.val() : 0;
   const now = Date.now();
   let updates = {};
   updates[`users/${userId}/balance`] = currentBal + product.mining;
-  // restart mining immediately
-  updates[`users/${userId}/shopItems/${product.id}/startTime`] = now;
+  updates[`users/${userId}/shopItems/${product.id}/startTime`] = now; // restart mining
   updates[`users/${userId}/shopItems/${product.id}/claimed`] = false;
   await db.ref().update(updates);
 
-  // local refresh
   if (!userShopData[product.id]) userShopData[product.id] = { bought: true };
   userShopData[product.id].startTime = now;
   userShopData[product.id].claimed = false;
@@ -253,7 +303,7 @@ setInterval(() => {
   for (let i = 0; i < SHOP_PRODUCTS.length; ++i) {
     const p = SHOP_PRODUCTS[i];
     const data = userShopData[p.id];
-    if (data && data.bought) {
+    if (hasBought(data)) {
       const { timeLeft, mined } = getMiningStatus(p, data);
       let timerEl = document.getElementById(`timer-${p.id}`);
       let miningEl = document.getElementById(`mining-${p.id}`);
