@@ -13,6 +13,77 @@ window.addEventListener('scroll', function() { window.scrollTo(0, 0); });
 document.body.style.overflow = "hidden";
 document.documentElement.style.overflow = "hidden";
 
+// =========== IndexedDB Helper ===========
+// صغير وعملي للتعامل مع indexedDB مثل localStorage
+const IDB_NAME = 'wellcoin_game_cache';
+const IDB_STORE = 'cache';
+
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = function(e) {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+function idbSet(key, val) {
+  return openIDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(val, key);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  });
+}
+function idbGet(key) {
+  return openIDB().then(db => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
+// =========== الموسيقى: استمرار من preload ===========
+
+// سنبحث عن العنصر الصوتي المصدّر من preload.html (موجود في نفس الدوم)
+let preloadAudio = document.getElementById('preloadAudio');
+if (!preloadAudio) {
+  // لو لم يوجد (مثلاً ريفريش مباشر)، أنشئه:
+  preloadAudio = document.createElement('audio');
+  preloadAudio.id = 'preloadAudio';
+  preloadAudio.src = 'assets/preload.mp3';
+  preloadAudio.loop = true;
+  preloadAudio.preload = 'auto';
+  preloadAudio.style.display = 'none';
+  document.body.appendChild(preloadAudio);
+}
+// تأكد أنه يعمل دائماً ويعيد نفسه بدون توقف أو تأخير
+function ensureAudioLoop() {
+  if (!preloadAudio) return;
+  preloadAudio.volume = 0.76;
+  preloadAudio.loop = true;
+  // في بعض الأحيان loop لا يعمل بلا فراغ بين الإعادة، فنعيد تشغيله يدويًا مع نهاية المقطع
+  preloadAudio.onended = () => {
+    preloadAudio.currentTime = 0;
+    preloadAudio.play().catch(()=>{});
+  };
+  // شغل الموسيقى إذا كانت متوقفة
+  if (preloadAudio.paused) {
+    preloadAudio.play().catch(()=>{});
+  }
+}
+document.addEventListener('DOMContentLoaded', ensureAudioLoop);
+window.addEventListener('focus', ensureAudioLoop);
+
 // -------------- Firebase & Telegram --------------
 const firebaseConfig = {
   apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
@@ -40,31 +111,33 @@ const energyBarInner = document.getElementById("energy-bar-inner");
 const energyBarLabel = document.getElementById("energy-bar-label");
 const tapCharacter = document.getElementById("tap-character");
 
-// ========== كاش محلي سريع (يلغي الإحساس بالتحميل) ==========
-function lsGet(key, fallback = null) {
-  try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch { return fallback; }
+// ========== كاش محلي سريع (معتمد على IndexedDB) ==========
+function cacheGet(key, fallback = null) {
+  return idbGet(key).then(v => (v === undefined ? fallback : v)).catch(() => fallback);
 }
-function lsSet(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+function cacheSet(key, val) {
+  return idbSet(key, val);
 }
 const CACHE_KEYS = {
   username: `wlc:${userId}:username`,
   balance:  `wlc:${userId}:balance`,
   shop:     `wlc:${userId}:shopItems`,
-  activeCharacterSrc: 'activeCharacterSrc'
+  activeCharacterSrc: `wlc:${userId}:activeCharacterSrc`
 };
 
 // Hydrate UI instantly from cache (قبل أي اتصال بالشبكة)
-document.addEventListener('DOMContentLoaded', () => {
-  const cachedUsername = lsGet(CACHE_KEYS.username, null);
+document.addEventListener('DOMContentLoaded', async () => {
+  // استرجع من الكاش (IndexedDB)
+  const cachedUsername = await cacheGet(CACHE_KEYS.username, null);
   if (usernameBox && cachedUsername) usernameBox.textContent = cachedUsername;
 
-  const cachedBalance = lsGet(CACHE_KEYS.balance, null);
+  const cachedBalance = await cacheGet(CACHE_KEYS.balance, null);
   if (balanceDisplay != null && typeof cachedBalance === 'number') {
     balanceDisplay.textContent = formatWLC(cachedBalance);
+    balance = cachedBalance;
   }
   try {
-    const savedChar = localStorage.getItem(CACHE_KEYS.activeCharacterSrc);
+    const savedChar = await cacheGet(CACHE_KEYS.activeCharacterSrc, null);
     if (savedChar && tapCharacter && tapCharacter.getAttribute('src') !== savedChar) {
       tapCharacter.setAttribute('src', savedChar);
     }
@@ -95,7 +168,7 @@ const CHARACTER_PRODUCTS = [
 ];
 
 // ========== ENERGY/BALANCE STATE ==========
-let balance = lsGet(CACHE_KEYS.balance, 0) || 0;
+let balance = 0;
 let energyTaps = 300;
 let maxTaps = 300;
 let tapValue = 100.0000000000; // يمكنك تعديلها إلى 100 كما رغبت
@@ -145,9 +218,9 @@ function sendBalanceToDB() {
 }
 
 // تحميل بيانات المستخدم من السيرفر مع تهيئة فورية
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
   const userRef = db.ref("users/" + userId);
-  userRef.once("value").then((snapshot) => {
+  userRef.once("value").then(async (snapshot) => {
     if (!snapshot.exists()) {
       window.location.href = "welcome.html";
       return;
@@ -157,18 +230,18 @@ window.addEventListener("load", () => {
     // اسم المستخدم + كاش
     const uname = userData.username || "Unknown Player";
     if (usernameBox) usernameBox.textContent = uname;
-    lsSet(CACHE_KEYS.username, uname);
+    cacheSet(CACHE_KEYS.username, uname);
 
     // رصيد من السيرفر + كاش + مزامنة حية
     balance = parseFloat(userData.balance || 0);
     lastSentBalance = balance;
     updateBalanceDisplay();
-    lsSet(CACHE_KEYS.balance, balance);
+    cacheSet(CACHE_KEYS.balance, balance);
     balanceRef.on("value", s => {
       const val = typeof s.val() === "number" ? s.val() : 0;
       balance = val;
       updateBalanceDisplay();
-      lsSet(CACHE_KEYS.balance, val);
+      cacheSet(CACHE_KEYS.balance, val);
     });
 
     // طاقة النقر
@@ -190,7 +263,7 @@ window.addEventListener("load", () => {
     startEnergyReplenish();
 
     // متجر: هيدرِيت من الكاش ثم اسمع للحيّ
-    const cachedShop = lsGet(CACHE_KEYS.shop, null);
+    const cachedShop = await cacheGet(CACHE_KEYS.shop, null);
     if (cachedShop) {
       shopDataCache = cachedShop;
       renderFloatingIcons(shopDataCache);
@@ -294,7 +367,7 @@ tapCharacter.addEventListener("pointerdown", function(e) {
   // تحديث فوري في الواجهة + كاش
   updateBalanceDisplay();
   updateEnergyBar();
-  lsSet(CACHE_KEYS.balance, balance);
+  cacheSet(CACHE_KEYS.balance, balance);
 
   // حفظ طاقة النقر (ممكن لاحقاً نخفّفه)
   saveEnergyToDB();
@@ -481,10 +554,9 @@ let shopDataCache = {};
 function setupShopLogic() {
   db.ref("users/" + userId + "/shopItems").on("value", snap => {
     const shopData = snap.val() || {};
-    // حفظ في الكاش المحلي لفتح سريع لاحقاً
-    lsSet(CACHE_KEYS.shop, shopData);
+    // حفظ في الكاش (IndexedDB) لفتح سريع لاحقاً
+    cacheSet(CACHE_KEYS.shop, shopData);
     shopDataCache = shopData;
-
     renderFloatingIcons(shopDataCache);
     updateCharacterImage(shopDataCache);
   });
@@ -521,15 +593,15 @@ function updateCharacterImage(shopData) {
     const prod = CHARACTER_PRODUCTS[i];
     if (shopData[prod.id] && shopData[prod.id].bought) {
       tapCharacter.src = prod.img;
-      // خزّن الشخصية النشطة محلياً لعرض فوري في الزيارات القادمة
-      try { localStorage.setItem(CACHE_KEYS.activeCharacterSrc, prod.img); } catch {}
+      // خزّن الشخصية النشطة بالكاش (IndexedDB) لعرض فوري في الزيارات القادمة
+      cacheSet(CACHE_KEYS.activeCharacterSrc, prod.img);
       updated = true;
       break;
     }
   }
   if (!updated) {
     tapCharacter.src = "assets/character.png";
-    try { localStorage.setItem(CACHE_KEYS.activeCharacterSrc, "assets/character.png"); } catch {}
+    cacheSet(CACHE_KEYS.activeCharacterSrc, "assets/character.png");
   }
 }
 
@@ -566,7 +638,7 @@ async function floatingClaimHandler(prod) {
       [`users/${userId}/shopItems/${prod.id}/claimed`]: false
     });
     // حدّث الكاش المحلي للرصيد
-    lsSet(CACHE_KEYS.balance, currentBal + prod.mining);
+    cacheSet(CACHE_KEYS.balance, currentBal + prod.mining);
 
     showOkeyPopup({
       title: "Claimed!",
