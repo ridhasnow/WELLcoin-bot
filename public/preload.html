@@ -29,7 +29,6 @@
       background: url('assets/preload.jpg') center bottom / cover no-repeat;
       filter: brightness(0.53) contrast(0.95) saturate(1.06);
     }
-    /* تم حذف overlay وجميع الإضاءات */
     .preload-card {
       position: absolute;
       z-index: 10;
@@ -176,17 +175,22 @@
     const audio = document.getElementById('preloadAudio');
     const soundBtn = document.getElementById('soundBtn');
     const soundSVG = document.getElementById('soundSVG');
-    let firstInteract = false;
-    const audioState = {
-      isPlaying: false,
-      init() {
-        this.isPlaying = true;
-        this.play();
-      },
-      play() {
+    // ابدأ تشغيل الموسيقى مباشرة جدا جدا بدون أي setTimeout أو أي انتظار
+    (function(){
+      try {
         audio.volume = 0.76;
         audio.loop = true;
-        audio.play().then(()=>{audio.currentTime=0;}).catch(()=>{});
+        let p = audio.play();
+        if (p && typeof p.then === "function") {
+          p.catch(()=>{});
+        }
+      } catch(e){}
+    })();
+
+    const audioState = {
+      isPlaying: true,
+      play() {
+        audio.play();
         this.isPlaying = true;
         soundBtn.classList.remove('muted');
       },
@@ -200,19 +204,28 @@
         else this.play();
       }
     };
-    // شغل الموسيقى أول شيء
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(()=>{
-        audioState.init();
-      }, 30);
-    });
     soundBtn.addEventListener('click', ()=>audioState.toggle());
     document.addEventListener('keydown', e => {
       if (e.key === 'm' || e.key === 'M') audioState.toggle();
     });
 
+    // ========== Progress Bar Logic ==========
+    const bar = document.getElementById('barFill');
+    const barText = document.getElementById('barText');
+    let progress = 0;
+    let totalSteps = 1;
+    let doneSteps = 0;
+    function setProgress(pct, msg) {
+      progress = Math.max(0, Math.min(100, pct|0));
+      bar.style.width = progress + '%';
+      if (msg) barText.textContent = msg;
+    }
+    function incProgress() {
+      doneSteps++;
+      setProgress(Math.floor(doneSteps*100/totalSteps), "Preparing game, please wait...");
+    }
+
     // ========== Assets ==========
-    // سيتم جلب جميع الملفات من مجلد assets تلقائياً (حدث القائمة يدوياً حسب ملفاتك)
     const BASE_ASSETS = [
       "assets/bmwcar.jpg",
       "assets/bodyguards.png",
@@ -325,23 +338,9 @@
       }, 700);
     }
 
-    // لا تعرض اسماء الأصول أثناء التحميل أبداً
-    function setProgress(pct, msg) {
-      progress = Math.max(0, Math.min(100, pct|0));
-      bar.style.width = progress + '%';
-      if (msg) barText.textContent = msg;
-    }
-    function incProgress(msg) {
-      doneSteps++;
-      setProgress(Math.floor(doneSteps*100/totalSteps), "Preparing game, please wait...");
-    }
-
-    // ابدأ التحميل فورياً مع بدء ظهور الصفحة والموسيقى
+    // ابدأ التحميل فورياً
     document.addEventListener('DOMContentLoaded', ()=>{
-      setTimeout(()=>{
-        audioState.init();
-        preloadAll();
-      }, 5);
+      preloadAll();
     });
   </script>
 </body>
