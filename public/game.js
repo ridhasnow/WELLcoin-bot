@@ -52,37 +52,50 @@ function idbGet(key) {
   });
 }
 
-// =========== الموسيقى: استمرار من preload ===========
-
-// سنبحث عن العنصر الصوتي المصدّر من preload.html (موجود في نفس الدوم)
-let preloadAudio = document.getElementById('preloadAudio');
-if (!preloadAudio) {
-  // لو لم يوجد (مثلاً ريفريش مباشر)، أنشئه:
-  preloadAudio = document.createElement('audio');
-  preloadAudio.id = 'preloadAudio';
-  preloadAudio.src = 'assets/preload.mp3';
-  preloadAudio.loop = true;
-  preloadAudio.preload = 'auto';
-  preloadAudio.style.display = 'none';
-  document.body.appendChild(preloadAudio);
-}
-// تأكد أنه يعمل دائماً ويعيد نفسه بدون توقف أو تأخير
-function ensureAudioLoop() {
-  if (!preloadAudio) return;
-  preloadAudio.volume = 0.76;
-  preloadAudio.loop = true;
-  // في بعض الأحيان loop لا يعمل بلا فراغ بين الإعادة، فنعيد تشغيله يدويًا مع نهاية المقطع
-  preloadAudio.onended = () => {
-    preloadAudio.currentTime = 0;
-    preloadAudio.play().catch(()=>{});
-  };
-  // شغل الموسيقى إذا كانت متوقفة
-  if (preloadAudio.paused) {
-    preloadAudio.play().catch(()=>{});
+// ========== تحميل الصور والايقونات من الكاش ==========
+async function setImgFromCache(imgEl, assetPath) {
+  if (!imgEl) return;
+  try {
+    let blob = await idbGet('asset:' + assetPath);
+    if (blob && blob instanceof Blob) {
+      imgEl.src = URL.createObjectURL(blob);
+      imgEl.setAttribute('data-cached', '1');
+    } else {
+      imgEl.src = assetPath;
+    }
+  } catch {
+    imgEl.src = assetPath;
   }
 }
-document.addEventListener('DOMContentLoaded', ensureAudioLoop);
-window.addEventListener('focus', ensureAudioLoop);
+
+// =========== الموسيقى: استمرار من preload ===========
+// عند كل جلسة جديدة، نعيد تشغيل الموسيقى من جديد لأن الصفحة reload
+(function setupMusic() {
+  let preloadAudio = document.getElementById('preloadAudio');
+  if (!preloadAudio) {
+    preloadAudio = document.createElement('audio');
+    preloadAudio.id = 'preloadAudio';
+    preloadAudio.src = 'assets/preload.mp3';
+    preloadAudio.loop = true;
+    preloadAudio.preload = 'auto';
+    preloadAudio.style.display = 'none';
+    document.body.appendChild(preloadAudio);
+  }
+  function ensureAudioLoop() {
+    if (!preloadAudio) return;
+    preloadAudio.volume = 0.76;
+    preloadAudio.loop = true;
+    preloadAudio.onended = () => {
+      preloadAudio.currentTime = 0;
+      preloadAudio.play().catch(()=>{});
+    };
+    if (preloadAudio.paused) {
+      preloadAudio.play().catch(()=>{});
+    }
+  }
+  document.addEventListener('DOMContentLoaded', ensureAudioLoop);
+  window.addEventListener('focus', ensureAudioLoop);
+})();
 
 // -------------- Firebase & Telegram --------------
 const firebaseConfig = {
@@ -125,9 +138,18 @@ const CACHE_KEYS = {
   activeCharacterSrc: `wlc:${userId}:activeCharacterSrc`
 };
 
-// Hydrate UI instantly from cache (قبل أي اتصال بالشبكة)
+// ========== تحميل الأصول من الكاش على الواجهة ==========
 document.addEventListener('DOMContentLoaded', async () => {
-  // استرجع من الكاش (IndexedDB)
+  // صور الهيدر
+  setImgFromCache(document.getElementById("ranked"), 'assets/ranked-icon.png');
+  setImgFromCache(document.querySelector(".coin-icon"), 'assets/wellcoin-icon.png');
+  setImgFromCache(document.querySelector(".dragon-frame-img"), 'assets/dragon-frame.png');
+  // صورة الشخصية الأساسية
+  let savedChar = await cacheGet(CACHE_KEYS.activeCharacterSrc, null);
+  if (!savedChar) savedChar = "assets/character.png";
+  setImgFromCache(tapCharacter, savedChar);
+
+  // بيانات الواجهة
   const cachedUsername = await cacheGet(CACHE_KEYS.username, null);
   if (usernameBox && cachedUsername) usernameBox.textContent = cachedUsername;
 
@@ -136,12 +158,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     balanceDisplay.textContent = formatWLC(cachedBalance);
     balance = cachedBalance;
   }
-  try {
-    const savedChar = await cacheGet(CACHE_KEYS.activeCharacterSrc, null);
-    if (savedChar && tapCharacter && tapCharacter.getAttribute('src') !== savedChar) {
-      tapCharacter.setAttribute('src', savedChar);
-    }
-  } catch {}
 });
 
 // ====== SHOP ICONS & CHARACTER IMAGE LOGIC ======
@@ -554,7 +570,6 @@ let shopDataCache = {};
 function setupShopLogic() {
   db.ref("users/" + userId + "/shopItems").on("value", snap => {
     const shopData = snap.val() || {};
-    // حفظ في الكاش (IndexedDB) لفتح سريع لاحقاً
     cacheSet(CACHE_KEYS.shop, shopData);
     shopDataCache = shopData;
     renderFloatingIcons(shopDataCache);
@@ -566,20 +581,23 @@ function renderFloatingIcons(shopData) {
   const area = document.getElementById("floating-icons-area");
   if (!area) return;
   area.innerHTML = "";
-  FLOATING_PRODUCTS.forEach(prod => {
+  FLOATING_PRODUCTS.forEach(async prod => {
     const data = shopData[prod.id];
     if (data && data.bought) {
       const { timeLeft } = getMiningStatus(prod, data);
       const claimable = isClaimable(data);
       const iconId = `floating-claim-${prod.id}`;
+      let imgTag = `<img class="floating-icon-img" alt="${prod.displayName}" />`;
       area.innerHTML += `
         <div class="floating-icon-outer" id="floating-${prod.id}" title="${prod.displayName}">
-          <img class="floating-icon-img" src="${prod.img}" alt="${prod.displayName}" />
+          ${imgTag}
           <div class="floating-icon-timer" id="floating-timer-${prod.id}">${timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00"}</div>
           <button class="floating-claim-btn${claimable ? "" : " disabled"}" id="${iconId}" ${claimable ? "" : "disabled"}>Claim</button>
         </div>
       `;
+      // حمّل الصورة من الكاش بعد إضافة العنصر (لضمان وجوده)
       setTimeout(() => {
+        setImgFromCache(document.querySelector(`#floating-${prod.id} .floating-icon-img`), prod.img);
         const claimBtn = document.getElementById(iconId);
         if (claimBtn) claimBtn.onclick = () => floatingClaimHandler(prod);
       }, 0);
@@ -592,22 +610,20 @@ function updateCharacterImage(shopData) {
   for (let i = CHARACTER_PRODUCTS.length - 1; i >= 0; --i) {
     const prod = CHARACTER_PRODUCTS[i];
     if (shopData[prod.id] && shopData[prod.id].bought) {
-      tapCharacter.src = prod.img;
-      // خزّن الشخصية النشطة بالكاش (IndexedDB) لعرض فوري في الزيارات القادمة
+      setImgFromCache(tapCharacter, prod.img);
       cacheSet(CACHE_KEYS.activeCharacterSrc, prod.img);
       updated = true;
       break;
     }
   }
   if (!updated) {
-    tapCharacter.src = "assets/character.png";
+    setImgFromCache(tapCharacter, "assets/character.png");
     cacheSet(CACHE_KEYS.activeCharacterSrc, "assets/character.png");
   }
 }
 
 // Floating claim with popup + restart mining
 async function floatingClaimHandler(prod) {
-  // re-read item to be safe (تحقق لحظي من السيرفر)
   const snap = await db.ref(`users/${userId}/shopItems/${prod.id}`).once("value");
   const data = snap.val();
   if (!data || !data.bought) return;
@@ -628,7 +644,6 @@ async function floatingClaimHandler(prod) {
   });
   document.getElementById("popup-claim-confirm").onclick = async () => {
     closePopup();
-    // read balance
     const balSnap = await db.ref("users/" + userId + "/balance").once("value");
     const currentBal = typeof balSnap.val() === "number" ? balSnap.val() : 0;
     const now = Date.now();
@@ -637,7 +652,6 @@ async function floatingClaimHandler(prod) {
       [`users/${userId}/shopItems/${prod.id}/startTime`]: now,
       [`users/${userId}/shopItems/${prod.id}/claimed`]: false
     });
-    // حدّث الكاش المحلي للرصيد
     cacheSet(CACHE_KEYS.balance, currentBal + prod.mining);
 
     showOkeyPopup({
@@ -647,7 +661,6 @@ async function floatingClaimHandler(prod) {
   };
 }
 
-// Live refresh for floating timers/claim state بدون قراءات DB متكررة
 setInterval(() => {
   const area = document.getElementById("floating-icons-area");
   if (!area) return;
