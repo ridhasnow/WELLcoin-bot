@@ -9,7 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    /* ... (نفس الستايل السابق) ... */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body, html {
       height: 100%;
@@ -204,7 +203,6 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     const tgUser = tg.initDataUnsafe?.user;
-    // جلب اسم اللاعب بشكل كامل (username أو الاسم الكامل)
     let tgUsername = "Player";
     if (tgUser) {
       if (tgUser.username && tgUser.username.trim() !== "") {
@@ -243,16 +241,14 @@
     async function checkIfUserExists() {
       if (!userId) return;
 
-      // جلب بيانات اللاعب من Firebase فقط
+      // Fetch player data from Firebase
       let playerData = await getPlayerDataFromFirebase(userId);
 
-      // إذا وجدته في القاعدة، اعرض الاسم بشكل صحيح (ولا تظهر unknown)
       if (playerData) {
         usernameField.value = playerData.username || tgUsername;
         saveBtn.textContent = "I'm Back";
-        saveBtn.onclick = () => window.location.href = "index.html";
+        saveBtn.onclick = () => window.location.href = "preload.html";
       } else {
-        // إذا لم يوجد، اعتبره مستخدم جديد تمامًا وسجله في Firebase
         usernameField.value = tgUsername;
         saveBtn.textContent = "Save";
         saveBtn.onclick = handleSaveOrReturn;
@@ -276,12 +272,11 @@
       if (!userId) return;
       const existsInFirebase = await getPlayerDataFromFirebase(userId);
       if (existsInFirebase) {
-        window.location.href = "index.html";
+        window.location.href = "preload.html";
       } else {
-        // سجل المستخدم الجديد في Firebase
         try {
           await registerNewUserInFirebase();
-          window.location.href = "index.html";
+          window.location.href = "preload.html";
         } catch (error) {
           alert("Error saving data: " + error.message);
         }
