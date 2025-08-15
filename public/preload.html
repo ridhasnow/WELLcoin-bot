@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <title>Loading...</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
+    /* ... نفس الستايل السابق ... */
     html, body {
       height: 100%;
       margin: 0;
@@ -175,60 +179,80 @@
   <audio id="preloadAudio" src="assets/preload.mp3" preload="auto" loop></audio>
 
   <script>
+    // ========== IndexedDB Helper ==========
+    // صغير وعملي للتعامل مع indexedDB مثل localStorage
+    const IDB_NAME = 'wellcoin_game_cache';
+    const IDB_STORE = 'cache';
+
+    function openIDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = function(e) {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) {
+            db.createObjectStore(IDB_STORE);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    function idbSet(key, val) {
+      return openIDB().then(db => {
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).put(val, key);
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+      });
+    }
+    function idbGet(key) {
+      return openIDB().then(db => {
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const req = tx.objectStore(IDB_STORE).get(key);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      });
+    }
+    function idbClear() {
+      return openIDB().then(db => {
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, 'readwrite');
+          tx.objectStore(IDB_STORE).clear();
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+      });
+    }
+
+    // ========== Progress Bar Logic ==========
     const bar = document.getElementById('barFill');
     const barText = document.getElementById('barText');
     let progress = 0;
+    let totalSteps = 1;
+    let doneSteps = 0;
     function setProgress(pct, msg) {
       progress = Math.max(0, Math.min(100, pct|0));
       bar.style.width = progress + '%';
       if (msg) barText.textContent = msg;
     }
-    function fakeLoading() {
-      let pct = 0;
-      const steps = [
-        { pct: 18, msg: 'Initializing resources...' },
-        { pct: 33, msg: 'Loading data...' },
-        { pct: 63, msg: 'Loading images...' },
-        { pct: 87, msg: 'Finalizing settings...' },
-        { pct: 100, msg: 'Ready! Entering the game...' }
-      ];
-      let i = 0;
-      function nextStep() {
-        if (i < steps.length) {
-          const {pct: p, msg} = steps[i];
-          let cur = progress;
-          let step = () => {
-            if (cur < p) {
-              cur += 2;
-              setProgress(cur, msg);
-              setTimeout(step, 32 + Math.random()*60);
-            } else {
-              setTimeout(() => { i++; nextStep(); }, 380 + Math.random()*320);
-            }
-          };
-          step();
-        } else {
-          setTimeout(() => {
-            try { localStorage.setItem('music_on', audioState.isPlaying ? '1' : '0'); } catch {}
-            window.location.replace('index.html');
-          }, 850);
-        }
-      }
-      nextStep();
+    function incProgress(msg) {
+      doneSteps++;
+      setProgress(Math.floor(doneSteps*100/totalSteps), msg);
     }
 
-    // ==== Persistent Music Logic (keep music after preload) ====
-    // Play music across pages using localStorage + single <audio> element
+    // ========== Persistent Music Logic ==========
     const audio = document.getElementById('preloadAudio');
     const soundBtn = document.getElementById('soundBtn');
     const soundSVG = document.getElementById('soundSVG');
     const audioState = {
       isPlaying: false,
       init() {
-        const prev = localStorage.getItem('music_on');
-        this.isPlaying = (prev === null || prev === '1');
-        if (this.isPlaying) this.play();
-        else this.pause();
+        this.isPlaying = true;
+        this.play();
       },
       play() {
         audio.volume = 0.76;
@@ -236,36 +260,115 @@
         audio.play().catch(()=>{});
         this.isPlaying = true;
         soundBtn.classList.remove('muted');
-        try { localStorage.setItem('music_on', '1'); } catch {}
       },
       pause() {
         audio.pause();
         this.isPlaying = false;
         soundBtn.classList.add('muted');
-        try { localStorage.setItem('music_on', '0'); } catch {}
       },
       toggle() {
         if (this.isPlaying) this.pause();
         else this.play();
       }
     };
-
-    function setupMusicPersistence() {
-      window.__PRELOAD_MUSIC_PERSIST__ = true;
-    }
-
     soundBtn.addEventListener('click', ()=>audioState.toggle());
-
-    document.addEventListener('DOMContentLoaded', ()=>{
-      audioState.init();
-      setupMusicPersistence();
-      setTimeout(fakeLoading, 480);
-    });
-
     document.addEventListener('keydown', e => {
       if (e.key === 'm' || e.key === 'M') audioState.toggle();
     });
 
+    // ========== Assets ==========
+    const BASE_ASSETS = [
+      'assets/ranked-icon.png',
+      'assets/wellcoin-icon.png',
+      'assets/dragon-frame.png',
+      'assets/character.png',
+      // Floating products
+      'assets/shop.jpg',
+      'assets/bmwcar.jpg',
+      'assets/yacht.jpg',
+      'assets/helicopter.jpg',
+      // Characters
+      'assets/character1.png','assets/character2.png','assets/character3.png',
+      'assets/character4.png','assets/character5.png','assets/character6.png',
+      'assets/character7.png','assets/character8.png','assets/character9.png',
+      'assets/character10.png','assets/character11.png','assets/character12.png',
+      'assets/character13.png'
+    ];
+
+    // ========== Firebase User Data ==========
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    const tgUser = tg.initDataUnsafe?.user;
+    const userId = tgUser?.id ? tgUser.id.toString() : null;
+
+    // ========== Main Preload Logic ==========
+    async function preloadAll() {
+      // 1. Clear old cache for fresh session
+      await idbClear();
+
+      // 2. Progress: total steps (assets + user data + shop data)
+      totalSteps = 2 + BASE_ASSETS.length;
+
+      // 3. Preload all assets (images)
+      setProgress(0, "Loading game assets...");
+      await Promise.all(BASE_ASSETS.map(src => {
+        return new Promise(res => {
+          const img = new Image();
+          img.onload = () => { incProgress('Loaded: ' + src.split('/').pop()); res(); };
+          img.onerror = () => { incProgress('Loaded: ' + src.split('/').pop()); res(); };
+          img.src = src;
+          // optionally: store as blob in indexedDB for offline use
+          fetch(src).then(r=>r.blob()).then(blob=>{
+            idbSet('asset:'+src, blob);
+          }).catch(()=>{});
+        });
+      }));
+
+      // 4. Load user data
+      setProgress(Math.floor(doneSteps*100/totalSteps), "Loading player data...");
+      if (!userId) {
+        setProgress(100, "Please login via Telegram");
+        return;
+      }
+      const userRef = db.ref("users/" + userId);
+      const userSnap = await userRef.get();
+      if (!userSnap.exists()) {
+        setProgress(100, "Account not found. Please register.");
+        setTimeout(()=>window.location.href="welcome.html", 1600);
+        return;
+      }
+      incProgress("User data loaded");
+      await idbSet('userData', userSnap.val());
+
+      // 5. Load shop items (shopItems) if separated
+      const shopSnap = await db.ref("users/" + userId + "/shopItems").get();
+      if (shopSnap.exists()) {
+        await idbSet('shopItems', shopSnap.val());
+      }
+      incProgress("Shop data loaded");
+
+      // 6. Done, redirect to game
+      setProgress(100, "Ready! Entering the game...");
+      setTimeout(()=>{
+        window.location.replace('index.html');
+      }, 1000);
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      audioState.init();
+      setTimeout(preloadAll, 350);
+    });
   </script>
 </body>
 </html>
