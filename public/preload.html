@@ -8,14 +8,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    /* ... نفس الستايل السابق ... */
     html, body {
       height: 100%;
       margin: 0;
       padding: 0;
       font-family: 'Tajawal', Arial, sans-serif;
       overflow: hidden;
-      background: #2b1a13;
+      background: #16100b;
     }
     body {
       min-height: 100vh;
@@ -28,57 +27,9 @@
       width: 100vw;
       height: 100vh;
       background: url('assets/preload.jpg') center bottom / cover no-repeat;
-      filter: brightness(0.95) contrast(1.15) saturate(1.08);
+      filter: brightness(0.53) contrast(0.95) saturate(1.06);
     }
-    .overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      background:
-        radial-gradient(ellipse at 62% 20%, rgba(255,200,90,0.55) 0%, transparent 54%),
-        radial-gradient(ellipse at 78% 57%, rgba(255,170,50,0.22) 0%, transparent 38%),
-        radial-gradient(ellipse at 19% 82%, rgba(255,120,40,0.16) 0%, transparent 44%),
-        linear-gradient(to bottom, rgba(40,20,5,0.13) 0%, rgba(32,16,8,0.28) 100%);
-      box-shadow: 0 0 200px 40px #ffbb4d44 inset;
-      mix-blend-mode: soften;
-    }
-    .glow {
-      position: fixed;
-      z-index: 2;
-      pointer-events: none;
-      left: 50%; top: 23.8%;
-      width: 11vw; height: 11vw;
-      max-width: 120px; max-height: 120px;
-      min-width: 44px; min-height: 44px;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      background: radial-gradient(circle, #ffeeb2 0%, #ffe29b99 40%, #ffd46133 85%, transparent 100%);
-      opacity: 0.92;
-      filter: blur(2.5px) brightness(1.15);
-    }
-    .lamp-glow {
-      position: fixed;
-      z-index: 2;
-      pointer-events: none;
-      border-radius: 50%;
-      background: radial-gradient(circle, #fffbe0 0%, #ffd96b88 60%, #ffb74411 95%, transparent 100%);
-      filter: blur(1.8px);
-      opacity: 0.88;
-    }
-    .lamp1 { left: 22vw; top: 66vh; width: 30px; height: 30px; }
-    .lamp2 { left: 33vw; top: 47vh; width: 34px; height: 34px; }
-    .lamp3 { left: 63vw; top: 43vh; width: 38px; height: 38px; }
-    .lamp4 { left: 85vw; top: 60vh; width: 26px; height: 26px; }
-    .lamp5 { left: 48vw; top: 87vh; width: 20px; height: 20px; opacity: 0.7; }
-    .warm-fade {
-      position: fixed;
-      inset: 0;
-      z-index: 3;
-      pointer-events: none;
-      background: linear-gradient(180deg, transparent 80%, #b34d1b22 100%);
-      mix-blend-mode: lighten;
-    }
+    /* تم حذف overlay وجميع الإضاءات */
     .preload-card {
       position: absolute;
       z-index: 10;
@@ -86,104 +37,97 @@
       bottom: 5vh;
       transform: translateX(-50%);
       width: min(410px, 92vw);
-      background: rgba(38,22,11,0.72);
+      background: rgba(38,22,11,0.61);
       border-radius: 22px;
-      box-shadow: 0 6px 36px 0 #0008;
-      padding: 32px 18px 24px 18px;
+      box-shadow: 0 4px 16px 0 #0008;
+      padding: 16px 10px 12px 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      border: 1.5px solid #ffb75b77;
-      backdrop-filter: blur(2.5px);
+      border: 1.5px solid #ffb75b55;
+      backdrop-filter: blur(1.5px);
+      opacity: 0.92;
+      min-height: 70px;
+      max-height: 120px;
     }
     .preload-title {
-      font-size: 1.45rem;
+      font-size: 1.1rem;
       color: #ffeab7;
       letter-spacing: 1px;
-      margin-bottom: 8px;
-      text-shadow: 0 2px 9px #ffddaa88;
+      margin-bottom: 4px;
+      text-shadow: 0 2px 9px #ffddaa55;
       text-align: center;
     }
     .bar-box {
       width: 100%;
-      margin: 14px 0 6px 0;
+      margin: 8px 0 2px 0;
       background: #31210e;
       border-radius: 12px;
       box-shadow: 0 2px 8px #0008 inset;
-      height: 16px;
+      height: 11px;
       overflow: hidden;
-      border: 1.5px solid #ffb75b55;
+      border: 1px solid #ffb75b33;
     }
     .bar-fill {
       transition: width 0.35s cubic-bezier(.65,.22,.19,1.14);
       height: 100%;
       background: linear-gradient(90deg, #ffc85c 3%, #ffa93a 80%, #ffeabd 100%);
-      box-shadow: 0 3px 12px #ffbb4d33;
+      box-shadow: 0 3px 12px #ffbb4d22;
       width: 0%;
     }
     .bar-text {
-      font-size: 1.1rem;
+      font-size: 0.97rem;
       color: #ffeab7;
       text-align: center;
-      margin-top: 10px;
+      margin-top: 7px;
       letter-spacing: .5px;
-      text-shadow: 0 2px 8px #34140055;
+      text-shadow: 0 2px 8px #34140044;
+      opacity: 0.89;
+      min-height: 18px;
     }
     .sound-btn {
       position: absolute;
-      left: 20px;
-      bottom: 16px;
+      top: 18px;
+      left: 16px;
       z-index: 20;
       width: 38px;
       height: 38px;
       border-radius: 50%;
       border: none;
       background: rgba(255,220,90,0.11);
-      box-shadow: 0 0 0 1.5px #ffca5e55;
+      box-shadow: 0 0 0 1.5px #ffca5e44;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: background 0.15s;
     }
-    .sound-btn:hover { background: rgba(255,220,90,0.18); }
+    .sound-btn:hover { background: rgba(255,220,90,0.17); }
     .sound-btn svg { width: 26px; height: 26px; fill: #fedb87; }
     .sound-btn.muted svg { fill: #7b5b24; opacity: 0.74; }
     @media (max-width: 600px) {
-      .preload-card { padding: 20px 6px 18px 6px; }
-      .preload-title { font-size: 1.1rem; }
+      .preload-card { padding: 8px 2px 7px 2px; }
+      .preload-title { font-size: 0.95rem; }
+      .sound-btn { top: 10px; left: 5px; width:32px; height:32px;}
+      .bar-text { font-size: 0.91rem;}
     }
   </style>
 </head>
 <body>
   <div class="bg"></div>
-  <div class="overlay"></div>
-  <div class="glow"></div>
-  <div class="lamp-glow lamp1"></div>
-  <div class="lamp-glow lamp2"></div>
-  <div class="lamp-glow lamp3"></div>
-  <div class="lamp-glow lamp4"></div>
-  <div class="lamp-glow lamp5"></div>
-  <div class="warm-fade"></div>
-
   <div class="preload-card">
     <div class="preload-title">Loading Game...</div>
     <div class="bar-box"><div class="bar-fill" id="barFill"></div></div>
-    <div class="bar-text" id="barText">Please wait a moment</div>
+    <div class="bar-text" id="barText">Preparing game, please wait...</div>
   </div>
-
-  <button class="sound-btn" id="soundBtn" title="Play/Pause Music" aria-label="Play or mute music">
+  <button class="sound-btn" id="soundBtn" title="Play/Pause Music" aria-label="Play or mute music" style="opacity:0.97;">
     <svg id="soundSVG" viewBox="0 0 26 26"><path d="M3 10.5v5h5l5.7 4.3c.5.4 1.3 0 1.3-.7v-16c0-.8-.8-1.1-1.3-.7L8 8.5H3zm18.5 2.5a7.5 7.5 0 0 0-3.5-6.2l-1 1.4c2.1 1.5 3 4.2 1.8 6.5l1.1 1.5c1.1-1.2 1.6-2.8 1.6-4.2zm-3.8 1.7l1.1 1.5a4.5 4.5 0 0 0 .7-5.5l-1.2 1.5a2.5 2.5 0 0 1-.6 2.5z"/></svg>
   </button>
-
   <audio id="preloadAudio" src="assets/preload.mp3" preload="auto" loop></audio>
-
   <script>
     // ========== IndexedDB Helper ==========
-    // صغير وعملي للتعامل مع indexedDB مثل localStorage
     const IDB_NAME = 'wellcoin_game_cache';
     const IDB_STORE = 'cache';
-
     function openIDB() {
       return new Promise((resolve, reject) => {
         const req = indexedDB.open(IDB_NAME, 1);
@@ -228,26 +172,11 @@
       });
     }
 
-    // ========== Progress Bar Logic ==========
-    const bar = document.getElementById('barFill');
-    const barText = document.getElementById('barText');
-    let progress = 0;
-    let totalSteps = 1;
-    let doneSteps = 0;
-    function setProgress(pct, msg) {
-      progress = Math.max(0, Math.min(100, pct|0));
-      bar.style.width = progress + '%';
-      if (msg) barText.textContent = msg;
-    }
-    function incProgress(msg) {
-      doneSteps++;
-      setProgress(Math.floor(doneSteps*100/totalSteps), msg);
-    }
-
     // ========== Persistent Music Logic ==========
     const audio = document.getElementById('preloadAudio');
     const soundBtn = document.getElementById('soundBtn');
     const soundSVG = document.getElementById('soundSVG');
+    let firstInteract = false;
     const audioState = {
       isPlaying: false,
       init() {
@@ -257,7 +186,7 @@
       play() {
         audio.volume = 0.76;
         audio.loop = true;
-        audio.play().catch(()=>{});
+        audio.play().then(()=>{audio.currentTime=0;}).catch(()=>{});
         this.isPlaying = true;
         soundBtn.classList.remove('muted');
       },
@@ -271,28 +200,56 @@
         else this.play();
       }
     };
+    // شغل الموسيقى أول شيء
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(()=>{
+        audioState.init();
+      }, 30);
+    });
     soundBtn.addEventListener('click', ()=>audioState.toggle());
     document.addEventListener('keydown', e => {
       if (e.key === 'm' || e.key === 'M') audioState.toggle();
     });
 
     // ========== Assets ==========
+    // سيتم جلب جميع الملفات من مجلد assets تلقائياً (حدث القائمة يدوياً حسب ملفاتك)
     const BASE_ASSETS = [
-      'assets/ranked-icon.png',
-      'assets/wellcoin-icon.png',
-      'assets/dragon-frame.png',
-      'assets/character.png',
-      // Floating products
-      'assets/shop.jpg',
-      'assets/bmwcar.jpg',
-      'assets/yacht.jpg',
-      'assets/helicopter.jpg',
-      // Characters
-      'assets/character1.png','assets/character2.png','assets/character3.png',
-      'assets/character4.png','assets/character5.png','assets/character6.png',
-      'assets/character7.png','assets/character8.png','assets/character9.png',
-      'assets/character10.png','assets/character11.png','assets/character12.png',
-      'assets/character13.png'
+      "assets/bmwcar.jpg",
+      "assets/bodyguards.png",
+      "assets/character.png",
+      "assets/character1.png",
+      "assets/character10.png",
+      "assets/character11.png",
+      "assets/character12.png",
+      "assets/character13.png",
+      "assets/character2.png",
+      "assets/character3.png",
+      "assets/character4.png",
+      "assets/character5.png",
+      "assets/character6.png",
+      "assets/character7.png",
+      "assets/character8.png",
+      "assets/character9.png",
+      "assets/clock.png",
+      "assets/dragon-frame.png",
+      "assets/gangsterhat.png",
+      "assets/helicopter.jpg",
+      "assets/house.png",
+      "assets/iphone15.png",
+      "assets/palace.png",
+      "assets/pitbull.png",
+      "assets/player1.png",
+      "assets/preload.jpg",
+      "assets/preload.mp3",
+      "assets/ranked-icon.png",
+      "assets/royalthrone.png",
+      "assets/shop.jpg",
+      "assets/suit.png",
+      "assets/wellcoin-icon.png",
+      "assets/wife.png",
+      "assets/yacht.jpg",
+      "assets/ak.png",
+      // أضف أي ملفات جديدة تظهر في مجلد assets هنا...
     ];
 
     // ========== Firebase User Data ==========
@@ -316,22 +273,25 @@
     async function preloadAll() {
       // 1. Clear old cache for fresh session
       await idbClear();
-
       // 2. Progress: total steps (assets + user data + shop data)
       totalSteps = 2 + BASE_ASSETS.length;
-
-      // 3. Preload all assets (images)
-      setProgress(0, "Loading game assets...");
+      // 3. Preload all assets (images, sounds)
+      setProgress(0, "Preparing game, please wait...");
       await Promise.all(BASE_ASSETS.map(src => {
         return new Promise(res => {
-          const img = new Image();
-          img.onload = () => { incProgress('Loaded: ' + src.split('/').pop()); res(); };
-          img.onerror = () => { incProgress('Loaded: ' + src.split('/').pop()); res(); };
-          img.src = src;
-          // optionally: store as blob in indexedDB for offline use
-          fetch(src).then(r=>r.blob()).then(blob=>{
-            idbSet('asset:'+src, blob);
-          }).catch(()=>{});
+          if (src.endsWith('.mp3')) { // تحميل ملف الموسيقى
+            fetch(src).then(r=>r.blob()).then(blob=>{
+              idbSet('asset:'+src, blob).finally(()=>{ incProgress(); res(); });
+            }).catch(()=>{ incProgress(); res(); });
+          } else {
+            const img = new Image();
+            img.onload = () => { incProgress(); res(); };
+            img.onerror = () => { incProgress(); res(); };
+            img.src = src;
+            fetch(src).then(r=>r.blob()).then(blob=>{
+              idbSet('asset:'+src, blob);
+            }).catch(()=>{});
+          }
         });
       }));
 
@@ -348,7 +308,7 @@
         setTimeout(()=>window.location.href="welcome.html", 1600);
         return;
       }
-      incProgress("User data loaded");
+      incProgress();
       await idbSet('userData', userSnap.val());
 
       // 5. Load shop items (shopItems) if separated
@@ -356,18 +316,32 @@
       if (shopSnap.exists()) {
         await idbSet('shopItems', shopSnap.val());
       }
-      incProgress("Shop data loaded");
+      incProgress();
 
       // 6. Done, redirect to game
       setProgress(100, "Ready! Entering the game...");
       setTimeout(()=>{
         window.location.replace('index.html');
-      }, 1000);
+      }, 700);
     }
 
+    // لا تعرض اسماء الأصول أثناء التحميل أبداً
+    function setProgress(pct, msg) {
+      progress = Math.max(0, Math.min(100, pct|0));
+      bar.style.width = progress + '%';
+      if (msg) barText.textContent = msg;
+    }
+    function incProgress(msg) {
+      doneSteps++;
+      setProgress(Math.floor(doneSteps*100/totalSteps), "Preparing game, please wait...");
+    }
+
+    // ابدأ التحميل فورياً مع بدء ظهور الصفحة والموسيقى
     document.addEventListener('DOMContentLoaded', ()=>{
-      audioState.init();
-      setTimeout(preloadAll, 350);
+      setTimeout(()=>{
+        audioState.init();
+        preloadAll();
+      }, 5);
     });
   </script>
 </body>
