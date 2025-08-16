@@ -134,6 +134,8 @@
       align-items: center;
       font-size: 1.4rem;
       z-index: 99999;
+      text-align: center;
+      padding: 0 16px;
     }
     .block-access a {
       background: #007bff;
@@ -148,26 +150,85 @@
       transition: background 0.2s;
     }
     .block-access a:hover { background: #0056b3; }
+    /* Optional subtle overlay when DevTools suspected (anti-inspect) */
+    .security-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+      color: #fff; display: none; align-items: center; justify-content: center; z-index: 100000;
+      text-align: center; padding: 20px; font-size: 1rem;
+    }
   </style>
+
+  <!-- حماية أساسية: تعطيل قائمة الزر الأيمن والاختصارات الشائعة + مؤشّر DevTools -->
   <script>
-    // Block any access not from Telegram WebApp
-    window.addEventListener('DOMContentLoaded', function() {
-      let tg = window.Telegram?.WebApp;
-      if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
+    "use strict";
+    (function harden() {
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      ['copy','cut','paste','dragstart','selectstart'].forEach(ev => {
+        document.addEventListener(ev, e => e.preventDefault());
+      });
+      document.addEventListener('keydown', function(e) {
+        const k = (e.key || '').toLowerCase();
+        if (
+          k === 'f12' ||
+          (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(k)) ||
+          (e.metaKey && e.altKey && ['i','j','c'].includes(k)) ||
+          (e.ctrlKey && k === 'u') || (e.metaKey && k === 'u')
+        ) {
+          e.preventDefault(); e.stopPropagation(); return false;
+        }
+      }, true);
+
+      // مؤشر بسيط لفتح DevTools (اختياري)
+      const secOverlay = document.createElement('div');
+      secOverlay.className = 'security-overlay';
+      secOverlay.innerHTML = 'Security mode active';
+      document.addEventListener('DOMContentLoaded', () => document.body.appendChild(secOverlay));
+      function devtoolsOpen() {
+        let opened = false;
+        if (window.outerWidth && window.innerWidth) {
+          const wDiff = Math.abs(window.outerWidth - window.innerWidth);
+          const hDiff = Math.abs(window.outerHeight - window.innerHeight);
+          if (wDiff > 140 || hDiff > 160) opened = true;
+        }
+        try {
+          const el = new Image();
+          Object.defineProperty(el, 'id', { get() { opened = true; return ''; } });
+          console.log('%c', el);
+        } catch(_) {}
+        return opened;
+      }
+      setInterval(() => {
+        try {
+          secOverlay.style.display = devtoolsOpen() ? 'flex' : 'none';
+        } catch(_) {}
+      }, 900);
+    })();
+  </script>
+
+  <!-- بوابة: السماح فقط داخل Telegram WebApp -->
+  <script>
+    (function gateTelegram() {
+      function block() {
         document.body.innerHTML =
           '<div class="block-access">' +
           'Access denied.<br>Please open WELLcoin from Telegram app.<br>' +
-          '<a href="https://t.me/WELLcoinGameBot?start=play" target="_blank">Open in Telegram</a>' +
+          '<a href="https://t.me/WELLcoinGameBot?start=play" target="_blank" rel="noopener noreferrer">Open in Telegram</a>' +
           '</div>';
         throw new Error("Access blocked: must open from Telegram.");
       }
-    });
+      // نحاول التحقق مبكرًا قدر الإمكان
+      const tg = window.Telegram && window.Telegram.WebApp;
+      if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
+        window.addEventListener('DOMContentLoaded', block);
+      }
+    })();
   </script>
 </head>
 <body>
   <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
     <source src="assets/background.mp4" type="video/mp4" />
   </video>
+
   <div class="overlay">
     <div class="top-text">
       <div class="animated-text">
@@ -179,11 +240,13 @@
       <button class="agree-btn" onclick="showPopup()">I'm Ready</button>
     </div>
   </div>
+
   <div class="popup" id="usernamePopup">
     <span class="close-btn" onclick="closePopup()">×</span>
     <input type="text" id="usernameInput" placeholder="Enter your username" readonly />
     <button id="saveBtn" onclick="handleSaveOrReturn()">Save</button>
   </div>
+
   <script>
     // ----- Firebase Config -----
     const firebaseConfig = {
@@ -247,7 +310,8 @@
       if (playerData) {
         usernameField.value = playerData.username || tgUsername;
         saveBtn.textContent = "I'm Back";
-        saveBtn.onclick = () => window.location.href = "preload.html";
+        // تأكيد المرور عبر welcome دائمًا بإضافة from=welcome
+        saveBtn.onclick = () => window.location.href = "preload.html?from=welcome";
       } else {
         usernameField.value = tgUsername;
         saveBtn.textContent = "Save";
@@ -271,12 +335,13 @@
     async function handleSaveOrReturn() {
       if (!userId) return;
       const existsInFirebase = await getPlayerDataFromFirebase(userId);
+      // دائمًا الانتقال مع from=welcome
       if (existsInFirebase) {
-        window.location.href = "preload.html";
+        window.location.href = "preload.html?from=welcome";
       } else {
         try {
           await registerNewUserInFirebase();
-          window.location.href = "preload.html";
+          window.location.href = "preload.html?from=welcome";
         } catch (error) {
           alert("Error saving data: " + error.message);
         }
