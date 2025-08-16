@@ -1,6 +1,3 @@
-// تأكيد تحميل الملف
-console.log('[preload] script loaded');
-
 // ---------- DOM Refs ----------
 const bgEl = document.getElementById('bg');
 const soundBtn = document.getElementById('soundBtn');
@@ -78,22 +75,15 @@ const audioState = {
   isPlaying: true,
   async play() {
     const ctx = ensureAudioContext();
-    try {
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
-    } catch(e) {}
+    try { if (ctx.state === 'suspended') await ctx.resume(); } catch(e) {}
     if (audioBuffer && !audioSource) {
       audioSource = ctx.createBufferSource();
       audioSource.buffer = audioBuffer;
       audioSource.loop = true;
-
       gainNode = ctx.createGain();
       gainNode.gain.value = 0.76;
-
       audioSource.connect(gainNode);
       gainNode.connect(ctx.destination);
-
       try { audioSource.start(0); } catch(e) {}
     }
     this.isPlaying = true;
@@ -105,18 +95,13 @@ const audioState = {
     this.isPlaying = false;
     setSoundUI(false);
   },
-  toggle() {
-    if (this.isPlaying) this.pause(); else this.play();
-  }
+  toggle() { this.isPlaying ? this.pause() : this.play(); }
 };
 
-// Try preference (if any)
 const musicPreferred = sessionStorage.getItem('musicPreferred') === '1';
-
 let bgObjectUrl = null;
 
 async function preloadBackgroundAndMusic() {
-  // Background from cache if available
   try {
     const cachedBg = await idbGet('asset:assets/preload.jpg');
     if (cachedBg instanceof Blob) {
@@ -126,7 +111,6 @@ async function preloadBackgroundAndMusic() {
     }
   } catch(e) {}
 
-  // Ensure background image is loaded
   await new Promise(resolve => {
     const bgImage = new Image();
     bgImage.onload = resolve;
@@ -134,7 +118,6 @@ async function preloadBackgroundAndMusic() {
     bgImage.src = 'assets/preload.jpg';
   });
 
-  // Music
   try {
     const cachedAudio = await idbGet('asset:assets/preload.mp3');
     let arrayBuffer;
@@ -146,12 +129,10 @@ async function preloadBackgroundAndMusic() {
     }
     audioBuffer = await ensureAudioContext().decodeAudioData(arrayBuffer);
     if (musicPreferred) await audioState.play();
-  } catch(e) {
-    console.log('Audio setup failed:', e);
-  }
+  } catch(e) { console.log('Audio setup failed:', e); }
 }
 
-// Events
+// ---------- Event Handlers ----------
 if (soundBtn) soundBtn.addEventListener('click', () => audioState.toggle());
 document.addEventListener('keydown', e => {
   if (e.key === 'm' || e.key === 'M') audioState.toggle();
@@ -169,7 +150,7 @@ window.addEventListener('beforeunload', () => {
   if (bgObjectUrl) { URL.revokeObjectURL(bgObjectUrl); bgObjectUrl = null; }
 });
 
-// Progress
+// ---------- Progress Bar Logic ----------
 let progress = 0;
 let totalSteps = 1;
 let doneSteps = 0;
@@ -179,12 +160,9 @@ function setProgress(pct, msg) {
   if (barRole) barRole.setAttribute('aria-valuenow', String(progress));
   if (msg) barText.textContent = msg;
 }
-function incProgress() {
-  doneSteps++;
-  setProgress(Math.floor(doneSteps*100/totalSteps), "Preparing game, please wait...");
-}
+function incProgress() { doneSteps++; setProgress(Math.floor(doneSteps*100/totalSteps), "Preparing game, please wait..."); }
 
-// Assets
+// ---------- Assets ----------
 const BASE_ASSETS = [
   "assets/bmwcar.jpg","assets/bodyguards.png","assets/character.png","assets/character1.png",
   "assets/character10.png","assets/character11.png","assets/character12.png","assets/character13.png",
@@ -196,7 +174,7 @@ const BASE_ASSETS = [
   "assets/shop.jpg","assets/suit.png","assets/wellcoin-icon.png","assets/wife.png","assets/yacht.jpg","assets/ak.png"
 ];
 
-// Firebase
+// ---------- Firebase Config ----------
 const firebaseConfig = {
   apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
   authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -213,26 +191,19 @@ tg.ready();
 const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser?.id ? tgUser.id.toString() : null;
 
-// Main preload
+// ---------- Main Preload Logic ----------
 async function preloadAll() {
-  // 1) BG + Music
   await preloadBackgroundAndMusic();
 
-  // 2) Cache clear / version
   try {
     if (FORCE_CLEAR_CACHE) {
-      await idbClear();
-      await idbSet(CACHE_VERSION_KEY, CACHE_VERSION);
+      await idbClear(); await idbSet(CACHE_VERSION_KEY, CACHE_VERSION);
     } else {
       const v = await idbGet(CACHE_VERSION_KEY);
-      if (v !== CACHE_VERSION) {
-        await idbClear();
-        await idbSet(CACHE_VERSION_KEY, CACHE_VERSION);
-      }
+      if (v !== CACHE_VERSION) { await idbClear(); await idbSet(CACHE_VERSION_KEY, CACHE_VERSION); }
     }
   } catch(e) {}
 
-  // 3) Load assets
   totalSteps = 2 + BASE_ASSETS.length;
   setProgress(0, "Preparing game, please wait...");
   await Promise.all(BASE_ASSETS.map(src => {
@@ -246,19 +217,13 @@ async function preloadAll() {
         img.onload = () => { incProgress(); res(); };
         img.onerror = () => { incProgress(); res(); };
         img.src = src;
-        fetch(src).then(r=>r.blob()).then(blob=>{
-          idbSet('asset:'+src, blob);
-        }).catch(()=>{});
+        fetch(src).then(r=>r.blob()).then(blob=>{ idbSet('asset:'+src, blob); }).catch(()=>{});
       }
     });
   }));
 
-  // 4) User data
   setProgress(Math.floor(doneSteps*100/totalSteps), "Loading player data...");
-  if (!userId) {
-    setProgress(100, "Please login via Telegram");
-    return;
-  }
+  if (!userId) { setProgress(100, "Please login via Telegram"); return; }
 
   try {
     const userRef = db.ref("users/" + userId);
@@ -275,32 +240,26 @@ async function preloadAll() {
     setProgress(100, "Network error. Retrying may help.");
   }
 
-  // 5) Shop
   try {
     const shopSnap = await db.ref("users/" + userId + "/shopItems").get();
-    if (shopSnap.exists()) {
-      await idbSet('shopItems', shopSnap.val());
-    }
+    if (shopSnap.exists()) { await idbSet('shopItems', shopSnap.val()); }
   } catch(e) {}
   incProgress();
 
-  // 6) Go
   setProgress(100, "Ready! Entering the game...");
   setTimeout(()=>{ window.location.replace('index.html'); }, 700);
 }
-
 document.addEventListener('DOMContentLoaded', preloadAll);
 
-// ========== FX: واقعية لمس الماء + رذاذ مائل خفيف (PixiJS) ==========
+// ========== FX: واقعية لمس الماء + رذاذ مائل خفيف (PixiJS بدون pixi-filters) ==========
 (function initFX() {
   window.addEventListener('load', () => {
     const fxHost = document.getElementById('fxHost');
     if (!fxHost) return;
 
     const hasPIXI = typeof window.PIXI !== 'undefined' && window.PIXI.Application;
-    const hasShockwave = hasPIXI && window.PIXI.filters && window.PIXI.filters.ShockwaveFilter;
-    if (!hasPIXI || !hasShockwave) {
-      console.warn('[preload] FX disabled (PIXI or ShockwaveFilter unavailable).');
+    if (!hasPIXI) {
+      console.warn('[preload] FX disabled (PIXI unavailable).');
       return;
     }
 
@@ -312,13 +271,11 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     });
     fxHost.appendChild(app.view);
 
-    const scene = new PIXI.Container();
-    app.stage.addChild(scene);
-
+    // خلفية WebGL (لمطابقة صورة الخلفية)
     const bgTexture = PIXI.Texture.from('assets/preload.jpg');
     const bgSprite = new PIXI.Sprite(bgTexture);
-    bgSprite.anchor.set(0.5, 1.0);
-    scene.addChild(bgSprite);
+    bgSprite.anchor.set(0.5, 1.0); // center-bottom
+    app.stage.addChild(bgSprite);
 
     function fitBg() {
       const w = app.renderer.width;
@@ -331,138 +288,172 @@ document.addEventListener('DOMContentLoaded', preloadAll);
         bgSprite.scale.set(scale);
       }
     }
-    if (bgTexture.baseTexture.valid) fitBg();
-    else bgTexture.baseTexture.once('loaded', fitBg);
+    if (bgTexture.baseTexture.valid) fitBg(); else bgTexture.baseTexture.once('loaded', fitBg);
     window.addEventListener('resize', fitBg);
 
-    const colorMatrix = new PIXI.filters.ColorMatrixFilter();
-    colorMatrix.brightness(0.53, false);
-    colorMatrix.contrast(0.95, true);
-    colorMatrix.saturate(1.06, true);
+    // Shader تموّج ماء مخصص (Shockwave-like)
+    const frag = `
+      precision mediump float;
+      varying vec2 vTextureCoord;
+      uniform sampler2D uSampler;
+      uniform vec2 center;
+      uniform float time;
+      uniform float amplitude;
+      uniform float wavelength;
+      uniform float radius;
+
+      void main(void){
+        vec2 uv = vTextureCoord;
+        vec2 dir = uv - center;
+        float dist = length(dir);
+
+        if (dist < radius) {
+          float falloff = smoothstep(radius, 0.0, dist); // أقوى قرب المركز
+          // موجة شعاعية: الوقت يحرك الموجة للخارج، وwavelength يتحكم بالتردد
+          float wave = sin((dist * wavelength) - (time * 6.28318)) * amplitude * falloff;
+          // إزاحة UV باتجاه شعاعي
+          if (dist > 0.0001) {
+            uv += (dir / dist) * wave;
+          }
+        }
+
+        gl_FragColor = texture2D(uSampler, uv);
+      }
+    `;
+
+    function makeWaveFilter(normX, normY, amp, wl, rad) {
+      const filter = new PIXI.Filter(undefined, frag, {
+        center: new Float32Array([normX, normY]),
+        time: 0.0,
+        amplitude: amp,        // ~0.007..0.02
+        wavelength: wl,        // ~20..35
+        radius: rad            // ~0.35..0.7 (normalized)
+      });
+      return filter;
+    }
 
     const waves = [];
-    function recomputeFilters() {
-      bgSprite.filters = [colorMatrix].concat(waves.map(w => w.filter));
-    }
+    function addWave(px, py, strong=false) {
+      const w = app.renderer.width;
+      const h = app.renderer.height;
+      const nx = px / w;
+      const ny = py / h;
+      const amp = strong ? 0.018 : 0.011;
+      const wl  = strong ? 30.0 : 24.0;
+      const rad = strong ? 0.55 : 0.42;
 
-    function stagePos(clientX, clientY) {
-      const rect = app.view.getBoundingClientRect();
-      const x = (clientX - rect.left) * (app.renderer.width / rect.width);
-      const y = (clientY - rect.top) * (app.renderer.height / rect.height);
-      return { x, y };
-    }
-
-    function spawnWave(clientX, clientY, strong=false) {
-      const { x, y } = stagePos(clientX, clientY);
-      const Shock = PIXI.filters.ShockwaveFilter;
-      const wavelength = strong ? 28 : 22;
-      const amplitude = strong ? 65 : 48;
-
-      const filter = new Shock([x, y], { amplitude, wavelength, brightness: 1.0, radius: 0.75 });
+      const filter = makeWaveFilter(nx, ny, amp, wl, rad);
       const lifeMs = 1300;
       const created = performance.now();
-      const wave = { filter, created, lifeMs };
-      waves.push(wave);
-      if (waves.length > 12) waves.splice(0, waves.length - 12);
-      recomputeFilters();
+
+      waves.push({ filter, lifeMs, created });
+      // طبّق الفلاتر كسلسلة (كل موجة فلتر مستقل)
+      bgSprite.filters = waves.map(w => w.filter);
+      if (waves.length > 14) {
+        waves.splice(0, waves.length - 14);
+        bgSprite.filters = waves.map(w => w.filter);
+      }
     }
 
+    // أحداث اللمس/المؤشر
     let pointerDown = false;
-    let lastSpawnT = 0;
+    let lastSpawn = 0;
     let lastX = 0, lastY = 0;
 
-    function onPointerDown(e) {
+    function onDown(e) {
       pointerDown = true;
       const pt = e.touches ? e.touches[0] : e;
-      spawnWave(pt.clientX, pt.clientY, true);
-      lastSpawnT = performance.now();
+      addWave(pt.clientX, pt.clientY, true);
+      lastSpawn = performance.now();
       lastX = pt.clientX; lastY = pt.clientY;
     }
-    function onPointerMove(e) {
+    function onMove(e) {
       if (!pointerDown) return;
       const pt = e.touches ? e.touches[0] : e;
       const now = performance.now();
       const dx = pt.clientX - lastX, dy = pt.clientY - lastY;
       const dist = Math.hypot(dx, dy);
-      if (dist > 16 || now - lastSpawnT > 80) {
-        spawnWave(pt.clientX, pt.clientY, false);
-        lastSpawnT = now; lastX = pt.clientX; lastY = pt.clientY;
+      if (dist > 14 || now - lastSpawn > 80) {
+        addWave(pt.clientX, pt.clientY, false);
+        lastSpawn = now; lastX = pt.clientX; lastY = pt.clientY;
       }
     }
-    function onPointerUp() { pointerDown = false; }
+    function onUp() { pointerDown = false; }
 
-    document.addEventListener('pointerdown', onPointerDown, { passive: true });
-    document.addEventListener('pointermove', onPointerMove, { passive: true });
-    document.addEventListener('pointerup', onPointerUp, { passive: true });
-    document.addEventListener('pointercancel', onPointerUp, { passive: true });
-    document.addEventListener('touchstart', onPointerDown, { passive: true });
-    document.addEventListener('touchmove', onPointerMove, { passive: true });
-    document.addEventListener('touchend', onPointerUp, { passive: true });
+    document.addEventListener('pointerdown', onDown, { passive: true });
+    document.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerup', onUp, { passive: true });
+    document.addEventListener('pointercancel', onUp, { passive: true });
+    document.addEventListener('touchstart', onDown, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: true });
+    document.addEventListener('touchend', onUp, { passive: true });
 
-    // Rain spray particles
+    // رذاذ مطر مائل (جسيمات خفيفة)
     const rainContainer = new PIXI.ParticleContainer(800, { position: true, rotation: true, alpha: true, scale: true });
     app.stage.addChild(rainContainer);
 
-    const streakGfx = new PIXI.Graphics();
-    streakGfx.lineStyle(1.0, 0xFFFFFF, 0.8);
-    streakGfx.moveTo(0, 0);
-    streakGfx.lineTo(0, 14);
-    streakGfx.rotation = -0.45;
-    const streakTex = app.renderer.generateTexture(streakGfx, { resolution: 2, scaleMode: PIXI.SCALE_MODES.LINEAR });
+    // نرسم خط رفيع كملمس المطر
+    const g = new PIXI.Graphics();
+    g.lineStyle(1.0, 0xFFFFFF, 0.8);
+    g.moveTo(0, 0);
+    g.lineTo(0, 14);
+    g.rotation = -0.52; // ميلان
+    const streakTex = app.renderer.generateTexture(g, { resolution: 2, scaleMode: PIXI.SCALE_MODES.LINEAR });
 
-    const SPRAY_COUNT = 120;
+    const SPRAY_COUNT = 130;
     const W = () => app.renderer.width;
     const H = () => app.renderer.height;
-    const particles = [];
-    function spawnParticle(i) {
+
+    const drops = [];
+    function spawnDrop(i) {
       const s = new PIXI.Sprite(streakTex);
       s.anchor.set(0.5, 0.1);
-      s.alpha = 0.06 + Math.random() * 0.06;
-      s.scale.set(0.7 + Math.random() * 0.6);
-      s.rotation = -0.6 + (Math.random() * 0.12 - 0.06);
-      s.x = Math.random() * (W() + 60) - 30;
-      s.y = Math.random() * (H() + 60) - 60;
-      const wind = 60 + Math.random() * 80;
-      const fall = 140 + Math.random() * 120;
-      particles[i] = { s, vx: wind, vy: fall };
+      s.alpha = 0.05 + Math.random() * 0.07;
+      s.scale.set(0.65 + Math.random() * 0.7);
+      s.rotation = -0.58 + (Math.random() * 0.16 - 0.08);
+      s.x = Math.random() * (W() + 80) - 40;
+      s.y = Math.random() * (H() + 120) - 120;
+      const wind = 70 + Math.random() * 100;
+      const fall = 160 + Math.random() * 160;
+      drops[i] = { s, vx: wind, vy: fall };
       rainContainer.addChild(s);
     }
-    for (let i = 0; i < SPRAY_COUNT; i++) spawnParticle(i);
+    for (let i = 0; i < SPRAY_COUNT; i++) spawnDrop(i);
 
+    // تفعيل الأنيميشن
     app.ticker.add((delta) => {
       const t = performance.now();
 
-      // animate waves
+      // تحديث الموجات (نزيد time بشكل خطي)
       for (let i = waves.length - 1; i >= 0; i--) {
         const w = waves[i];
         const age = t - w.created;
         const u = Math.min(1, age / w.lifeMs);
-        w.filter.time = u * 1.0;
+        w.filter.uniforms.time = u; // 0..1
         if (age >= w.lifeMs) {
           waves.splice(i, 1);
-          recomputeFilters();
+          bgSprite.filters = waves.map(x => x.filter);
         }
       }
 
-      // rain
+      // تحريك الرذاذ
       const dt = delta / 60;
       const width = W(), height = H();
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        const s = p.s;
-        s.x += (p.vx) * dt;
-        s.y += (p.vy) * dt;
-        if (s.x > width + 40 || s.y > height + 40) {
-          s.x = Math.random() * (width + 40) - 60;
-          s.y = -20 - Math.random() * 80;
+      for (let i = 0; i < drops.length; i++) {
+        const d = drops[i]; const s = d.s;
+        s.x += d.vx * dt;
+        s.y += d.vy * dt;
+        if (s.x > width + 60 || s.y > height + 80) {
+          s.x = Math.random() * (width + 80) - 60;
+          s.y = -40 - Math.random() * 120;
           s.alpha = 0.05 + Math.random() * 0.07;
-          p.vx = 60 + Math.random() * 80;
-          p.vy = 140 + Math.random() * 120;
+          d.vx = 70 + Math.random() * 100;
+          d.vy = 160 + Math.random() * 160;
         }
       }
     });
 
-    // أخفي خلفية DOM بعد تفعيل WebGL لتجنب الطبقتين
+    // بعد تفعيل WebGL، نخفي خلفية DOM حتى لا تتضاعف
     try { bgEl.style.visibility = 'hidden'; } catch(_) {}
   });
 })();
