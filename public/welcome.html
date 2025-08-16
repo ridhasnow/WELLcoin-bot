@@ -16,98 +16,47 @@
       overflow: hidden;
       background: #16100b;
     }
-    body {
-      min-height: 100vh;
-      position: relative;
-    }
+    body { min-height: 100vh; position: relative; }
     .bg {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      width: 100vw;
-      height: 100vh;
+      position: fixed; inset: 0; z-index: 0;
+      width: 100vw; height: 100vh;
       background: url('assets/preload.jpg') center bottom / cover no-repeat;
       filter: brightness(0.53) contrast(0.95) saturate(1.06);
     }
     /* Canvas تأثيرات الماء/الرذاذ */
     #fxCanvas {
-      position: fixed;
-      inset: 0;
-      z-index: 5; /* فوق الخلفية وتحت الكارد */
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none; /* حتى لا تمنع الضغط على الأزرار */
+      position: fixed; inset: 0; z-index: 5;
+      width: 100vw; height: 100vh; pointer-events: none;
     }
     .preload-card {
-      position: absolute;
-      z-index: 10;
-      left: 50%;
-      bottom: 5vh;
-      transform: translateX(-50%);
-      width: min(410px, 92vw);
-      background: rgba(38,22,11,0.61);
-      border-radius: 22px;
-      box-shadow: 0 4px 16px 0 #0008;
-      padding: 16px 10px 12px 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      border: 1.5px solid #ffb75b55;
-      backdrop-filter: blur(1.5px);
-      opacity: 0.92;
-      min-height: 70px;
-      max-height: 120px;
+      position: absolute; z-index: 10; left: 50%; bottom: 5vh; transform: translateX(-50%);
+      width: min(410px, 92vw); background: rgba(38,22,11,0.61); border-radius: 22px;
+      box-shadow: 0 4px 16px 0 #0008; padding: 16px 10px 12px 10px;
+      display: flex; flex-direction: column; align-items: center;
+      border: 1.5px solid #ffb75b55; backdrop-filter: blur(1.5px); opacity: 0.92;
+      min-height: 70px; max-height: 120px;
     }
     .preload-title {
-      font-size: 1.1rem;
-      color: #ffeab7;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-      text-shadow: 0 2px 9px #ffddaa55;
-      text-align: center;
+      font-size: 1.1rem; color: #ffeab7; letter-spacing: 1px; margin-bottom: 4px;
+      text-shadow: 0 2px 9px #ffddaa55; text-align: center;
     }
     .bar-box {
-      width: 100%;
-      margin: 8px 0 2px 0;
-      background: #31210e;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px #0008 inset;
-      height: 11px;
-      overflow: hidden;
-      border: 1px solid #ffb75b33;
+      width: 100%; margin: 8px 0 2px 0; background: #31210e; border-radius: 12px;
+      box-shadow: 0 2px 8px #0008 inset; height: 11px; overflow: hidden; border: 1px solid #ffb75b33;
     }
     .bar-fill {
       transition: width 0.35s cubic-bezier(.65,.22,.19,1.14);
-      height: 100%;
-      background: linear-gradient(90deg, #ffc85c 3%, #ffa93a 80%, #ffeabd 100%);
-      box-shadow: 0 3px 12px #ffbb4d22;
-      width: 0%;
+      height: 100%; background: linear-gradient(90deg, #ffc85c 3%, #ffa93a 80%, #ffeabd 100%);
+      box-shadow: 0 3px 12px #ffbb4d22; width: 0%;
     }
     .bar-text {
-      font-size: 0.97rem;
-      color: #ffeab7;
-      text-align: center;
-      margin-top: 7px;
-      letter-spacing: .5px;
-      text-shadow: 0 2px 8px #34140044;
-      opacity: 0.89;
-      min-height: 18px;
+      font-size: 0.97rem; color: #ffeab7; text-align: center; margin-top: 7px; letter-spacing: .5px;
+      text-shadow: 0 2px 8px #34140044; opacity: 0.89; min-height: 18px;
     }
     .sound-btn {
-      position: absolute;
-      top: 18px;
-      left: 16px;
-      z-index: 20;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255,220,90,0.11);
-      box-shadow: 0 0 0 1.5px #ffca5e44;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; top: 18px; left: 16px; z-index: 20; width: 38px; height: 38px;
+      border-radius: 50%; border: none; background: rgba(255,220,90,0.11);
+      box-shadow: 0 0 0 1.5px #ffca5e44; cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background 0.15s;
     }
     .sound-btn:hover { background: rgba(255,220,90,0.17); }
@@ -138,6 +87,22 @@
   </button>
 
   <script>
+    // ---------- Gate: اضمن المرور عبر welcome.html أولاً (بدون تعديل welcome) ----------
+    (function gateToWelcome() {
+      try {
+        const ref = document.referrer || '';
+        const cameFromWelcome = /welcome\.html(?:[\?#].*)?$/i.test(ref) || ref.indexOf('welcome.html') !== -1;
+        if (cameFromWelcome) {
+          sessionStorage.setItem('cameFromWelcome', '1');
+        }
+        const allowed = cameFromWelcome || sessionStorage.getItem('cameFromWelcome') === '1';
+        if (!allowed) {
+          window.location.replace('welcome.html');
+          throw new Error('Redirecting to welcome first.');
+        }
+      } catch (_) {}
+    })();
+
     // ---------- DOM Refs ----------
     const bgEl = document.getElementById('bg');
     const soundBtn = document.getElementById('soundBtn');
@@ -198,14 +163,11 @@
         grow: strong ? 1.35 : 1.05,
         fade: strong ? 0.008 : 0.006
       });
-      // حد أعلى للريبلز لحماية الأداء
       if (ripples.length > 220) ripples.splice(0, ripples.length - 220);
     }
 
     function pointerPos(e) {
-      if (e.touches && e.touches[0]) {
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
+      if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
       return { x: e.clientX, y: e.clientY };
     }
 
@@ -220,8 +182,7 @@
     function onPointerMove(e) {
       if (!pointerDown) return;
       const { x, y } = pointerPos(e);
-      const dx = x - lastSpawnX;
-      const dy = y - lastSpawnY;
+      const dx = x - lastSpawnX, dy = y - lastSpawnY;
       const dist = Math.hypot(dx, dy);
       const now = performance.now();
       if (dist > RIPPLE_SPAWN_DIST || now - lastSpawnTime > 70) {
@@ -234,27 +195,21 @@
         lastHoldTime = now;
       }
     }
-    function onPointerUp() {
-      pointerDown = false;
-    }
+    function onPointerUp() { pointerDown = false; }
 
-    // التقط أحداث اللمس/الفأرة بشكل عام
     document.addEventListener('pointerdown', onPointerDown, { passive: true });
     document.addEventListener('pointermove', onPointerMove, { passive: true });
     document.addEventListener('pointerup', onPointerUp, { passive: true });
     document.addEventListener('pointercancel', onPointerUp, { passive: true });
-    // دعم لمس قديم
     document.addEventListener('touchstart', e => onPointerDown(e), { passive: true });
     document.addEventListener('touchmove', e => onPointerMove(e), { passive: true });
     document.addEventListener('touchend', onPointerUp, { passive: true });
 
-    // رسم
     let lastTs = 0;
     function loop(ts) {
       const dt = Math.min(0.033, (ts - lastTs) / 1000 || 0.016);
       lastTs = ts;
 
-      // مسح الإطار
       ctx.clearRect(0, 0, innerWidth, innerHeight);
 
       // رذاذ المطر الخفيف
@@ -264,7 +219,6 @@
         p.x += (WIND + p.vx * 10) * dt;
         p.y += (GRAVITY + p.vy * 40) * dt;
 
-        // إعادة التوليد عند الخروج
         if (p.x > innerWidth + 20 || p.y > innerHeight + 20) {
           p.x = Math.random() * innerWidth - 20;
           p.y = -10;
@@ -277,7 +231,6 @@
         ctx.strokeStyle = `rgba(255,255,255,${p.alpha})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        // خط مائل بسيط لمحاكاة المطر
         ctx.moveTo(p.x, p.y);
         ctx.lineTo(p.x - 0.8 * p.len, p.y + p.len);
         ctx.stroke();
@@ -286,8 +239,8 @@
       // تموّجات الماء
       for (let i = ripples.length - 1; i >= 0; i--) {
         const r = ripples[i];
-        r.r += r.grow * 60 * dt;     // توسّع سريع نسبيًا
-        r.alpha -= r.fade;           // تلاشي تدريجي
+        r.r += r.grow * 60 * dt;
+        r.alpha -= r.fade;
 
         if (r.alpha <= 0 || r.r >= r.maxR) {
           ripples.splice(i, 1);
@@ -301,12 +254,10 @@
         ctx.shadowColor = 'rgba(255,255,255,0.35)';
         ctx.shadowBlur = 6;
 
-        // الحلقة الأساسية
         ctx.beginPath();
         ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
         ctx.stroke();
 
-        // حلقة ثانوية خفيفة لإحساس الماء
         ctx.shadowBlur = 10;
         ctx.globalAlpha = 0.35 * Math.max(0, r.alpha);
         ctx.beginPath();
@@ -324,7 +275,7 @@
     const IDB_STORE = 'cache';
     const CACHE_VERSION_KEY = 'cache_version';
     const CACHE_VERSION = 'v1';
-    const FORCE_CLEAR_CACHE = true; // إبقاء السلوك الحالي
+    const FORCE_CLEAR_CACHE = true;
 
     function openIDB() {
       return new Promise((resolve, reject) => {
@@ -389,11 +340,7 @@
       isPlaying: true,
       async play() {
         const ctxA = ensureAudioContext();
-        try {
-          if (ctxA.state === 'suspended') {
-            await ctxA.resume();
-          }
-        } catch(e) {}
+        try { if (ctxA.state === 'suspended') await ctxA.resume(); } catch(e) {}
         if (audioBuffer && !audioSource) {
           audioSource = ctxA.createBufferSource();
           audioSource.buffer = audioBuffer;
@@ -416,19 +363,14 @@
         this.isPlaying = false;
         setSoundUI(false);
       },
-      toggle() {
-        if (this.isPlaying) this.pause();
-        else this.play();
-      }
+      toggle() { this.isPlaying ? this.pause() : this.play(); }
     };
 
-    // محاولة احترام تفضيل الموسيقى لو تم ضبطه من صفحة أخرى (اختياري)
     const musicPreferred = sessionStorage.getItem('musicPreferred') === '1';
 
     let bgObjectUrl = null;
 
     async function preloadBackgroundAndMusic() {
-      // تحميل الخلفية من الكاش إن توفرت
       try {
         const cachedBg = await idbGet('asset:assets/preload.jpg');
         if (cachedBg instanceof Blob) {
@@ -438,7 +380,6 @@
         }
       } catch(e) {}
 
-      // ضمان تحميل الصورة (شبكة كاحتياط)
       await new Promise(resolve => {
         const bgImage = new Image();
         bgImage.onload = resolve;
@@ -446,7 +387,6 @@
         bgImage.src = 'assets/preload.jpg';
       });
 
-      // تحميل وإعداد الصوت
       try {
         const cachedAudio = await idbGet('asset:assets/preload.mp3');
         if (cachedAudio instanceof Blob) {
@@ -457,7 +397,6 @@
           const arrayBuffer = await response.arrayBuffer();
           audioBuffer = await ensureAudioContext().decodeAudioData(arrayBuffer);
         }
-        // محاولة التشغيل التلقائي
         if (musicPreferred) {
           await audioState.play();
         } else {
@@ -470,11 +409,8 @@
 
     // ---------- Event Handlers ----------
     soundBtn.addEventListener('click', () => audioState.toggle());
-    document.addEventListener('keydown', e => {
-      if (e.key === 'm' || e.key === 'M') audioState.toggle();
-    });
+    document.addEventListener('keydown', e => { if (e.key === 'm' || e.key === 'M') audioState.toggle(); });
 
-    // أول نقرة على الصفحة لمحاولة Resume للصوت عند الحاجة
     document.addEventListener('click', () => {
       const ctxA = ensureAudioContext();
       if (ctxA.state === 'suspended') {
@@ -483,10 +419,7 @@
     }, { once: true });
 
     window.addEventListener('beforeunload', () => {
-      if (bgObjectUrl) {
-        URL.revokeObjectURL(bgObjectUrl);
-        bgObjectUrl = null;
-      }
+      if (bgObjectUrl) { URL.revokeObjectURL(bgObjectUrl); bgObjectUrl = null; }
     });
 
     // ---------- Progress Bar Logic ----------
@@ -577,9 +510,7 @@
             await idbSet(CACHE_VERSION_KEY, CACHE_VERSION);
           }
         }
-      } catch(e) {
-        // non-fatal
-      }
+      } catch(e) {}
 
       // 3) Load assets
       totalSteps = 2 + BASE_ASSETS.length;
@@ -630,29 +561,22 @@
         if (shopSnap.exists()) {
           await idbSet('shopItems', shopSnap.val());
         }
-      } catch(e) {
-        // non-fatal
-      }
+      } catch(e) {}
       incProgress();
 
       // 6) Done -> go to game
       setProgress(100, "Ready! Entering the game...");
-      setTimeout(()=>{
-        window.location.replace('index.html');
-      }, 700);
+      setTimeout(()=>{ window.location.replace('index.html'); }, 700);
     }
 
     document.addEventListener('DOMContentLoaded', preloadAll);
 
-    // ---------- Anti-Inspect / Hardening (تقليل الاطلاع عبر الكونسول) ----------
+    // ---------- Anti-Inspect / Hardening ----------
     (function antiInspect() {
-      // تعطيل قائمة الزر الأيمن وبعض أحداث النسخ/اللصق/السحب
       document.addEventListener('contextmenu', e => e.preventDefault());
       ['copy','cut','paste','dragstart','selectstart'].forEach(ev => {
         document.addEventListener(ev, e => e.preventDefault());
       });
-
-      // تعطيل مفاتيح شائعة لفتح الأدوات أو عرض المصدر
       document.addEventListener('keydown', function(e) {
         const key = e.key?.toLowerCase();
         if (
@@ -662,34 +586,25 @@
           (e.ctrlKey && key === 'u') ||
           (e.metaKey && key === 'u')
         ) {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
+          e.preventDefault(); e.stopPropagation(); return false;
         }
       }, true);
 
       const origLog = console.log.bind(console);
-
       function isDevToolsOpen() {
         let opened = false;
-        // اختلاف الأبعاد قد يدل على وجود الديف تولز
         if (window.outerWidth && window.innerWidth) {
           const wDiff = Math.abs(window.outerWidth - window.innerWidth);
           const hDiff = Math.abs(window.outerHeight - window.innerHeight);
           if (wDiff > 160 || hDiff > 160) opened = true;
         }
-        // حيلة الـ getter عند محاولة عرض الكائن في الكونسول
         try {
           const el = new Image();
-          Object.defineProperty(el, 'id', {
-            get() { opened = true; return ''; }
-          });
+          Object.defineProperty(el, 'id', { get() { opened = true; return ''; } });
           origLog('%c', el);
         } catch(_) {}
         return opened;
       }
-
-      // فحص دوري: لو مفتوح يتم إنهاء الجلسة
       setInterval(() => {
         if (isDevToolsOpen()) {
           try { document.documentElement.innerHTML = ''; } catch(_) {}
