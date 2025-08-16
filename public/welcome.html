@@ -113,6 +113,16 @@
   </style>
 </head>
 <body>
+  <script>
+  (function () {
+    try {
+      const p = new URLSearchParams(location.search);
+      if (p.get('from') !== 'welcome') {
+        location.replace('welcome.html');
+      }
+    } catch (e) {}
+  })();
+</script>
   <div class="bg" id="bg"></div>
   <div class="preload-card">
     <div class="preload-title">Loading Game...</div>
