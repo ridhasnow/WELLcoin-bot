@@ -98,7 +98,7 @@ const audioState = {
   toggle() { this.isPlaying ? this.pause() : this.play(); }
 };
 
-const musicPreferred = sessionStorage.getItem('musicPreferred') === '1';
+// لم نعد نعتمد على أي تفضيل من الـ sessionStorage للتشغيل
 let bgObjectUrl = null;
 
 async function preloadBackgroundAndMusic() {
@@ -128,8 +128,16 @@ async function preloadBackgroundAndMusic() {
       arrayBuffer = await response.arrayBuffer();
     }
     audioBuffer = await ensureAudioContext().decodeAudioData(arrayBuffer);
-    if (musicPreferred) await audioState.play();
-  } catch(e) { console.log('Audio setup failed:', e); }
+
+    // محاولة التشغيل التلقائي دائمًا (كما كان قبل التقسيم)
+    await audioState.play().catch(()=>{});
+    // إعادة محاولة لاحقة صغيرة (بعض البيئات تحتاج resume بعد تهيئة WebView)
+    setTimeout(() => {
+      ensureAudioContext().resume().then(() => audioState.play()).catch(()=>{});
+    }, 150);
+  } catch(e) {
+    console.log('Audio setup failed:', e);
+  }
 }
 
 // ---------- Event Handlers ----------
@@ -251,7 +259,7 @@ async function preloadAll() {
 }
 document.addEventListener('DOMContentLoaded', preloadAll);
 
-// ========== FX: واقعية لمس الماء + رذاذ مائل خفيف (PixiJS بدون pixi-filters) ==========
+// ========== FX (لا تغييرات هنا) ==========
 (function initFX() {
   window.addEventListener('load', () => {
     const fxHost = document.getElementById('fxHost');
@@ -271,10 +279,9 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     });
     fxHost.appendChild(app.view);
 
-    // خلفية WebGL (لمطابقة صورة الخلفية)
     const bgTexture = PIXI.Texture.from('assets/preload.jpg');
     const bgSprite = new PIXI.Sprite(bgTexture);
-    bgSprite.anchor.set(0.5, 1.0); // center-bottom
+    bgSprite.anchor.set(0.5, 1.0);
     app.stage.addChild(bgSprite);
 
     function fitBg() {
@@ -291,7 +298,6 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     if (bgTexture.baseTexture.valid) fitBg(); else bgTexture.baseTexture.once('loaded', fitBg);
     window.addEventListener('resize', fitBg);
 
-    // Shader تموّج ماء مخصص (Shockwave-like)
     const frag = `
       precision mediump float;
       varying vec2 vTextureCoord;
@@ -301,35 +307,28 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       uniform float amplitude;
       uniform float wavelength;
       uniform float radius;
-
       void main(void){
         vec2 uv = vTextureCoord;
         vec2 dir = uv - center;
         float dist = length(dir);
-
         if (dist < radius) {
-          float falloff = smoothstep(radius, 0.0, dist); // أقوى قرب المركز
-          // موجة شعاعية: الوقت يحرك الموجة للخارج، وwavelength يتحكم بالتردد
+          float falloff = smoothstep(radius, 0.0, dist);
           float wave = sin((dist * wavelength) - (time * 6.28318)) * amplitude * falloff;
-          // إزاحة UV باتجاه شعاعي
           if (dist > 0.0001) {
             uv += (dir / dist) * wave;
           }
         }
-
         gl_FragColor = texture2D(uSampler, uv);
       }
     `;
-
     function makeWaveFilter(normX, normY, amp, wl, rad) {
-      const filter = new PIXI.Filter(undefined, frag, {
+      return new PIXI.Filter(undefined, frag, {
         center: new Float32Array([normX, normY]),
         time: 0.0,
-        amplitude: amp,        // ~0.007..0.02
-        wavelength: wl,        // ~20..35
-        radius: rad            // ~0.35..0.7 (normalized)
+        amplitude: amp,
+        wavelength: wl,
+        radius: rad
       });
-      return filter;
     }
 
     const waves = [];
@@ -338,28 +337,20 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       const h = app.renderer.height;
       const nx = px / w;
       const ny = py / h;
-      const amp = strong ? 0.010 : 0.06;
-      const wl  = strong ? 20.0 : 15.0;
-      const rad = strong ? 0.20 : 0.15;
-
+      const amp = strong ? 0.018 : 0.011;
+      const wl  = strong ? 30.0 : 24.0;
+      const rad = strong ? 0.55 : 0.42;
       const filter = makeWaveFilter(nx, ny, amp, wl, rad);
       const lifeMs = 1300;
       const created = performance.now();
-
       waves.push({ filter, lifeMs, created });
-      // طبّق الفلاتر كسلسلة (كل موجة فلتر مستقل)
+      if (waves.length > 14) waves.splice(0, waves.length - 14);
       bgSprite.filters = waves.map(w => w.filter);
-      if (waves.length > 14) {
-        waves.splice(0, waves.length - 14);
-        bgSprite.filters = waves.map(w => w.filter);
-      }
     }
 
-    // أحداث اللمس/المؤشر
     let pointerDown = false;
     let lastSpawn = 0;
     let lastX = 0, lastY = 0;
-
     function onDown(e) {
       pointerDown = true;
       const pt = e.touches ? e.touches[0] : e;
@@ -379,7 +370,6 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       }
     }
     function onUp() { pointerDown = false; }
-
     document.addEventListener('pointerdown', onDown, { passive: true });
     document.addEventListener('pointermove', onMove, { passive: true });
     document.addEventListener('pointerup', onUp, { passive: true });
@@ -388,22 +378,17 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     document.addEventListener('touchmove', onMove, { passive: true });
     document.addEventListener('touchend', onUp, { passive: true });
 
-    // رذاذ مطر مائل (جسيمات خفيفة)
     const rainContainer = new PIXI.ParticleContainer(800, { position: true, rotation: true, alpha: true, scale: true });
     app.stage.addChild(rainContainer);
-
-    // نرسم خط رفيع كملمس المطر
     const g = new PIXI.Graphics();
     g.lineStyle(1.0, 0xFFFFFF, 0.8);
     g.moveTo(0, 0);
     g.lineTo(0, 14);
-    g.rotation = -0.52; // ميلان
+    g.rotation = -0.52;
     const streakTex = app.renderer.generateTexture(g, { resolution: 2, scaleMode: PIXI.SCALE_MODES.LINEAR });
-
     const SPRAY_COUNT = 130;
     const W = () => app.renderer.width;
     const H = () => app.renderer.height;
-
     const drops = [];
     function spawnDrop(i) {
       const s = new PIXI.Sprite(streakTex);
@@ -411,7 +396,7 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       s.alpha = 0.05 + Math.random() * 0.07;
       s.scale.set(0.65 + Math.random() * 0.7);
       s.rotation = -0.58 + (Math.random() * 0.16 - 0.08);
-      s.x = Math.random() * (W() + 80) - 40;
+      s.x = Math.random() * (W() + 80) - 60;
       s.y = Math.random() * (H() + 120) - 120;
       const wind = 70 + Math.random() * 100;
       const fall = 160 + Math.random() * 160;
@@ -420,23 +405,18 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     }
     for (let i = 0; i < SPRAY_COUNT; i++) spawnDrop(i);
 
-    // تفعيل الأنيميشن
     app.ticker.add((delta) => {
       const t = performance.now();
-
-      // تحديث الموجات (نزيد time بشكل خطي)
       for (let i = waves.length - 1; i >= 0; i--) {
         const w = waves[i];
         const age = t - w.created;
         const u = Math.min(1, age / w.lifeMs);
-        w.filter.uniforms.time = u; // 0..1
+        w.filter.uniforms.time = u;
         if (age >= w.lifeMs) {
           waves.splice(i, 1);
           bgSprite.filters = waves.map(x => x.filter);
         }
       }
-
-      // تحريك الرذاذ
       const dt = delta / 60;
       const width = W(), height = H();
       for (let i = 0; i < drops.length; i++) {
@@ -453,7 +433,6 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       }
     });
 
-    // بعد تفعيل WebGL، نخفي خلفية DOM حتى لا تتضاعف
     try { bgEl.style.visibility = 'hidden'; } catch(_) {}
   });
 })();
