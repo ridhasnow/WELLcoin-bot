@@ -1,4 +1,5 @@
-/* ========= Keep original preload logic intact ========= */
+// تأكيد تحميل الملف
+console.log('[preload] script loaded');
 
 // ---------- DOM Refs ----------
 const bgEl = document.getElementById('bg');
@@ -12,7 +13,7 @@ const IDB_NAME = 'wellcoin_game_cache';
 const IDB_STORE = 'cache';
 const CACHE_VERSION_KEY = 'cache_version';
 const CACHE_VERSION = 'v1';
-const FORCE_CLEAR_CACHE = true; // keep current behavior; can turn off later
+const FORCE_CLEAR_CACHE = true;
 
 function openIDB() {
   return new Promise((resolve, reject) => {
@@ -81,9 +82,7 @@ const audioState = {
       if (ctx.state === 'suspended') {
         await ctx.resume();
       }
-    } catch(e) {
-      // resume may be blocked without user gesture
-    }
+    } catch(e) {}
     if (audioBuffer && !audioSource) {
       audioSource = ctx.createBufferSource();
       audioSource.buffer = audioBuffer;
@@ -107,18 +106,17 @@ const audioState = {
     setSoundUI(false);
   },
   toggle() {
-    if (this.isPlaying) this.pause();
-    else this.play();
+    if (this.isPlaying) this.pause(); else this.play();
   }
 };
 
-// Try to honor preference from welcome page
+// Try preference (if any)
 const musicPreferred = sessionStorage.getItem('musicPreferred') === '1';
 
 let bgObjectUrl = null;
 
 async function preloadBackgroundAndMusic() {
-  // Load background from cache if available
+  // Background from cache if available
   try {
     const cachedBg = await idbGet('asset:assets/preload.jpg');
     if (cachedBg instanceof Blob) {
@@ -128,7 +126,7 @@ async function preloadBackgroundAndMusic() {
     }
   } catch(e) {}
 
-  // Ensure background is loaded (network as fallback)
+  // Ensure background image is loaded
   await new Promise(resolve => {
     const bgImage = new Image();
     bgImage.onload = resolve;
@@ -136,49 +134,42 @@ async function preloadBackgroundAndMusic() {
     bgImage.src = 'assets/preload.jpg';
   });
 
-  // Load and setup audio buffer
+  // Music
   try {
     const cachedAudio = await idbGet('asset:assets/preload.mp3');
+    let arrayBuffer;
     if (cachedAudio instanceof Blob) {
-      const arrayBuffer = await cachedAudio.arrayBuffer();
-      audioBuffer = await ensureAudioContext().decodeAudioData(arrayBuffer);
+      arrayBuffer = await cachedAudio.arrayBuffer();
     } else {
       const response = await fetch('assets/preload.mp3');
-      const arrayBuffer = await response.arrayBuffer();
-      audioBuffer = await ensureAudioContext().decodeAudioData(arrayBuffer);
+      arrayBuffer = await response.arrayBuffer();
     }
-    if (musicPreferred) {
-      await audioState.play();
-    } else {
-      await audioState.play().catch(()=>{});
-    }
+    audioBuffer = await ensureAudioContext().decodeAudioData(arrayBuffer);
+    if (musicPreferred) await audioState.play();
   } catch(e) {
     console.log('Audio setup failed:', e);
   }
 }
 
-// ---------- Event Handlers ----------
-soundBtn.addEventListener('click', () => audioState.toggle());
+// Events
+if (soundBtn) soundBtn.addEventListener('click', () => audioState.toggle());
 document.addEventListener('keydown', e => {
   if (e.key === 'm' || e.key === 'M') audioState.toggle();
 });
-
-// Make sure first click resumes audio if needed
 document.addEventListener('click', () => {
   const ctx = ensureAudioContext();
   if (ctx.state === 'suspended') {
     ctx.resume().then(() => audioState.play());
+  } else if (!audioSource && audioBuffer) {
+    audioState.play();
   }
 }, { once: true });
 
 window.addEventListener('beforeunload', () => {
-  if (bgObjectUrl) {
-    URL.revokeObjectURL(bgObjectUrl);
-    bgObjectUrl = null;
-  }
+  if (bgObjectUrl) { URL.revokeObjectURL(bgObjectUrl); bgObjectUrl = null; }
 });
 
-// ---------- Progress Bar Logic ----------
+// Progress
 let progress = 0;
 let totalSteps = 1;
 let doneSteps = 0;
@@ -193,46 +184,19 @@ function incProgress() {
   setProgress(Math.floor(doneSteps*100/totalSteps), "Preparing game, please wait...");
 }
 
-// ---------- Assets ----------
+// Assets
 const BASE_ASSETS = [
-  "assets/bmwcar.jpg",
-  "assets/bodyguards.png",
-  "assets/character.png",
-  "assets/character1.png",
-  "assets/character10.png",
-  "assets/character11.png",
-  "assets/character12.png",
-  "assets/character13.png",
-  "assets/character2.png",
-  "assets/character3.png",
-  "assets/character4.png",
-  "assets/character5.png",
-  "assets/character6.png",
-  "assets/character7.png",
-  "assets/character8.png",
-  "assets/character9.png",
-  "assets/clock.png",
-  "assets/dragon-frame.png",
-  "assets/gangsterhat.png",
-  "assets/helicopter.jpg",
-  "assets/house.png",
-  "assets/iphone15.png",
-  "assets/palace.png",
-  "assets/pitbull.png",
-  "assets/player1.png",
-  "assets/preload.jpg",
-  "assets/preload.mp3",
-  "assets/ranked-icon.png",
-  "assets/royalthrone.png",
-  "assets/shop.jpg",
-  "assets/suit.png",
-  "assets/wellcoin-icon.png",
-  "assets/wife.png",
-  "assets/yacht.jpg",
-  "assets/ak.png"
+  "assets/bmwcar.jpg","assets/bodyguards.png","assets/character.png","assets/character1.png",
+  "assets/character10.png","assets/character11.png","assets/character12.png","assets/character13.png",
+  "assets/character2.png","assets/character3.png","assets/character4.png","assets/character5.png",
+  "assets/character6.png","assets/character7.png","assets/character8.png","assets/character9.png",
+  "assets/clock.png","assets/dragon-frame.png","assets/gangsterhat.png","assets/helicopter.jpg",
+  "assets/house.png","assets/iphone15.png","assets/palace.png","assets/pitbull.png","assets/player1.png",
+  "assets/preload.jpg","assets/preload.mp3","assets/ranked-icon.png","assets/royalthrone.png",
+  "assets/shop.jpg","assets/suit.png","assets/wellcoin-icon.png","assets/wife.png","assets/yacht.jpg","assets/ak.png"
 ];
 
-// ---------- Firebase Config ----------
+// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
   authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -249,12 +213,12 @@ tg.ready();
 const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser?.id ? tgUser.id.toString() : null;
 
-// ---------- Main Preload Logic ----------
+// Main preload
 async function preloadAll() {
-  // 1) Background + Music
+  // 1) BG + Music
   await preloadBackgroundAndMusic();
 
-  // 2) Clear cache (kept as-is for now)
+  // 2) Cache clear / version
   try {
     if (FORCE_CLEAR_CACHE) {
       await idbClear();
@@ -266,9 +230,7 @@ async function preloadAll() {
         await idbSet(CACHE_VERSION_KEY, CACHE_VERSION);
       }
     }
-  } catch(e) {
-    // non-fatal
-  }
+  } catch(e) {}
 
   // 3) Load assets
   totalSteps = 2 + BASE_ASSETS.length;
@@ -291,7 +253,7 @@ async function preloadAll() {
     });
   }));
 
-  // 4) Load user data
+  // 4) User data
   setProgress(Math.floor(doneSteps*100/totalSteps), "Loading player data...");
   if (!userId) {
     setProgress(100, "Please login via Telegram");
@@ -311,37 +273,26 @@ async function preloadAll() {
   } catch(e) {
     console.error('Failed to load user:', e);
     setProgress(100, "Network error. Retrying may help.");
-    // Keep going to avoid dead-end
   }
 
-  // 5) Load shop items
+  // 5) Shop
   try {
     const shopSnap = await db.ref("users/" + userId + "/shopItems").get();
     if (shopSnap.exists()) {
       await idbSet('shopItems', shopSnap.val());
     }
-  } catch(e) {
-    // non-fatal
-  }
+  } catch(e) {}
   incProgress();
 
-  // 6) Done -> go to game
+  // 6) Go
   setProgress(100, "Ready! Entering the game...");
-  setTimeout(()=>{
-    window.location.replace('index.html');
-  }, 700);
+  setTimeout(()=>{ window.location.replace('index.html'); }, 700);
 }
 
 document.addEventListener('DOMContentLoaded', preloadAll);
 
-/* ========= High-quality FX: Realistic water touch + diagonal fine spray =========
-   - Uses PixiJS + pixi-filters ShockwaveFilter for water ripples at touch points.
-   - Renders background in WebGL for physically convincing distortion.
-   - Adds ultra-light diagonal rain spray as particle sprites (subtle, efficient).
-   - If WebGL or filters unavailable, gracefully falls back to existing DOM background.
-======================================================================== */
-
-(function initFXWhenReady() {
+// ========== FX: واقعية لمس الماء + رذاذ مائل خفيف (PixiJS) ==========
+(function initFX() {
   window.addEventListener('load', () => {
     const fxHost = document.getElementById('fxHost');
     if (!fxHost) return;
@@ -349,7 +300,7 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     const hasPIXI = typeof window.PIXI !== 'undefined' && window.PIXI.Application;
     const hasShockwave = hasPIXI && window.PIXI.filters && window.PIXI.filters.ShockwaveFilter;
     if (!hasPIXI || !hasShockwave) {
-      // No WebGL/filters; keep original DOM background and skip FX
+      console.warn('[preload] FX disabled (PIXI or ShockwaveFilter unavailable).');
       return;
     }
 
@@ -359,17 +310,14 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       antialias: true,
       powerPreference: 'high-performance'
     });
-
     fxHost.appendChild(app.view);
 
-    // Create a container to hold background sprite (so filters apply cleanly)
     const scene = new PIXI.Container();
     app.stage.addChild(scene);
 
-    // Background sprite (cover, center-bottom) to match .bg exactly
     const bgTexture = PIXI.Texture.from('assets/preload.jpg');
     const bgSprite = new PIXI.Sprite(bgTexture);
-    bgSprite.anchor.set(0.5, 1.0); // center-bottom
+    bgSprite.anchor.set(0.5, 1.0);
     scene.addChild(bgSprite);
 
     function fitBg() {
@@ -383,32 +331,19 @@ document.addEventListener('DOMContentLoaded', preloadAll);
         bgSprite.scale.set(scale);
       }
     }
-    if (bgTexture.baseTexture.valid) {
-      fitBg();
-    } else {
-      bgTexture.baseTexture.once('loaded', fitBg);
-    }
+    if (bgTexture.baseTexture.valid) fitBg();
+    else bgTexture.baseTexture.once('loaded', fitBg);
     window.addEventListener('resize', fitBg);
 
-    // Color tuning to approximate CSS filter on .bg
     const colorMatrix = new PIXI.filters.ColorMatrixFilter();
-    // brightness(0.53), contrast(0.95), saturate(1.06)
     colorMatrix.brightness(0.53, false);
     colorMatrix.contrast(0.95, true);
     colorMatrix.saturate(1.06, true);
 
-    // Active shockwaves list
     const waves = [];
-
-    // Apply filters dynamically: base color + dynamic waves
     function recomputeFilters() {
       bgSprite.filters = [colorMatrix].concat(waves.map(w => w.filter));
     }
-
-    // Touch/Pointer handling to add realistic water ripples
-    let pointerDown = false;
-    let lastSpawnT = 0;
-    let lastX = 0, lastY = 0;
 
     function stagePos(clientX, clientY) {
       const rect = app.view.getBoundingClientRect();
@@ -420,24 +355,21 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     function spawnWave(clientX, clientY, strong=false) {
       const { x, y } = stagePos(clientX, clientY);
       const Shock = PIXI.filters.ShockwaveFilter;
-      // Tuned for watery ripple
       const wavelength = strong ? 28 : 22;
       const amplitude = strong ? 65 : 48;
-      const speed = strong ? 280 : 220; // px/s
-      const radius = strong ? 0.9 : 0.75; // relative spread factor (used in time curve)
 
       const filter = new Shock([x, y], { amplitude, wavelength, brightness: 1.0, radius: 0.75 });
-      // We'll animate filter.time from 0 to duration by ticker
-      const lifeMs = 1300; // total lifetime per wave
+      const lifeMs = 1300;
       const created = performance.now();
-
-      const wave = { filter, created, lifeMs, speed, center: [x, y], radius };
+      const wave = { filter, created, lifeMs };
       waves.push(wave);
-      recomputeFilters();
-
-      // Auto-trim too many waves
       if (waves.length > 12) waves.splice(0, waves.length - 12);
+      recomputeFilters();
     }
+
+    let pointerDown = false;
+    let lastSpawnT = 0;
+    let lastX = 0, lastY = 0;
 
     function onPointerDown(e) {
       pointerDown = true;
@@ -452,7 +384,6 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       const now = performance.now();
       const dx = pt.clientX - lastX, dy = pt.clientY - lastY;
       const dist = Math.hypot(dx, dy);
-      // Spawn trail ripples based on distance/time
       if (dist > 16 || now - lastSpawnT > 80) {
         spawnWave(pt.clientX, pt.clientY, false);
         lastSpawnT = now; lastX = pt.clientX; lastY = pt.clientY;
@@ -460,7 +391,6 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     }
     function onPointerUp() { pointerDown = false; }
 
-    // Note: fxHost has pointer-events:none, so listen on document
     document.addEventListener('pointerdown', onPointerDown, { passive: true });
     document.addEventListener('pointermove', onPointerMove, { passive: true });
     document.addEventListener('pointerup', onPointerUp, { passive: true });
@@ -469,17 +399,15 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     document.addEventListener('touchmove', onPointerMove, { passive: true });
     document.addEventListener('touchend', onPointerUp, { passive: true });
 
-    // Subtle diagonal rain spray using particle sprites
-    const rainContainer = new PIXI.ParticleContainer(800, { vertices: false, position: true, rotation: true, tint: true, uvs: false, alpha: true, scale: true });
+    // Rain spray particles
+    const rainContainer = new PIXI.ParticleContainer(800, { position: true, rotation: true, alpha: true, scale: true });
     app.stage.addChild(rainContainer);
 
-    // Create a tiny diagonal streak texture
     const streakGfx = new PIXI.Graphics();
     streakGfx.lineStyle(1.0, 0xFFFFFF, 0.8);
-    // draw a short diagonal stroke
     streakGfx.moveTo(0, 0);
     streakGfx.lineTo(0, 14);
-    streakGfx.rotation = -0.45; // tilt ~ -26°
+    streakGfx.rotation = -0.45;
     const streakTex = app.renderer.generateTexture(streakGfx, { resolution: 2, scaleMode: PIXI.SCALE_MODES.LINEAR });
 
     const SPRAY_COUNT = 120;
@@ -491,7 +419,7 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       s.anchor.set(0.5, 0.1);
       s.alpha = 0.06 + Math.random() * 0.06;
       s.scale.set(0.7 + Math.random() * 0.6);
-      s.rotation = -0.6 + (Math.random() * 0.12 - 0.06); // small variation
+      s.rotation = -0.6 + (Math.random() * 0.12 - 0.06);
       s.x = Math.random() * (W() + 60) - 30;
       s.y = Math.random() * (H() + 60) - 60;
       const wind = 60 + Math.random() * 80;
@@ -501,36 +429,30 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     }
     for (let i = 0; i < SPRAY_COUNT; i++) spawnParticle(i);
 
-    // Animate everything
     app.ticker.add((delta) => {
       const t = performance.now();
 
-      // Waves
+      // animate waves
       for (let i = waves.length - 1; i >= 0; i--) {
         const w = waves[i];
         const age = t - w.created;
         const u = Math.min(1, age / w.lifeMs);
-        // ShockwaveFilter expects time in seconds; map u to time nonlinearly for realism
         w.filter.time = u * 1.0;
-        // Optionally expand center radius via amplitude decay (built-in effect looks good already)
-
         if (age >= w.lifeMs) {
           waves.splice(i, 1);
           recomputeFilters();
         }
       }
 
-      // Rain
-      const dt = delta / 60; // normalize
+      // rain
+      const dt = delta / 60;
       const width = W(), height = H();
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         const s = p.s;
         s.x += (p.vx) * dt;
         s.y += (p.vy) * dt;
-
         if (s.x > width + 40 || s.y > height + 40) {
-          // respawn at top-left quadrant with randomization
           s.x = Math.random() * (width + 40) - 60;
           s.y = -20 - Math.random() * 80;
           s.alpha = 0.05 + Math.random() * 0.07;
@@ -540,9 +462,7 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       }
     });
 
-    // Once WebGL background is up, hide the DOM background to avoid double layers
-    try {
-      bgEl.style.visibility = 'hidden';
-    } catch (_) {}
+    // أخفي خلفية DOM بعد تفعيل WebGL لتجنب الطبقتين
+    try { bgEl.style.visibility = 'hidden'; } catch(_) {}
   });
 })();
