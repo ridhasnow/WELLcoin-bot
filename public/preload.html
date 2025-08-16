@@ -7,9 +7,9 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <!-- High-quality rendering libs for realistic water + spray -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.1/pixi.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5/dist/pixi-filters.js" defer></script>
+  <!-- مكتبات WebGL العالية الجودة للماء + الرذاذ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.1/pixi.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5/dist/pixi-filters.js"></script>
   <style>
     html, body {
       height: 100%;
@@ -19,98 +19,45 @@
       overflow: hidden;
       background: #16100b;
     }
-    body {
-      min-height: 100vh;
-      position: relative;
-    }
+    body { min-height: 100vh; position: relative; }
     .bg {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      width: 100vw;
-      height: 100vh;
+      position: fixed; inset: 0; z-index: 0;
+      width: 100vw; height: 100vh;
       background: url('assets/preload.jpg') center bottom / cover no-repeat;
       filter: brightness(0.53) contrast(0.95) saturate(1.06);
     }
-
-    /* WebGL overlay host (PixiJS). We place it under the UI but above the page background. */
-    #fxHost {
-      position: fixed;
-      inset: 0;
-      z-index: 4;
-      pointer-events: none; /* let clicks pass to buttons */
-    }
+    /* طبقة WebGL للمؤثرات */
+    #fxHost { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
 
     .preload-card {
-      position: absolute;
-      z-index: 10;
-      left: 50%;
-      bottom: 5vh;
-      transform: translateX(-50%);
-      width: min(410px, 92vw);
-      background: rgba(38,22,11,0.61);
-      border-radius: 22px;
-      box-shadow: 0 4px 16px 0 #0008;
-      padding: 16px 10px 12px 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      border: 1.5px solid #ffb75b55;
-      backdrop-filter: blur(1.5px);
-      opacity: 0.92;
-      min-height: 70px;
-      max-height: 120px;
+      position: absolute; z-index: 10; left: 50%; bottom: 5vh; transform: translateX(-50%);
+      width: min(410px, 92vw); background: rgba(38,22,11,0.61); border-radius: 22px;
+      box-shadow: 0 4px 16px 0 #0008; padding: 16px 10px 12px 10px;
+      display: flex; flex-direction: column; align-items: center;
+      border: 1.5px solid #ffb75b55; backdrop-filter: blur(1.5px); opacity: 0.92;
+      min-height: 70px; max-height: 120px;
     }
     .preload-title {
-      font-size: 1.1rem;
-      color: #ffeab7;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-      text-shadow: 0 2px 9px #ffddaa55;
-      text-align: center;
+      font-size: 1.1rem; color: #ffeab7; letter-spacing: 1px; margin-bottom: 4px;
+      text-shadow: 0 2px 9px #ffddaa55; text-align: center;
     }
     .bar-box {
-      width: 100%;
-      margin: 8px 0 2px 0;
-      background: #31210e;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px #0008 inset;
-      height: 11px;
-      overflow: hidden;
-      border: 1px solid #ffb75b33;
+      width: 100%; margin: 8px 0 2px 0; background: #31210e; border-radius: 12px;
+      box-shadow: 0 2px 8px #0008 inset; height: 11px; overflow: hidden; border: 1px solid #ffb75b33;
     }
     .bar-fill {
       transition: width 0.35s cubic-bezier(.65,.22,.19,1.14);
-      height: 100%;
-      background: linear-gradient(90deg, #ffc85c 3%, #ffa93a 80%, #ffeabd 100%);
-      box-shadow: 0 3px 12px #ffbb4d22;
-      width: 0%;
+      height: 100%; background: linear-gradient(90deg, #ffc85c 3%, #ffa93a 80%, #ffeabd 100%);
+      box-shadow: 0 3px 12px #ffbb4d22; width: 0%;
     }
     .bar-text {
-      font-size: 0.97rem;
-      color: #ffeab7;
-      text-align: center;
-      margin-top: 7px;
-      letter-spacing: .5px;
-      text-shadow: 0 2px 8px #34140044;
-      opacity: 0.89;
-      min-height: 18px;
+      font-size: 0.97rem; color: #ffeab7; text-align: center; margin-top: 7px; letter-spacing: .5px;
+      text-shadow: 0 2px 8px #34140044; opacity: 0.89; min-height: 18px;
     }
     .sound-btn {
-      position: absolute;
-      top: 18px;
-      left: 16px;
-      z-index: 20;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255,220,90,0.11);
-      box-shadow: 0 0 0 1.5px #ffca5e44;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; top: 18px; left: 16px; z-index: 20; width: 38px; height: 38px;
+      border-radius: 50%; border: none; background: rgba(255,220,90,0.11);
+      box-shadow: 0 0 0 1.5px #ffca5e44; cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background 0.15s;
     }
     .sound-btn:hover { background: rgba(255,220,90,0.17); }
@@ -140,6 +87,7 @@
     <svg id="soundSVG" viewBox="0 0 26 26"><path d="M3 10.5v5h5l5.7 4.3c.5.4 1.3 0 1.3-.7v-16c0-.8-.8-1.1-1.3-.7L8 8.5H3zm18.5 2.5a7.5 7.5 0 0 0-3.5-6.2l-1 1.4c2.1 1.5 3 4.2 1.8 6.5l1.1 1.5c1.1-1.2 1.6-2.8 1.6-4.2zm-3.8 1.7l1.1 1.5a4.5 4.5 0 0 0 .7-5.5l-1.2 1.5a2.5 2.5 0 0 1-.6 2.5z"/></svg>
   </button>
 
-  <script src="public/preload.js" defer></script>
+  <!-- ملاحظة مهمة: بما أن هذا الملف داخل public، استخدم المسار النسبي المباشر -->
+  <script src="preload.js"></script>
 </body>
 </html>
