@@ -338,9 +338,9 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       const h = app.renderer.height;
       const nx = px / w;
       const ny = py / h;
-      const amp = strong ? 0.018 : 0.011;
-      const wl  = strong ? 30.0 : 24.0;
-      const rad = strong ? 0.55 : 0.42;
+      const amp = strong ? 0.010 : 0.06;
+      const wl  = strong ? 20.0 : 15.0;
+      const rad = strong ? 0.20 : 0.15;
 
       const filter = makeWaveFilter(nx, ny, amp, wl, rad);
       const lifeMs = 1300;
