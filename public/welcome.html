@@ -1,191 +1,549 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to WELLcoin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Loading...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body, html {
+    html, body {
       height: 100%;
-      font-family: 'Cinzel', serif;
+      margin: 0;
+      padding: 0;
+      font-family: 'Tajawal', Arial, sans-serif;
       overflow: hidden;
+      background: #16100b;
+    }
+    body {
+      min-height: 100vh;
       position: relative;
-      color: white;
     }
-    video.bg-video {
+    .bg {
       position: fixed;
-      top: 0;
-      left: 0;
+      inset: 0;
+      z-index: 0;
       width: 100vw;
       height: 100vh;
-      object-fit: cover;
-      z-index: -1;
+      background: url('assets/preload.jpg') center bottom / cover no-repeat;
+      filter: brightness(0.53) contrast(0.95) saturate(1.06);
     }
-    .overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: transparent;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-      z-index: 2;
-    }
-    .animated-text {
-      font-size: 22px;
-      max-width: 500px;
-      margin-bottom: 40px;
-      line-height: 1.5;
-      color: #fff8dc;
-      text-shadow: 0 1px 1px #000, 0 0 8px #ffd700;
-      animation: fadeIn 4s ease-in-out;
-    }
-    @keyframes fadeIn {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-    .agree-btn {
-      padding: 12px 30px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #fff;
-      background: #007bff;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      box-shadow: 0 0 10px #007bff;
-      transition: background 0.3s;
-    }
-    .top-text {
-      position: absolute;
-      top: 30px;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      z-index: 2;
-    }
-    .bottom-btn {
-      position: absolute;
-      bottom: 40px;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      z-index: 2;
-    }
-    .agree-btn:hover { background: #0056b3; }
-    .popup {
+    /* Canvas تأثيرات الماء/الرذاذ */
+    #fxCanvas {
       position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #111;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px gold;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      z-index: 999;
-    }
-    .popup input {
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
-      margin-bottom: 20px;
-      width: 200px;
-      text-align: center;
-    }
-    .popup button {
-      background: gold;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .close-btn {
-      position: absolute;
-      top: 8px;
-      right: 12px;
-      font-size: 22px;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-      z-index: 1000;
-    }
-    .block-access {
-      position: fixed;
-      top: 0;
-      left: 0;
+      inset: 0;
+      z-index: 5; /* فوق الخلفية وتحت الكارد */
       width: 100vw;
       height: 100vh;
-      background: #111;
-      color: #fff;
+      pointer-events: none; /* حتى لا تمنع الضغط على الأزرار */
+    }
+    .preload-card {
+      position: absolute;
+      z-index: 10;
+      left: 50%;
+      bottom: 5vh;
+      transform: translateX(-50%);
+      width: min(410px, 92vw);
+      background: rgba(38,22,11,0.61);
+      border-radius: 22px;
+      box-shadow: 0 4px 16px 0 #0008;
+      padding: 16px 10px 12px 10px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      font-size: 1.4rem;
-      z-index: 99999;
+      border: 1.5px solid #ffb75b55;
+      backdrop-filter: blur(1.5px);
+      opacity: 0.92;
+      min-height: 70px;
+      max-height: 120px;
     }
-    .block-access a {
-      background: #007bff;
-      color: #fff;
-      padding: 12px 32px;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: bold;
-      margin-top: 35px;
+    .preload-title {
       font-size: 1.1rem;
-      box-shadow: 0 0 10px #007bff;
-      transition: background 0.2s;
+      color: #ffeab7;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      text-shadow: 0 2px 9px #ffddaa55;
+      text-align: center;
     }
-    .block-access a:hover { background: #0056b3; }
+    .bar-box {
+      width: 100%;
+      margin: 8px 0 2px 0;
+      background: #31210e;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px #0008 inset;
+      height: 11px;
+      overflow: hidden;
+      border: 1px solid #ffb75b33;
+    }
+    .bar-fill {
+      transition: width 0.35s cubic-bezier(.65,.22,.19,1.14);
+      height: 100%;
+      background: linear-gradient(90deg, #ffc85c 3%, #ffa93a 80%, #ffeabd 100%);
+      box-shadow: 0 3px 12px #ffbb4d22;
+      width: 0%;
+    }
+    .bar-text {
+      font-size: 0.97rem;
+      color: #ffeab7;
+      text-align: center;
+      margin-top: 7px;
+      letter-spacing: .5px;
+      text-shadow: 0 2px 8px #34140044;
+      opacity: 0.89;
+      min-height: 18px;
+    }
+    .sound-btn {
+      position: absolute;
+      top: 18px;
+      left: 16px;
+      z-index: 20;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,220,90,0.11);
+      box-shadow: 0 0 0 1.5px #ffca5e44;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .sound-btn:hover { background: rgba(255,220,90,0.17); }
+    .sound-btn svg { width: 26px; height: 26px; fill: #fedb87; }
+    .sound-btn.muted svg { fill: #7b5b24; opacity: 0.74; }
+    @media (max-width: 600px) {
+      .preload-card { padding: 8px 2px 7px 2px; }
+      .preload-title { font-size: 0.95rem; }
+      .sound-btn { top: 10px; left: 5px; width:32px; height:32px;}
+      .bar-text { font-size: 0.91rem;}
+    }
+    /* تعطيل تحديد النص على مستوى الصفحة (ضمن “الحماية”) */
+    * { -webkit-user-select: none; user-select: none; }
   </style>
-  <script>
-    // Block any access not from Telegram WebApp
-    window.addEventListener('DOMContentLoaded', function() {
-      let tg = window.Telegram?.WebApp;
-      if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
-        document.body.innerHTML =
-          '<div class="block-access">' +
-          'Access denied.<br>Please open WELLcoin from Telegram app.<br>' +
-          '<a href="https://t.me/WELLcoinGameBot?start=play" target="_blank">Open in Telegram</a>' +
-          '</div>';
-        throw new Error("Access blocked: must open from Telegram.");
-      }
-    });
-  </script>
 </head>
 <body>
-  <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
-    <source src="assets/background.mp4" type="video/mp4" />
-  </video>
-  <div class="overlay">
-    <div class="top-text">
-      <div class="animated-text">
-        Welcome, You Are Now On The Edge Of A New Gaming Realm. Soon, Your Skills Will Become A Source Of Real Wealth.<br />
-        Are You Ready?
-      </div>
+  <div class="bg" id="bg"></div>
+  <canvas id="fxCanvas"></canvas>
+  <div class="preload-card">
+    <div class="preload-title">Loading Game...</div>
+    <div class="bar-box" id="barRole" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="bar-fill" id="barFill"></div>
     </div>
-    <div class="bottom-btn">
-      <button class="agree-btn" onclick="showPopup()">I'm Ready</button>
-    </div>
+    <div class="bar-text" id="barText" aria-live="polite">Preparing game, please wait...</div>
   </div>
-  <div class="popup" id="usernamePopup">
-    <span class="close-btn" onclick="closePopup()">×</span>
-    <input type="text" id="usernameInput" placeholder="Enter your username" readonly />
-    <button id="saveBtn" onclick="handleSaveOrReturn()">Save</button>
-  </div>
+  <button class="sound-btn" id="soundBtn" title="Play/Pause Music" aria-label="Play or mute music" aria-pressed="true" style="opacity:0.97;">
+    <svg id="soundSVG" viewBox="0 0 26 26"><path d="M3 10.5v5h5l5.7 4.3c.5.4 1.3 0 1.3-.7v-16c0-.8-.8-1.1-1.3-.7L8 8.5H3zm18.5 2.5a7.5 7.5 0 0 0-3.5-6.2l-1 1.4c2.1 1.5 3 4.2 1.8 6.5l1.1 1.5c1.1-1.2 1.6-2.8 1.6-4.2zm-3.8 1.7l1.1 1.5a4.5 4.5 0 0 0 .7-5.5l-1.2 1.5a2.5 2.5 0 0 1-.6 2.5z"/></svg>
+  </button>
+
   <script>
-    // ----- Firebase Config -----
+    // ---------- DOM Refs ----------
+    const bgEl = document.getElementById('bg');
+    const soundBtn = document.getElementById('soundBtn');
+    const bar = document.getElementById('barFill');
+    const barText = document.getElementById('barText');
+    const barRole = document.getElementById('barRole');
+    const fxCanvas = document.getElementById('fxCanvas');
+    const ctx = fxCanvas.getContext('2d');
+
+    // ---------- Canvas Setup ----------
+    let dpr = Math.min(2, window.devicePixelRatio || 1);
+    function resizeCanvas() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      fxCanvas.width = Math.floor(innerWidth * dpr);
+      fxCanvas.height = Math.floor(innerHeight * dpr);
+      fxCanvas.style.width = innerWidth + 'px';
+      fxCanvas.style.height = innerHeight + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas, { passive: true });
+    resizeCanvas();
+
+    // ---------- Water Ripples + Rain Spray ----------
+    const ripples = [];
+    const spray = [];
+    const MAX_SPRAY = 80; // رذاذ خفيف جدًا
+    const GRAVITY = 28; // سرعة سقوط خفيفة
+    const WIND = 6; // ميل بسيط
+    const RIPPLE_SPAWN_DIST = 14; // تباعد التموجات أثناء السحب
+    const RIPPLE_BASE_MAX = 80; // أقصى نصف قطر للتموج
+    const HOLD_RIPPLE_INTERVAL = 120; // تموجات صغيرة أثناء الضغط الثابت
+    let pointerDown = false;
+    let lastSpawnX = 0, lastSpawnY = 0, lastSpawnTime = 0;
+    let lastHoldTime = 0;
+
+    function initSpray() {
+      spray.length = 0;
+      for (let i = 0; i < MAX_SPRAY; i++) {
+        spray.push({
+          x: Math.random() * innerWidth,
+          y: Math.random() * innerHeight,
+          vx: (Math.random() * 0.8 + 0.6) * (WIND/6),
+          vy: Math.random() * 0.8 + 0.6,
+          len: Math.random() * 10 + 6,
+          alpha: Math.random() * 0.05 + 0.02
+        });
+      }
+    }
+    initSpray();
+
+    function spawnRipple(x, y, strong=false) {
+      ripples.push({
+        x, y,
+        r: strong ? 4 : 2,
+        maxR: (Math.random() * 0.35 + 0.75) * RIPPLE_BASE_MAX,
+        alpha: strong ? 0.45 : 0.35,
+        lineW: strong ? 2.2 : 1.6,
+        grow: strong ? 1.35 : 1.05,
+        fade: strong ? 0.008 : 0.006
+      });
+      // حد أعلى للريبلز لحماية الأداء
+      if (ripples.length > 220) ripples.splice(0, ripples.length - 220);
+    }
+
+    function pointerPos(e) {
+      if (e.touches && e.touches[0]) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function onPointerDown(e) {
+      pointerDown = true;
+      const { x, y } = pointerPos(e);
+      spawnRipple(x, y, true);
+      lastSpawnX = x; lastSpawnY = y;
+      lastSpawnTime = performance.now();
+      lastHoldTime = lastSpawnTime;
+    }
+    function onPointerMove(e) {
+      if (!pointerDown) return;
+      const { x, y } = pointerPos(e);
+      const dx = x - lastSpawnX;
+      const dy = y - lastSpawnY;
+      const dist = Math.hypot(dx, dy);
+      const now = performance.now();
+      if (dist > RIPPLE_SPAWN_DIST || now - lastSpawnTime > 70) {
+        spawnRipple(x, y, false);
+        lastSpawnX = x; lastSpawnY = y;
+        lastSpawnTime = now;
+      }
+      if (now - lastHoldTime > HOLD_RIPPLE_INTERVAL) {
+        spawnRipple(x, y, false);
+        lastHoldTime = now;
+      }
+    }
+    function onPointerUp() {
+      pointerDown = false;
+    }
+
+    // التقط أحداث اللمس/الفأرة بشكل عام
+    document.addEventListener('pointerdown', onPointerDown, { passive: true });
+    document.addEventListener('pointermove', onPointerMove, { passive: true });
+    document.addEventListener('pointerup', onPointerUp, { passive: true });
+    document.addEventListener('pointercancel', onPointerUp, { passive: true });
+    // دعم لمس قديم
+    document.addEventListener('touchstart', e => onPointerDown(e), { passive: true });
+    document.addEventListener('touchmove', e => onPointerMove(e), { passive: true });
+    document.addEventListener('touchend', onPointerUp, { passive: true });
+
+    // رسم
+    let lastTs = 0;
+    function loop(ts) {
+      const dt = Math.min(0.033, (ts - lastTs) / 1000 || 0.016);
+      lastTs = ts;
+
+      // مسح الإطار
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+
+      // رذاذ المطر الخفيف
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < spray.length; i++) {
+        const p = spray[i];
+        p.x += (WIND + p.vx * 10) * dt;
+        p.y += (GRAVITY + p.vy * 40) * dt;
+
+        // إعادة التوليد عند الخروج
+        if (p.x > innerWidth + 20 || p.y > innerHeight + 20) {
+          p.x = Math.random() * innerWidth - 20;
+          p.y = -10;
+          p.vx = (Math.random() * 0.8 + 0.6) * (WIND/6);
+          p.vy = Math.random() * 0.8 + 0.6;
+          p.len = Math.random() * 10 + 6;
+          p.alpha = Math.random() * 0.05 + 0.02;
+        }
+
+        ctx.strokeStyle = `rgba(255,255,255,${p.alpha})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        // خط مائل بسيط لمحاكاة المطر
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - 0.8 * p.len, p.y + p.len);
+        ctx.stroke();
+      }
+
+      // تموّجات الماء
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        r.r += r.grow * 60 * dt;     // توسّع سريع نسبيًا
+        r.alpha -= r.fade;           // تلاشي تدريجي
+
+        if (r.alpha <= 0 || r.r >= r.maxR) {
+          ripples.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = r.lineW;
+        ctx.strokeStyle = `rgba(255,255,255,${Math.max(0, r.alpha)})`;
+        ctx.shadowColor = 'rgba(255,255,255,0.35)';
+        ctx.shadowBlur = 6;
+
+        // الحلقة الأساسية
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // حلقة ثانوية خفيفة لإحساس الماء
+        ctx.shadowBlur = 10;
+        ctx.globalAlpha = 0.35 * Math.max(0, r.alpha);
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.r * 0.78, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    // ---------- IndexedDB Helper ----------
+    const IDB_NAME = 'wellcoin_game_cache';
+    const IDB_STORE = 'cache';
+    const CACHE_VERSION_KEY = 'cache_version';
+    const CACHE_VERSION = 'v1';
+    const FORCE_CLEAR_CACHE = true; // إبقاء السلوك الحالي
+
+    function openIDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = function() {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    function idbSet(key, val) {
+      return openIDB().then(db => new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(val, key);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      }));
+    }
+    function idbGet(key) {
+      return openIDB().then(db => new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      }));
+    }
+    function idbClear() {
+      return openIDB().then(db => new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).clear();
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      }));
+    }
+
+    // ---------- Audio System ----------
+    let audioContext;
+    let audioBuffer;
+    let audioSource;
+    let gainNode;
+
+    function ensureAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioContext;
+    }
+    function setSoundUI(isPlaying) {
+      if (!soundBtn) return;
+      if (isPlaying) {
+        soundBtn.classList.remove('muted');
+        soundBtn.setAttribute('aria-pressed', 'true');
+      } else {
+        soundBtn.classList.add('muted');
+        soundBtn.setAttribute('aria-pressed', 'false');
+      }
+    }
+
+    const audioState = {
+      isPlaying: true,
+      async play() {
+        const ctxA = ensureAudioContext();
+        try {
+          if (ctxA.state === 'suspended') {
+            await ctxA.resume();
+          }
+        } catch(e) {}
+        if (audioBuffer && !audioSource) {
+          audioSource = ctxA.createBufferSource();
+          audioSource.buffer = audioBuffer;
+          audioSource.loop = true;
+
+          gainNode = ctxA.createGain();
+          gainNode.gain.value = 0.76;
+
+          audioSource.connect(gainNode);
+          gainNode.connect(ctxA.destination);
+
+          try { audioSource.start(0); } catch(e) {}
+        }
+        this.isPlaying = true;
+        if (gainNode) gainNode.gain.value = 0.76;
+        setSoundUI(true);
+      },
+      pause() {
+        if (gainNode) gainNode.gain.value = 0;
+        this.isPlaying = false;
+        setSoundUI(false);
+      },
+      toggle() {
+        if (this.isPlaying) this.pause();
+        else this.play();
+      }
+    };
+
+    // محاولة احترام تفضيل الموسيقى لو تم ضبطه من صفحة أخرى (اختياري)
+    const musicPreferred = sessionStorage.getItem('musicPreferred') === '1';
+
+    let bgObjectUrl = null;
+
+    async function preloadBackgroundAndMusic() {
+      // تحميل الخلفية من الكاش إن توفرت
+      try {
+        const cachedBg = await idbGet('asset:assets/preload.jpg');
+        if (cachedBg instanceof Blob) {
+          if (bgObjectUrl) URL.revokeObjectURL(bgObjectUrl);
+          bgObjectUrl = URL.createObjectURL(cachedBg);
+          bgEl.style.background = `url(${bgObjectUrl}) center bottom / cover no-repeat`;
+        }
+      } catch(e) {}
+
+      // ضمان تحميل الصورة (شبكة كاحتياط)
+      await new Promise(resolve => {
+        const bgImage = new Image();
+        bgImage.onload = resolve;
+        bgImage.onerror = resolve;
+        bgImage.src = 'assets/preload.jpg';
+      });
+
+      // تحميل وإعداد الصوت
+      try {
+        const cachedAudio = await idbGet('asset:assets/preload.mp3');
+        if (cachedAudio instanceof Blob) {
+          const arrayBuffer = await cachedAudio.arrayBuffer();
+          audioBuffer = await ensureAudioContext().decodeAudioData(arrayBuffer);
+        } else {
+          const response = await fetch('assets/preload.mp3');
+          const arrayBuffer = await response.arrayBuffer();
+          audioBuffer = await ensureAudioContext().decodeAudioData(arrayBuffer);
+        }
+        // محاولة التشغيل التلقائي
+        if (musicPreferred) {
+          await audioState.play();
+        } else {
+          await audioState.play().catch(()=>{});
+        }
+      } catch(e) {
+        console.log('Audio setup failed:', e);
+      }
+    }
+
+    // ---------- Event Handlers ----------
+    soundBtn.addEventListener('click', () => audioState.toggle());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'm' || e.key === 'M') audioState.toggle();
+    });
+
+    // أول نقرة على الصفحة لمحاولة Resume للصوت عند الحاجة
+    document.addEventListener('click', () => {
+      const ctxA = ensureAudioContext();
+      if (ctxA.state === 'suspended') {
+        ctxA.resume().then(() => audioState.play());
+      }
+    }, { once: true });
+
+    window.addEventListener('beforeunload', () => {
+      if (bgObjectUrl) {
+        URL.revokeObjectURL(bgObjectUrl);
+        bgObjectUrl = null;
+      }
+    });
+
+    // ---------- Progress Bar Logic ----------
+    let progress = 0;
+    let totalSteps = 1;
+    let doneSteps = 0;
+    function setProgress(pct, msg) {
+      progress = Math.max(0, Math.min(100, pct|0));
+      bar.style.width = progress + '%';
+      if (barRole) barRole.setAttribute('aria-valuenow', String(progress));
+      if (msg) barText.textContent = msg;
+    }
+    function incProgress() {
+      doneSteps++;
+      setProgress(Math.floor(doneSteps*100/totalSteps), "Preparing game, please wait...");
+    }
+
+    // ---------- Assets ----------
+    const BASE_ASSETS = [
+      "assets/bmwcar.jpg",
+      "assets/bodyguards.png",
+      "assets/character.png",
+      "assets/character1.png",
+      "assets/character10.png",
+      "assets/character11.png",
+      "assets/character12.png",
+      "assets/character13.png",
+      "assets/character2.png",
+      "assets/character3.png",
+      "assets/character4.png",
+      "assets/character5.png",
+      "assets/character6.png",
+      "assets/character7.png",
+      "assets/character8.png",
+      "assets/character9.png",
+      "assets/clock.png",
+      "assets/dragon-frame.png",
+      "assets/gangsterhat.png",
+      "assets/helicopter.jpg",
+      "assets/house.png",
+      "assets/iphone15.png",
+      "assets/palace.png",
+      "assets/pitbull.png",
+      "assets/player1.png",
+      "assets/preload.jpg",
+      "assets/preload.mp3",
+      "assets/ranked-icon.png",
+      "assets/royalthrone.png",
+      "assets/shop.jpg",
+      "assets/suit.png",
+      "assets/wellcoin-icon.png",
+      "assets/wife.png",
+      "assets/yacht.jpg",
+      "assets/ak.png"
+    ];
+
+    // ---------- Firebase Config ----------
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -193,98 +551,152 @@
       projectId: "wellcoinbotgame",
       storageBucket: "wellcoinbotgame.appspot.com",
       messagingSenderId: "108640533638",
-      appId: "1:108640533638:web:ed07516d96ac38f47f6507",
-      measurementId: "G-3H07CXT2PF"
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
-    // ----- Telegram WebApp Integration -----
     const tg = window.Telegram.WebApp;
     tg.ready();
     const tgUser = tg.initDataUnsafe?.user;
-    let tgUsername = "Player";
-    if (tgUser) {
-      if (tgUser.username && tgUser.username.trim() !== "") {
-        tgUsername = tgUser.username;
-      } else if ((tgUser.first_name && tgUser.first_name.trim() !== "") || (tgUser.last_name && tgUser.last_name.trim() !== "")) {
-        tgUsername = `${tgUser.first_name ? tgUser.first_name : ""}${tgUser.last_name ? " " + tgUser.last_name : ""}`.trim();
-      }
-    }
     const userId = tgUser?.id ? tgUser.id.toString() : null;
-    const usernameField = document.getElementById("usernameInput");
-    const saveBtn = document.getElementById("saveBtn");
 
-    // ----- Helper: Fetch player from Firebase -----
-    async function getPlayerDataFromFirebase(userId) {
+    // ---------- Main Preload Logic ----------
+    async function preloadAll() {
+      // 1) Background + Music
+      await preloadBackgroundAndMusic();
+
+      // 2) Clear cache (kept as-is for now)
       try {
-        const snapshot = await db.ref("users/" + userId).get();
-        return snapshot.exists() ? snapshot.val() : null;
-      } catch (err) {
-        return null;
-      }
-    }
-
-    // ----- Register user in Firebase -----
-    async function registerNewUserInFirebase() {
-      return db.ref("users/" + userId).set({
-        username: tgUsername,
-        balance: 0,
-        coinCount: 0,
-        countdown: 10800,
-        lastPlayed: Date.now(),
-        joinedAt: new Date().toISOString()
-      });
-    }
-
-    // ----- Main Logic -----
-    async function checkIfUserExists() {
-      if (!userId) return;
-
-      // Fetch player data from Firebase
-      let playerData = await getPlayerDataFromFirebase(userId);
-
-      if (playerData) {
-        usernameField.value = playerData.username || tgUsername;
-        saveBtn.textContent = "I'm Back";
-        saveBtn.onclick = () => window.location.href = "preload.html";
-      } else {
-        usernameField.value = tgUsername;
-        saveBtn.textContent = "Save";
-        saveBtn.onclick = handleSaveOrReturn;
-      }
-    }
-
-    // ----- Show/Hide Popup -----
-    function showPopup() {
-      const video = document.getElementById("bg-video");
-      video.muted = false;
-      video.currentTime = 0;
-      video.play();
-      document.getElementById("usernamePopup").style.display = "flex";
-    }
-    function closePopup() {
-      document.getElementById("usernamePopup").style.display = "none";
-    }
-
-    // ----- Handle Save/Return -----
-    async function handleSaveOrReturn() {
-      if (!userId) return;
-      const existsInFirebase = await getPlayerDataFromFirebase(userId);
-      if (existsInFirebase) {
-        window.location.href = "preload.html";
-      } else {
-        try {
-          await registerNewUserInFirebase();
-          window.location.href = "preload.html";
-        } catch (error) {
-          alert("Error saving data: " + error.message);
+        if (FORCE_CLEAR_CACHE) {
+          await idbClear();
+          await idbSet(CACHE_VERSION_KEY, CACHE_VERSION);
+        } else {
+          const v = await idbGet(CACHE_VERSION_KEY);
+          if (v !== CACHE_VERSION) {
+            await idbClear();
+            await idbSet(CACHE_VERSION_KEY, CACHE_VERSION);
+          }
         }
+      } catch(e) {
+        // non-fatal
       }
+
+      // 3) Load assets
+      totalSteps = 2 + BASE_ASSETS.length;
+      setProgress(0, "Preparing game, please wait...");
+      await Promise.all(BASE_ASSETS.map(src => {
+        return new Promise(res => {
+          if (src.endsWith('.mp3')) {
+            fetch(src).then(r=>r.blob()).then(blob=>{
+              idbSet('asset:'+src, blob).finally(()=>{ incProgress(); res(); });
+            }).catch(()=>{ incProgress(); res(); });
+          } else {
+            const img = new Image();
+            img.onload = () => { incProgress(); res(); };
+            img.onerror = () => { incProgress(); res(); };
+            img.src = src;
+            fetch(src).then(r=>r.blob()).then(blob=>{
+              idbSet('asset:'+src, blob);
+            }).catch(()=>{});
+          }
+        });
+      }));
+
+      // 4) Load user data
+      setProgress(Math.floor(doneSteps*100/totalSteps), "Loading player data...");
+      if (!userId) {
+        setProgress(100, "Please login via Telegram");
+        return;
+      }
+
+      try {
+        const userRef = db.ref("users/" + userId);
+        const userSnap = await userRef.get();
+        if (!userSnap.exists()) {
+          setProgress(100, "Account not found. Please register.");
+          setTimeout(()=>window.location.href="welcome.html", 1600);
+          return;
+        }
+        incProgress();
+        await idbSet('userData', userSnap.val());
+      } catch(e) {
+        console.error('Failed to load user:', e);
+        setProgress(100, "Network error. Retrying may help.");
+      }
+
+      // 5) Load shop items
+      try {
+        const shopSnap = await db.ref("users/" + userId + "/shopItems").get();
+        if (shopSnap.exists()) {
+          await idbSet('shopItems', shopSnap.val());
+        }
+      } catch(e) {
+        // non-fatal
+      }
+      incProgress();
+
+      // 6) Done -> go to game
+      setProgress(100, "Ready! Entering the game...");
+      setTimeout(()=>{
+        window.location.replace('index.html');
+      }, 700);
     }
 
-    // ----- Initialize -----
-    window.addEventListener("load", checkIfUserExists);
+    document.addEventListener('DOMContentLoaded', preloadAll);
+
+    // ---------- Anti-Inspect / Hardening (تقليل الاطلاع عبر الكونسول) ----------
+    (function antiInspect() {
+      // تعطيل قائمة الزر الأيمن وبعض أحداث النسخ/اللصق/السحب
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      ['copy','cut','paste','dragstart','selectstart'].forEach(ev => {
+        document.addEventListener(ev, e => e.preventDefault());
+      });
+
+      // تعطيل مفاتيح شائعة لفتح الأدوات أو عرض المصدر
+      document.addEventListener('keydown', function(e) {
+        const key = e.key?.toLowerCase();
+        if (
+          key === 'f12' ||
+          (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(key)) ||
+          (e.metaKey && e.altKey && ['i','j','c'].includes(key)) ||
+          (e.ctrlKey && key === 'u') ||
+          (e.metaKey && key === 'u')
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }, true);
+
+      const origLog = console.log.bind(console);
+
+      function isDevToolsOpen() {
+        let opened = false;
+        // اختلاف الأبعاد قد يدل على وجود الديف تولز
+        if (window.outerWidth && window.innerWidth) {
+          const wDiff = Math.abs(window.outerWidth - window.innerWidth);
+          const hDiff = Math.abs(window.outerHeight - window.innerHeight);
+          if (wDiff > 160 || hDiff > 160) opened = true;
+        }
+        // حيلة الـ getter عند محاولة عرض الكائن في الكونسول
+        try {
+          const el = new Image();
+          Object.defineProperty(el, 'id', {
+            get() { opened = true; return ''; }
+          });
+          origLog('%c', el);
+        } catch(_) {}
+        return opened;
+      }
+
+      // فحص دوري: لو مفتوح يتم إنهاء الجلسة
+      setInterval(() => {
+        if (isDevToolsOpen()) {
+          try { document.documentElement.innerHTML = ''; } catch(_) {}
+          try { window.location.replace('about:blank'); } catch(_) {}
+        }
+      }, 700);
+    })();
   </script>
 </body>
 </html>
