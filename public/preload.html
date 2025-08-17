@@ -7,7 +7,7 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <!-- PixiJS لرسم رذاذ المطر فقط (بدون أي طبقة فوق الصورة) -->
+  <!-- PixiJS لرسم رذاذ المطر فقط -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.1/pixi.min.js"></script>
   <style>
     html, body {
@@ -19,17 +19,18 @@
       background: #16100b;
     }
     body { min-height: 100vh; position: relative; }
+
     .bg {
       position: fixed; inset: 0; z-index: 0;
       width: 100vw; height: 100vh;
       background: url('assets/preload.jpg') center bottom / cover no-repeat;
-      /* لا فلاتر ولا طبقات فوق الصورة للحفاظ على ألوانها الأصلية */
+      /* لا فلاتر ولا طبقات للحفاظ على الألوان الأصلية */
     }
 
-    /* طبقة شفافة فوق الخلفية لعرض رذاذ المطر فقط */
+    /* طبقة شفافة لرذاذ المطر فقط */
     #rainHost {
       position: fixed; inset: 0; z-index: 4;
-      pointer-events: none; /* لا تمنع اللمس عن الواجهة */
+      pointer-events: none;
     }
 
     .preload-card {
@@ -67,23 +68,23 @@
     .sound-btn svg { width: 26px; height: 26px; fill: #fedb87; }
     .sound-btn.muted svg { fill: #7b5b24; opacity: 0.74; }
 
-    /* نقطة لمس صغيرة وخفيفة، تتلاشى خلال ثانية بسلاسة */
+    /* نقطة لمس أصغر وأخف، تتلاشى خلال ثانية */
     .touch-dot {
       position: fixed;
-      width: 9px; height: 9px;
+      width: 8px; height: 8px;
       border-radius: 50%;
       pointer-events: none;
       transform: translate(-50%, -50%);
-      background: radial-gradient(ellipse at center, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.35) 45%, rgba(255,255,255,0) 75%);
-      opacity: 0.6;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.28) 42%, rgba(255,255,255,0) 72%);
+      opacity: 0.45;
       animation: touchFade 1s ease-out forwards;
       will-change: opacity, filter, transform;
       z-index: 5;
     }
     @keyframes touchFade {
-      0%   { opacity: .6; filter: blur(0px) }
-      60%  { opacity: .35; filter: blur(.5px) }
-      100% { opacity: 0; filter: blur(1px) }
+      0%   { opacity: .45; filter: blur(0px) }
+      60%  { opacity: .25; filter: blur(.4px) }
+      100% { opacity: 0;   filter: blur(.9px) }
     }
 
     @media (max-width: 600px) {
@@ -107,7 +108,7 @@
   </div>
 
   <button class="sound-btn" id="soundBtn" title="Play/Pause Music" aria-label="Play or mute music" aria-pressed="true" style="opacity:0.97;">
-    <svg id="soundSVG" viewBox="0 0 26 26"><path d="M3 10.5v5h5l5.7 4.3c.5.4 1.3 0 1.3-.7v-16c0-.8-.8-1.1-1.3-.7L8 8.5H3zm18.5 2.5a7.5 7.5 0 0 0-3.5-6.2l-1 1.4c2.1 1.5 3 4.2 1.8 6.5l1.1 1.5c1.1-1.2 1.6-2.8 1.6-4.2zm-3.8 1.7l1.1 1.5a4.5 4.5 0 0 0 .7-5.5l-1.2 1.5a2.5 2.5 0 0 1-.6 2.5z"/></svg>
+    <svg id="soundSVG" viewBox="0 0 26 26"><path d="M3 10.5v5h5l5.7 4.3c.5.4 1.3 0 1.3-.7v-16c0-.8-.8-1.1-1.3-.7L8 8.5H3zm18.5 2.5a7.5 7.5 0 0 0-3.5-6.2l-1 1.4c2.1 1.5 3 4.2 1.8 6.5ل1.1 1.5c1.1-1.2 1.6-2.8 1.6-4.2zm-3.8 1.7l1.1 1.5a4.5 4.5 0 0 0 .7-5.5l-1.2 1.5a2.5 2.5 0 0 1-.6 2.5z"/></svg>
   </button>
 
   <script src="preload.js"></script>
