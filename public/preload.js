@@ -9,8 +9,8 @@ const barRole = document.getElementById('barRole');
 const IDB_NAME = 'wellcoin_game_cache';
 const IDB_STORE = 'cache';
 const CACHE_VERSION_KEY = 'cache_version';
-const CACHE_VERSION = 'v2'; // bump for smarter cache
-const FORCE_CLEAR_CACHE = false; // أسرع: لا تمسح الكاش في كل مرة
+const CACHE_VERSION = 'v3'; // bump
+const FORCE_CLEAR_CACHE = false; // لا تمسح الكاش لكل تشغيل (أسرع)
 
 function openIDB() {
   return new Promise((resolve, reject) => {
@@ -138,7 +138,7 @@ async function preloadBackgroundAndMusic() {
   }
 }
 
-// ---------- Touch tap dot (no water effect) ----------
+// ---------- Touch tap dot (صغيرة وخفيفة) ----------
 (function initTouchDot() {
   const addDot = (x, y) => {
     const dot = document.createElement('div');
@@ -180,6 +180,9 @@ const BASE_ASSETS = [
   "assets/shop.jpg","assets/suit.png","assets/wellcoin-icon.png","assets/wife.png","assets/yacht.jpg","assets/ak.png"
 ];
 
+// حدّد الأصول الحرجة (باستثناء الصوت)
+const CRITICAL = new Set(BASE_ASSETS.filter(s => !s.endsWith('.mp3')));
+
 // ---------- Firebase Config ----------
 const firebaseConfig = {
   apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
@@ -197,14 +200,14 @@ tg.ready();
 const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser?.id ? tgUser.id.toString() : null;
 
-// ---------- Faster, verified preload with concurrency + single-fetch ----------
+// ---------- أسرع تحميل مع توازي + حلول احتياطية ----------
 const CONCURRENCY = 6;
 const MAX_RETRIES = 2;
 
 async function fetchBlob(url, retries = MAX_RETRIES) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, { cache: 'force-cache' });
+      const res = await fetch(url); // اترك المتصفح يدير الكاش تلقائيًا
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return await res.blob();
     } catch (e) {
@@ -215,69 +218,102 @@ async function fetchBlob(url, retries = MAX_RETRIES) {
 }
 
 async function preloadImageOnce(src) {
-  const blob = await fetchBlob(src);
-  // Cache to IDB
-  idbSet('asset:' + src, blob).catch(()=>{});
-  // Decode quickly (avoid double network hit)
-  if ('createImageBitmap' in window) {
-    await createImageBitmap(blob).catch(()=>{});
-  } else {
-    await new Promise(res => {
-      const url = URL.createObjectURL(blob);
+  // 1) جرّب IDB أولاً
+  try {
+    const cached = await idbGet('asset:'+src);
+    if (cached instanceof Blob) {
+      if ('createImageBitmap' in window) {
+        await createImageBitmap(cached).catch(()=>{});
+      } else {
+        await new Promise(res => {
+          const url = URL.createObjectURL(cached);
+          const img = new Image();
+          img.onload = () => { URL.revokeObjectURL(url); res(); };
+          img.onerror = () => { URL.revokeObjectURL(url); res(); };
+          img.src = url;
+        });
+      }
+      return true;
+    }
+  } catch(e) {}
+
+  // 2) fetch -> cache -> decode
+  try {
+    const blob = await fetchBlob(src);
+    idbSet('asset:'+src, blob).catch(()=>{});
+    if ('createImageBitmap' in window) {
+      await createImageBitmap(blob).catch(()=>{});
+    } else {
+      await new Promise(res => {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); res(); };
+        img.onerror = () => { URL.revokeObjectURL(url); res(); };
+        img.src = url;
+      });
+    }
+    return true;
+  } catch(e) {
+    // 3) Fallback: تحميل الصورة مباشرة عبر Image() دون كاش
+    const ok = await new Promise(res => {
       const img = new Image();
-      img.onload = () => { URL.revokeObjectURL(url); res(); };
-      img.onerror = () => { URL.revokeObjectURL(url); res(); };
-      img.src = url;
+      img.onload = () => res(true);
+      img.onerror = () => res(false);
+      img.src = src + (src.includes('?') ? '&' : '?') + 't=' + Date.now(); // كسر كاش سيئ إن وُجد
     });
+    return ok;
   }
 }
 
 async function preloadAudioOnce(src) {
-  const blob = await fetchBlob(src);
-  idbSet('asset:' + src, blob).catch(()=>{});
-  return true;
-}
-
-async function loadAsset(src) {
+  // الصوت غير حرِج؛ إن فشل التحميل لا نوقف الدخول للعبة
   try {
-    if (src.endsWith('.mp3')) {
-      await preloadAudioOnce(src);
-    } else {
-      await preloadImageOnce(src);
-    }
-    return { src, ok: true };
-  } catch (e) {
-    return { src, ok: false, error: String(e) };
-  } finally {
-    incProgress();
+    const cached = await idbGet('asset:'+src);
+    if (cached instanceof Blob) return true;
+  } catch(e) {}
+  try {
+    const blob = await fetchBlob(src);
+    idbSet('asset:'+src, blob).catch(()=>{});
+    return true;
+  } catch(e) {
+    return false;
   }
 }
 
+async function loadAsset(src) {
+  let ok = false;
+  if (src.endsWith('.mp3')) {
+    ok = await preloadAudioOnce(src);
+  } else {
+    ok = await preloadImageOnce(src);
+  }
+  incProgress();
+  return { src, ok, critical: CRITICAL.has(src) };
+}
+
 async function preloadAssetsWithConcurrency(assets) {
-  totalSteps = 2 + assets.length; // + user + shop loads below
+  totalSteps = 2 + assets.length; // + user + shop
   setProgress(0, "Preparing game, please wait...");
 
-  const results = [];
+  const results = new Array(assets.length);
   let i = 0;
   async function worker() {
     while (i < assets.length) {
       const idx = i++;
-      const r = await loadAsset(assets[idx]);
-      results[idx] = r;
+      results[idx] = await loadAsset(assets[idx]);
     }
   }
   const workers = Array.from({ length: Math.min(CONCURRENCY, assets.length) }, worker);
   await Promise.all(workers);
 
-  // Retry any failures once more batch-wise
+  // إعادة محاولة للأصول الفاشلة (مرّة واحدة)
   const failed = results.filter(r => !r.ok).map(r => r.src);
   if (failed.length) {
-    const retryResults = await Promise.all(failed.map(loadAsset));
-    // merge retry back
-    retryResults.forEach(rr => {
-      const idx = assets.indexOf(rr.src);
-      if (idx >= 0) results[idx] = rr;
-    });
+    const retry = await Promise.all(failed.map(loadAsset));
+    for (const r of retry) {
+      const idx = assets.indexOf(r.src);
+      if (idx >= 0) results[idx] = r;
+    }
   }
   return results;
 }
@@ -287,7 +323,7 @@ async function preloadAll() {
   // 1) Background + Music
   await preloadBackgroundAndMusic();
 
-  // 2) Cache versioning (fast path)
+  // 2) Cache versioning
   try {
     const v = await idbGet(CACHE_VERSION_KEY);
     if (FORCE_CLEAR_CACHE || v !== CACHE_VERSION) {
@@ -296,10 +332,10 @@ async function preloadAll() {
     }
   } catch(e) {}
 
-  // 3) Load assets (fast, single-fetch, verified)
+  // 3) Load assets
   const results = await preloadAssetsWithConcurrency(BASE_ASSETS);
 
-  // 4) Verify user data
+  // 4) User data
   setProgress(Math.floor(doneSteps*100/totalSteps), "Loading player data...");
   if (!userId) {
     setProgress(100, "Please login via Telegram");
@@ -324,21 +360,18 @@ async function preloadAll() {
     setProgress(100, "Network error. Retrying may help.");
   }
 
-  // 5) Load shop items (non-fatal)
+  // 5) Shop items
   try {
     const shopSnap = await db.ref("users/" + userId + "/shopItems").get();
-    if (shopSnap.exists()) {
-      await idbSet('shopItems', shopSnap.val());
-    }
+    if (shopSnap.exists()) await idbSet('shopItems', shopSnap.val());
   } catch(e) {}
   incProgress();
 
-  // 6) Final verification before entering the game
-  const anyFailed = results.some(r => !r || r.ok === false);
-  if (!userOk || anyFailed) {
+  // 6) Final verification (لا تمنع بسبب الصوت فقط)
+  const anyFailedCritical = results.some(r => r.critical && !r.ok);
+  if (!userOk || anyFailedCritical) {
     setProgress(99, "Finalizing... some assets failed. Tap to retry.");
-    console.warn('Assets failed:', results.filter(r => !r.ok));
-    // Simple retry button behavior on tap
+    console.warn('Critical assets failed:', results.filter(r => r.critical && !r.ok));
     document.body.addEventListener('click', () => location.reload(), { once: true });
     return;
   }
@@ -346,21 +379,71 @@ async function preloadAll() {
   setProgress(100, "Ready! Entering the game...");
   setTimeout(()=>{ window.location.replace('index.html'); }, 400);
 }
-
 document.addEventListener('DOMContentLoaded', preloadAll);
 
-// ---------- Event Handlers ----------
-if (soundBtn) soundBtn.addEventListener('click', () => audioState.toggle());
-document.addEventListener('keydown', e => { if (e.key === 'm' || e.key === 'M') audioState.toggle(); });
-document.addEventListener('click', () => {
-  const ctx = ensureAudioContext();
-  if (ctx.state === 'suspended') {
-    ctx.resume().then(() => audioState.play());
-  } else if (!audioSource && audioBuffer) {
-    audioState.play();
-  }
-}, { once: true });
+// ---------- Rain-only FX (بدون أي طبقة على الصورة) ----------
+(function initRain() {
+  window.addEventListener('load', () => {
+    const host = document.getElementById('rainHost');
+    if (!host) return;
+    const hasPIXI = typeof window.PIXI !== 'undefined' && window.PIXI.Application;
+    if (!hasPIXI) return;
 
-window.addEventListener('beforeunload', () => {
-  if (bgObjectUrl) { URL.revokeObjectURL(bgObjectUrl); bgObjectUrl = null; }
-});
+    const app = new PIXI.Application({
+      resizeTo: window,
+      backgroundAlpha: 0,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    host.appendChild(app.view);
+
+    // حاوية جسيمات المطر فقط (لا نرسم الخلفية في Pixi إطلاقًا)
+    const rain = new PIXI.ParticleContainer(800, { position: true, rotation: true, alpha: true, scale: true });
+    app.stage.addChild(rain);
+
+    // نسيج خط رفيع مائل كقطرة
+    const g = new PIXI.Graphics();
+    g.lineStyle(1.0, 0xFFFFFF, 0.85);
+    g.moveTo(0, 0);
+    g.lineTo(0, 14);
+    g.rotation = -0.52;
+    const streakTex = app.renderer.generateTexture(g, { resolution: 2, scaleMode: PIXI.SCALE_MODES.LINEAR });
+
+    const COUNT = 130;
+    const W = () => app.renderer.width;
+    const H = () => app.renderer.height;
+
+    const drops = [];
+    function spawn(i) {
+      const s = new PIXI.Sprite(streakTex);
+      s.anchor.set(0.5, 0.1);
+      s.alpha = 0.05 + Math.random() * 0.07;
+      s.scale.set(0.65 + Math.random() * 0.7);
+      s.rotation = -0.58 + (Math.random() * 0.16 - 0.08);
+      s.x = Math.random() * (W() + 80) - 60;
+      s.y = Math.random() * (H() + 120) - 120;
+      const wind = 70 + Math.random() * 100;
+      const fall = 160 + Math.random() * 160;
+      drops[i] = { s, vx: wind, vy: fall };
+      rain.addChild(s);
+    }
+    for (let i = 0; i < COUNT; i++) spawn(i);
+
+    app.ticker.add((delta) => {
+      const dt = delta / 60;
+      const width = W(), height = H();
+      for (let i = 0; i < drops.length; i++) {
+        const d = drops[i]; const s = d.s;
+        s.x += d.vx * dt;
+        s.y += d.vy * dt;
+        if (s.x > width + 60 || s.y > height + 80) {
+          s.x = Math.random() * (width + 80) - 60;
+          s.y = -40 - Math.random() * 120;
+          s.alpha = 0.05 + Math.random() * 0.07;
+          d.vx = 70 + Math.random() * 100;
+          d.vy = 160 + Math.random() * 160;
+        }
+      }
+    });
+  });
+})();
