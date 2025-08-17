@@ -9,8 +9,8 @@ const barRole = document.getElementById('barRole');
 const IDB_NAME = 'wellcoin_game_cache';
 const IDB_STORE = 'cache';
 const CACHE_VERSION_KEY = 'cache_version';
-const CACHE_VERSION = 'v3'; // bump
-const FORCE_CLEAR_CACHE = false; // لا تمسح الكاش لكل تشغيل (أسرع)
+const CACHE_VERSION = 'v3';
+const FORCE_CLEAR_CACHE = false;
 
 function openIDB() {
   return new Promise((resolve, reject) => {
@@ -180,12 +180,9 @@ const BASE_ASSETS = [
   "assets/shop.jpg","assets/suit.png","assets/wellcoin-icon.png","assets/wife.png","assets/yacht.jpg","assets/ak.png"
 ];
 
-// حدّد الأصول الحرجة (باستثناء الصوت)
-const CRITICAL = new Set(BASE_ASSETS.filter(s => !s.endsWith('.mp3')));
-
 // ---------- Firebase Config ----------
 const firebaseConfig = {
-  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5يboBkw",
   authDomain: "wellcoinbotgame.firebaseapp.com",
   databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "wellcoinbotgame",
@@ -200,14 +197,14 @@ tg.ready();
 const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser?.id ? tgUser.id.toString() : null;
 
-// ---------- أسرع تحميل مع توازي + حلول احتياطية ----------
+// ---------- تسريع التحميل مع توازي + fallback ----------
 const CONCURRENCY = 6;
 const MAX_RETRIES = 2;
 
 async function fetchBlob(url, retries = MAX_RETRIES) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url); // اترك المتصفح يدير الكاش تلقائيًا
+      const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return await res.blob();
     } catch (e) {
@@ -218,7 +215,6 @@ async function fetchBlob(url, retries = MAX_RETRIES) {
 }
 
 async function preloadImageOnce(src) {
-  // 1) جرّب IDB أولاً
   try {
     const cached = await idbGet('asset:'+src);
     if (cached instanceof Blob) {
@@ -237,7 +233,6 @@ async function preloadImageOnce(src) {
     }
   } catch(e) {}
 
-  // 2) fetch -> cache -> decode
   try {
     const blob = await fetchBlob(src);
     idbSet('asset:'+src, blob).catch(()=>{});
@@ -254,19 +249,18 @@ async function preloadImageOnce(src) {
     }
     return true;
   } catch(e) {
-    // 3) Fallback: تحميل الصورة مباشرة عبر Image() دون كاش
+    // Fallback مباشر
     const ok = await new Promise(res => {
       const img = new Image();
       img.onload = () => res(true);
       img.onerror = () => res(false);
-      img.src = src + (src.includes('?') ? '&' : '?') + 't=' + Date.now(); // كسر كاش سيئ إن وُجد
+      img.src = src + (src.includes('?') ? '&' : '?') + 't=' + Date.now();
     });
     return ok;
   }
 }
 
 async function preloadAudioOnce(src) {
-  // الصوت غير حرِج؛ إن فشل التحميل لا نوقف الدخول للعبة
   try {
     const cached = await idbGet('asset:'+src);
     if (cached instanceof Blob) return true;
@@ -276,19 +270,16 @@ async function preloadAudioOnce(src) {
     idbSet('asset:'+src, blob).catch(()=>{});
     return true;
   } catch(e) {
-    return false;
+    return false; // لا يوقف الدخول
   }
 }
 
 async function loadAsset(src) {
   let ok = false;
-  if (src.endsWith('.mp3')) {
-    ok = await preloadAudioOnce(src);
-  } else {
-    ok = await preloadImageOnce(src);
-  }
+  if (src.endsWith('.mp3')) ok = await preloadAudioOnce(src);
+  else ok = await preloadImageOnce(src);
   incProgress();
-  return { src, ok, critical: CRITICAL.has(src) };
+  return { src, ok };
 }
 
 async function preloadAssetsWithConcurrency(assets) {
@@ -318,12 +309,12 @@ async function preloadAssetsWithConcurrency(assets) {
   return results;
 }
 
-// ---------- Main Preload Logic with verification ----------
+// ---------- Main Preload Logic ----------
 async function preloadAll() {
-  // 1) Background + Music
+  // 1) الخلفية + الموسيقى
   await preloadBackgroundAndMusic();
 
-  // 2) Cache versioning
+  // 2) إدارة نسخة الكاش
   try {
     const v = await idbGet(CACHE_VERSION_KEY);
     if (FORCE_CLEAR_CACHE || v !== CACHE_VERSION) {
@@ -332,22 +323,19 @@ async function preloadAll() {
     }
   } catch(e) {}
 
-  // 3) Load assets
+  // 3) تحميل الأصول سريعًا
   const results = await preloadAssetsWithConcurrency(BASE_ASSETS);
 
-  // 4) User data
+  // 4) بيانات المستخدم (شرط أساسي)
   setProgress(Math.floor(doneSteps*100/totalSteps), "Loading player data...");
   if (!userId) {
     setProgress(100, "Please login via Telegram");
     return;
   }
-
-  let userOk = true;
   try {
     const userRef = db.ref("users/" + userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists()) {
-      userOk = false;
       setProgress(100, "Account not found. Please register.");
       setTimeout(()=>window.location.href="welcome.html", 1600);
       return;
@@ -355,25 +343,21 @@ async function preloadAll() {
     incProgress();
     await idbSet('userData', userSnap.val());
   } catch(e) {
-    userOk = false;
     console.error('Failed to load user:', e);
     setProgress(100, "Network error. Retrying may help.");
   }
 
-  // 5) Shop items
+  // 5) متجر (غير قاتل)
   try {
     const shopSnap = await db.ref("users/" + userId + "/shopItems").get();
     if (shopSnap.exists()) await idbSet('shopItems', shopSnap.val());
   } catch(e) {}
   incProgress();
 
-  // 6) Final verification (لا تمنع بسبب الصوت فقط)
-  const anyFailedCritical = results.some(r => r.critical && !r.ok);
-  if (!userOk || anyFailedCritical) {
-    setProgress(99, "Finalizing... some assets failed. Tap to retry.");
-    console.warn('Critical assets failed:', results.filter(r => r.critical && !r.ok));
-    document.body.addEventListener('click', () => location.reload(), { once: true });
-    return;
+  // 6) لا نظهر أي رسالة “assets failed” — نمضي ونترك المفقود يتحمل لاحقًا
+  const stillFailed = results.filter(r => !r.ok);
+  if (stillFailed.length) {
+    console.warn('[preload] Non-blocking assets failed:', stillFailed.map(r=>r.src));
   }
 
   setProgress(100, "Ready! Entering the game...");
@@ -381,7 +365,7 @@ async function preloadAll() {
 }
 document.addEventListener('DOMContentLoaded', preloadAll);
 
-// ---------- Rain-only FX (بدون أي طبقة على الصورة) ----------
+// ---------- Rain-only FX (بدون أي طبقة فوق الصورة) ----------
 (function initRain() {
   window.addEventListener('load', () => {
     const host = document.getElementById('rainHost');
@@ -397,11 +381,9 @@ document.addEventListener('DOMContentLoaded', preloadAll);
     });
     host.appendChild(app.view);
 
-    // حاوية جسيمات المطر فقط (لا نرسم الخلفية في Pixi إطلاقًا)
     const rain = new PIXI.ParticleContainer(800, { position: true, rotation: true, alpha: true, scale: true });
     app.stage.addChild(rain);
 
-    // نسيج خط رفيع مائل كقطرة
     const g = new PIXI.Graphics();
     g.lineStyle(1.0, 0xFFFFFF, 0.85);
     g.moveTo(0, 0);
@@ -446,4 +428,9 @@ document.addEventListener('DOMContentLoaded', preloadAll);
       }
     });
   });
+})();
+
+// ---------- Touch dot (listener) ----------
+(function initTouchDotListener() {
+  // موجودة فوق في CSS والإنشاء في initTouchDot
 })();
