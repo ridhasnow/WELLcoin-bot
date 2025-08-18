@@ -28,33 +28,70 @@
       overflow: hidden;
       position: relative;
     }
-    header {
-      height: 59px;
-      background-color: rgba(0, 0, 0, 0.0);
-      width: 100%;
-      z-index: 5;
-      position: relative;
-    }
-    #ranked {
+
+    /* Top bar */
+    .topbar {
       position: fixed;
-      top: 20px;
-      right: 45px;
-      width: 32px;
-      height: 32px;
-      z-index: 9999;
-      cursor: pointer;
-      background: none;
-      border: none;
+      top: 0;
+      left: 0; right: 0;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      box-sizing: border-box;
+      z-index: 1000;
+      background: linear-gradient(180deg, rgba(10,10,10,0.90), rgba(10,10,10,0.65));
+      backdrop-filter: blur(4px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-    #ranked:hover {
-      transform: scale(1.15);
-      filter: drop-shadow(0 0 6px gold);
+    .userbox {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
     }
+    .user-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      border: 1px solid rgba(255,215,130,0.35);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      background: #111;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .user-meta {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+      min-width: 0;
+    }
+    .user-name {
+      color: #f2f2f2;
+      font-weight: 800;
+      font-size: 16px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 52vw;
+    }
+    .user-rank-icon {
+      margin-top: 6px;
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+      opacity: 0.9;
+      filter: drop-shadow(0 0 4px rgba(255,215,0,0.55));
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* Balance box moved to right */
     .balance-box {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 3;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -70,11 +107,14 @@
       font-family: 'Segoe UI', sans-serif;
       animation: glow 2s infinite ease-in-out;
       backdrop-filter: blur(5px);
+      margin-right: 2px;
     }
     .coin-icon {
       width: 26px;
       height: 26px;
       filter: drop-shadow(0 0 3px gold);
+      user-select: none;
+      -webkit-user-drag: none;
     }
     @keyframes glow {
       0%, 100% {
@@ -90,6 +130,14 @@
       font-weight: bold;
       text-shadow: 0 0 6px #fff799, 0 0 10px #ffdc73;
     }
+
+    /* Spacer for content under topbar (optional if needed) */
+    header {
+      height: 58px; /* matches .topbar height */
+      width: 100%;
+      flex: 0 0 auto;
+    }
+
     .character-container {
       flex-grow: 1;
       display: flex;
@@ -97,7 +145,7 @@
       justify-content: center;
       position: relative;
       width: 100vw;
-      height: 100%;
+      height: calc(100% - 0px);
       overflow: hidden;
       touch-action: none;
     }
@@ -110,6 +158,7 @@
       pointer-events: auto;
       transition: transform 0.05s cubic-bezier(.22,1.09,.71,1.01);
     }
+
     .bottom-buttons {
       display: flex;
       justify-content: space-between;
@@ -140,61 +189,18 @@
       box-shadow: 0 4px 6px rgba(255, 215, 0, 0.15);
       min-width: 0;
     }
-    .username-frame {
-      position: absolute;
-      top: 4px;
-      left: 72%;
-      transform: translateX(-50%);
-      width: 215px;
-      height: 60px;
-      z-index: 3;
-    }
-    .dragon-frame-img {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      pointer-events: none;
-      z-index: 1;
-      filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 10px rgba(255, 255, 200, 0.3));
-    }
-    #username-inside {
-      position: absolute;
-      top: 20px;
-      left: 42%;
-      transform: translateX(-50%);
-      z-index: 2;
-      text-align: center;
-      color: #fff;
-      font-weight: bold;
-      font-size: 14px;
-      padding: 4px 8px;
-      text-shadow: 0 0 6px gold;
-      max-width: 160px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      line-height: 1.2em;
-      max-height: 1.2em;
-      box-sizing: border-box;
-    }
-    .btn:hover {
-      background-color: #1a1a1a;
-      color: #ffd700;
-      box-shadow: 0 6px 10px rgba(255, 215, 0, 0.25);
-    }
-    .btn:active {
-      transform: scale(0.97);
-      background-color: #111;
-    }
+    .btn:hover { background-color: #1a1a1a; color: #ffd700; box-shadow: 0 6px 10px rgba(255, 215, 0, 0.25); }
+    .btn:active { transform: scale(0.97); background-color: #111; }
+
     #cooldown-overlay {
       position: fixed;
       left: 0; top: 0; width: 100vw; height: 100vh;
       display: none; align-items: center; justify-content: center;
-      z-index: 10000; 
-      background: rgba(20,20,30,0.92); 
+      z-index: 10000;
+      background: rgba(20,20,30,0.92);
       backdrop-filter: blur(2.5px);
     }
+
     .energy-bar-container {
       position: absolute;
       left: 0;
@@ -338,6 +344,7 @@
         transform: translate(-50%, -180%) scale(1.27) rotate(-5deg);
       }
     }
+
     .block-access {
       position: fixed;
       top: 0;
@@ -367,96 +374,85 @@
     }
     .block-access a:hover { background: #0056b3; }
 
-    /* Floating icons zone */
+    /* Floating icons zone (updated to match new style) */
     .floating-icons-area {
       position: fixed;
-      top: 68px;
+      top: 68px; /* under topbar */
       left: 8px;
       z-index: 20;
       display: flex;
       flex-direction: column;
-      gap: 37px;
+      gap: 10px;
       pointer-events: none;
-      width: 72px;
+      width: 80px;
       min-height: 50px;
     }
     .floating-icon-outer {
       position: relative;
       pointer-events: auto;
-      width: 64px;
-      height: 64px;
-      margin-bottom: 0;
-      border-radius: 16px;
-      background: linear-gradient(135deg, rgba(255,215,0,0.14) 60%,rgba(70,70,70,0.18) 100%);
-      backdrop-filter: blur(2.5px);
-      box-shadow: 0 0 18px #ffd70099, 0 3px 22px #000c;
+      width: 78px;
+      margin: 0;
+      border-radius: 14px;
+      background: transparent;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-end;
-      border: 2.7px solid #ffd700;
-      overflow: visible;
-      transition: box-shadow 0.18s;
-      cursor: pointer;
-    }
-    .floating-icon-outer:hover {
-      box-shadow: 0 0 32px #ffd700ee, 0 0 12px #fff9;
-      border-color: #fffbe1;
-      background: linear-gradient(135deg, #fffbe1 70%, #ffd700 100%);
+      justify-content: flex-start;
+      padding: 6px 4px 8px 4px;
+      border: none;
+      box-shadow: none;
+      cursor: default;
     }
     .floating-icon-img {
-      width: 52px;
-      height: 52px;
-      border-radius: 12px;
-      margin-top: 3px;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
       object-fit: cover;
-      box-shadow: 0 0 14px #ffd70077;
-      border: 2px solid #ffd700;
-      background: #fffbe1;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
+      opacity: 0.9; /* slight transparency */
+      border: 1px solid rgba(255, 215, 130, 0.35);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+      background: radial-gradient(110% 110% at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      user-select: none;
     }
     .floating-icon-timer {
-      width: 92%;
-      margin: 0 auto 3px auto;
-      padding: 2px 0;
-      background: linear-gradient(90deg,#222 70%,#ffd70022 100%);
-      color: #ffd700;
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1;
+      color: #e9f1ff;
+      background: rgba(8, 12, 16, 0.55);
+      border: 1px solid rgba(140, 190, 255, 0.25);
+      padding: 3px 7px;
+      border-radius: 999px;
+      letter-spacing: .2px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25) inset, 0 2px 10px rgba(0,0,0,0.2);
+      min-width: 64px;
       text-align: center;
-      font-size: 6px;
-      font-family: monospace;
-      border-radius: 8px;
-      font-weight: bold;
-      box-shadow: 0 0 6px #ffd70066;
-      margin-top: 2px;
-      letter-spacing: 1px;
     }
     .floating-claim-btn {
-      display: block;
-      width: 76%;
-      margin: 3px auto 6px auto;
-      background: linear-gradient(90deg,#ffd700 80%,#fffbe1 100%);
-      color: #222;
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 12px;
+      border-radius: 10px;
       border: none;
-      border-radius: 7px;
-      font-size: 7px;
-      font-weight: bold;
-      padding: 4px 0;
-      cursor: pointer;
-      box-shadow: 0 0 14px #ffd70077;
-      transition: 0.16s;
-      opacity: 1;
+      color: #222;
+      background: linear-gradient(90deg, #ffd36a, #fff2c3);
+      box-shadow: 0 4px 16px rgba(255, 210, 80, 0.35);
+      transition: transform .08s ease-out, box-shadow .12s ease-out, filter .12s ease-out;
+      display: block;
       pointer-events: auto;
     }
-    .floating-claim-btn:disabled,
-    .floating-claim-btn.disabled {
-      background: #333;
+    .floating-claim-btn:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 2px 10px rgba(255, 210, 80, 0.25);
+    }
+    .floating-claim-btn.disabled, .floating-claim-btn:disabled {
+      background: #2a2a2a;
       color: #aaa;
-      cursor: not-allowed;
-      opacity: 0.62;
       box-shadow: none;
-      pointer-events: none;
+      filter: grayscale(0.3);
+      cursor: not-allowed;
     }
   </style>
   <script>
@@ -474,17 +470,28 @@
   </script>
 </head>
 <body>
+  <!-- Fixed top bar -->
+  <div class="topbar">
+    <div class="userbox">
+      <img id="user-avatar" class="user-avatar" src="" alt="User avatar" />
+      <div class="user-meta">
+        <div id="user-name" class="user-name">Loading...</div>
+        <img id="user-rank-icon" class="user-rank-icon" src="" alt="Rank" />
+      </div>
+    </div>
+    <div class="balance-box">
+      <img src="assets/wellcoin-icon.png" alt="Coin Icon" class="coin-icon">
+      <span id="balance-amount">0.000000</span>
+    </div>
+  </div>
+
+  <!-- spacer under top bar -->
   <header></header>
-  <img src="assets/ranked-icon.png" id="ranked" alt="Ranked" title="Leaderboard" />
-  <div class="balance-box">
-    <img src="assets/wellcoin-icon.png" alt="Coin Icon" class="coin-icon">
-    <span id="balance-amount">0.0000000000</span>
-  </div>
-  <div class="username-frame">
-    <img src="assets/dragon-frame.png" class="dragon-frame-img" alt="Username Frame" />
-    <div id="username-inside">Loading...</div>
-  </div>
+
+  <!-- Floating icons (left column) -->
   <div class="floating-icons-area" id="floating-icons-area"></div>
+
+  <!-- Main character area -->
   <div class="character-container">
     <img src="assets/character.png" class="character" alt="Player Character" id="tap-character" />
     <div class="energy-bar-container" id="energy-bar-container">
@@ -494,12 +501,15 @@
       <div class="energy-bar-label" id="energy-bar-label">300/300 Taps</div>
     </div>
   </div>
+
+  <!-- Bottom nav -->
   <div class="bottom-buttons">
     <button class="btn">Me</button>
     <button class="btn" onclick="window.location.href='shop.html'">Shop</button>
     <button class="btn" onclick="window.location.href='missions.html'">Missions</button>
     <button class="btn" id="play-btn">Play</button>
   </div>
+
   <script src="game.js"></script>
 </body>
 </html>
