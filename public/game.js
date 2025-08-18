@@ -1,3 +1,4 @@
+game.js
 // --- منع الزوم والسكرول ---
 document.addEventListener('touchmove', function(event) {
   if (event.scale !== 1) { event.preventDefault(); }
@@ -663,38 +664,34 @@ function showOkeyPopup({title, desc}) {
   });
   document.getElementById("popup-okey-btn").onclick = closePopup;
 }
-// ========== شكل الأيقونات العائمة (تصغير شامل + شفافية أكثر مع الحفاظ على التباعد) ==========
+
+// ========== شكل الأيقونات العائمة (ستايل فقط، بدون تغيير الميكانيك) ==========
 (function injectFloatingIconsStyles(){
   const id = 'floating-icons-polish';
   if (document.getElementById(id)) return;
   const s = document.createElement('style');
   s.id = id;
   s.textContent = `
-    /* الحفاظ على نفس التباعد بين الأيقونات */
     .floating-icons-wrap, #floating-icons-area { gap: 10px !important; }
-
-    /* تصغير الحاوية العامة */
     .floating-icon-outer {
-      width: 66px !important; /* كان 78 */
+      width: 78px !important;
       background: transparent !important;
       border: none !important;
-      border-radius: 12px !important;
+      border-radius: 14px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
       justify-content: flex-start !important;
-      padding: 5px 3px 6px 3px !important; /* كان 6px 4px 8px */
+      padding: 6px 4px 8px 4px !important;
       box-shadow: none !important;
       backdrop-filter: none !important;
     }
-
-    /* صورة دائرية أصغر وشفافية أعلى قليلاً */
     .floating-icon-img {
-      width: 54px !important;  /* كان 64 */
-      height: 54px !important; /* كان 64 */
+      width: 64px !important;
+      height: 64px !important;
       border-radius: 50% !important;
       object-fit: cover !important;
-      opacity: 0.82 !important; /* كان 0.9 */
+      opacity: 0.9 !important;
       border: 1px solid rgba(255, 215, 130, 0.35) !important;
       box-shadow: 0 6px 16px rgba(0,0,0,0.35) !important;
       background: radial-gradient(110% 110% at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%) !important;
@@ -707,34 +704,30 @@ function showOkeyPopup({title, desc}) {
       box-shadow: 0 10px 22px rgba(0,0,0,0.45);
       opacity: 1;
     }
-
-    /* عداد الوقت أصغر */
     .floating-icon-timer {
-      margin-top: 5px !important;
-      font-size: 10px !important;      /* كان 11 */
+      margin-top: 6px !important;
+      font-size: 11px !important;
       line-height: 1 !important;
       color: #e9f1ff !important;
-      background: rgba(8, 12, 16, 0.50) !important;
-      border: 1px solid rgba(140, 190, 255, 0.22) !important;
-      padding: 2px 6px !important;      /* كان 3px 7px */
+      background: rgba(8, 12, 16, 0.55) !important;
+      border: 1px solid rgba(140, 190, 255, 0.25) !important;
+      padding: 3px 7px !important;
       border-radius: 999px !important;
       letter-spacing: .2px !important;
       box-shadow: 0 2px 6px rgba(0,0,0,0.25) inset, 0 2px 10px rgba(0,0,0,0.2);
-      min-width: 54px;                  /* كان 64 */
+      min-width: 64px;
       text-align: center;
     }
-
-    /* زر الـ Claim أصغر */
     .floating-claim-btn {
-      margin-top: 5px !important;
-      font-size: 11px !important;       /* كان 12 */
+      margin-top: 6px !important;
+      font-size: 12px !important;
       font-weight: 700 !important;
-      padding: 6px 10px !important;     /* كان 7px 12px */
-      border-radius: 9px !important;    /* كان 10px */
+      padding: 7px 12px !important;
+      border-radius: 10px !important;
       border: none !important;
       color: #222 !important;
       background: linear-gradient(90deg, #ffd36a, #fff2c3) !important;
-      box-shadow: 0 3px 12px rgba(255, 210, 80, 0.32) !important;
+      box-shadow: 0 4px 16px rgba(255, 210, 80, 0.35) !important;
       transition: transform .08s ease-out, box-shadow .12s ease-out, filter .12s ease-out;
     }
     .floating-claim-btn:active {
