@@ -117,7 +117,7 @@ window.addEventListener('beforeunload', () => {
   assetBlobUrlCache.clear();
 });
 
-// =========== الموسيقى: استمرار مضمون بعد الانتقال من preload ===========
+// =========== الموسيقى: ارجاع الميكانيك السابق (تشغيل مضمون + يستأنف بعد الرجوع) ===========
 (function setupMusic() {
   let audioEl = document.getElementById('preloadAudio');
   if (!audioEl) {
@@ -131,6 +131,7 @@ window.addEventListener('beforeunload', () => {
 
   let audioBlobUrl = null;
 
+  // تحميل المصدر (IDB أولاً كاختصار/تسخين، وإلا الملف المباشر)
   async function loadAudioSrc() {
     try {
       const blob = await idbGet('asset:assets/preload.mp3');
@@ -145,16 +146,16 @@ window.addEventListener('beforeunload', () => {
     }
   }
 
+  // استئناف الموضع (ct أولاً، ثم احتساب elapsed من startedAtMs)
   function applySessionResume() {
     try {
       const track = sessionStorage.getItem('wlc_music_track') || '';
       if (track && track !== 'assets/preload.mp3') return;
 
       const ct = parseFloat(sessionStorage.getItem('wlc_music_ct') || 'NaN');
-      if (Number.isFinite(ct) && ct > 0) {
-        const setCT = () => { try { audioEl.currentTime = ct % (audioEl.duration || ct); } catch {} };
-        if (audioEl.readyState >= 1) setCT();
-        else audioEl.addEventListener('loadedmetadata', setCT, { once: true });
+      if (Number.isFinite(ct) && ct >= 0) {
+        const setCT = () => { try { audioEl.currentTime = (audioEl.duration && audioEl.duration > 0) ? (ct % audioEl.duration) : ct; } catch {} };
+        if (audioEl.readyState >= 1) setCT(); else audioEl.addEventListener('loadedmetadata', setCT, { once: true });
         return;
       }
 
@@ -163,16 +164,16 @@ window.addEventListener('beforeunload', () => {
         const elapsedSec = Math.max(0, (Date.now() - startedAtMs) / 1000);
         const setPos = () => {
           const d = audioEl.duration;
-          if (Number.isFinite(d) && d > 1) {
-            try { audioEl.currentTime = (elapsedSec % d); } catch {}
+          if (Number.isFinite(d) && d > 0) {
+            try { audioEl.currentTime = elapsedSec % d; } catch {}
           }
         };
-        if (audioEl.readyState >= 1) setPos();
-        else audioEl.addEventListener('loadedmetadata', setPos, { once: true });
+        if (audioEl.readyState >= 1) setPos(); else audioEl.addEventListener('loadedmetadata', setPos, { once: true });
       }
     } catch {}
   }
 
+  // تشغيل صامت (priming) لتجاوز سياسات autoplay
   function primeMutedAutoplay() {
     try {
       audioEl.muted = true;
@@ -181,48 +182,91 @@ window.addEventListener('beforeunload', () => {
     } catch {}
   }
 
-  function unmuteNow() {
-    audioEl.muted = false;
-    audioEl.volume = 0.76;
-    audioEl.play().catch(()=>{});
+  // محاولة فك الكتم مباشرة (إن أتينا من preload بوَسم)
+  function maybeAutoUnmuteFromPreload() {
+    try {
+      const fromPreload = sessionStorage.getItem('wlc_from_preload') === '1';
+      if (!fromPreload) return;
+      unmuteNow();
+      window.addEventListener('pageshow', () => unmuteNow(), { once: true });
+      window.addEventListener('focus', () => unmuteNow(), { once: true });
+    } catch {}
   }
 
+  // فك الكتم وتشغيل مسموع
+  async function unmuteNow() {
+    audioEl.muted = false;
+    audioEl.volume = 0.76;
+    try { await audioEl.play(); } catch {}
+  }
+
+  // فك الكتم على أول تفاعل (مع إعادة التسليح لو فشل)
   function unmuteOnFirstGesture() {
     let armed = true;
-    const ensureAudible = () => {
+    const ensureAudible = async () => {
       if (!armed) return;
-      armed = false;
-      unmuteNow();
-      off();
+      try {
+        audioEl.muted = false;
+        audioEl.volume = 0.76;
+        await audioEl.play();
+        armed = false;
+        off();
+      } catch {
+        // لو فشل بسبب السياسة، نبقي المستمعات لتجربة لاحقة
+        armed = true;
+      }
     };
-    const opts = { once: true, passive: true };
+    function onFocusOrShow() {
+      audioEl.play().catch(()=>{});
+    }
+    const opts = { passive: true };
+    ['pointerdown','touchstart','click','keydown'].forEach(ev => document.addEventListener(ev, ensureAudible, opts));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) onFocusOrShow(); });
+    window.addEventListener('focus', onFocusOrShow);
+
+    // دعم خاص للشخصية
+    const tcReady = () => {
+      const tc = document.getElementById('tap-character');
+      if (tc) tc.addEventListener('pointerdown', ensureAudible, opts);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tcReady, { once: true }); else tcReady();
+
     function off() {
       ['pointerdown','touchstart','click','keydown'].forEach(ev => document.removeEventListener(ev, ensureAudible, opts));
       const tc = document.getElementById('tap-character');
       if (tc) tc.removeEventListener('pointerdown', ensureAudible, opts);
+      document.removeEventListener('visibilitychange', onFocusOrShow);
+      window.removeEventListener('focus', onFocusOrShow);
     }
-    ['pointerdown','touchstart','click','keydown'].forEach(ev => document.addEventListener(ev, ensureAudible, opts));
-    const tc = document.getElementById('tap-character');
-    if (tc) tc.addEventListener('pointerdown', ensureAudible, opts);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) audioEl.play().catch(()=>{}); });
-    window.addEventListener('focus', () => audioEl.play().catch(()=>{}));
   }
 
-  function maybeAutoUnmuteFromPreload() {
-    const fromPreload = sessionStorage.getItem('wlc_from_preload') === '1';
-    if (!fromPreload) return;
-    // نحاول فورًا ثم عند pageshow/focus كتعزيز
-    unmuteNow();
-    window.addEventListener('pageshow', () => unmuteNow(), { once: true });
-    window.addEventListener('focus', () => unmuteNow(), { once: true });
+  // حفظ الموضع قبل الخروج/الإخفاء لضمان استئناف بعد الرجوع من الصفحات الأخرى
+  function persistCT() {
+    try {
+      sessionStorage.setItem('wlc_music_ct', String(audioEl.currentTime || 0));
+      sessionStorage.setItem('wlc_music_track', 'assets/preload.mp3');
+      if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
+        // تقدير بدائي لبداية التشغيل
+        sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (audioEl.currentTime || 0) * 1000));
+      }
+    } catch {}
   }
+  window.addEventListener('pagehide', persistCT);
+  window.addEventListener('beforeunload', persistCT);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) persistCT(); });
+
+  // إعادة المحاولة عند العودة من صفحات أخرى (bfcache أو تنشيط)
+  window.addEventListener('pageshow', () => {
+    // نبدأ صامت ثم يَفك الكتم المستخدم على أول تفاعل
+    primeMutedAutoplay();
+  });
 
   (async () => {
     await loadAudioSrc();
     applySessionResume();
-    primeMutedAutoplay();        // يبدأ صامتًا لتجاوز سياسات autoplay
-    maybeAutoUnmuteFromPreload();// إن أتينا من preload نحاول فك الكتم مباشرة
-    unmuteOnFirstGesture();      // ضمان أكيد عند أول تفاعل
+    primeMutedAutoplay();        // يبدأ صامتًا مباشرة
+    maybeAutoUnmuteFromPreload();// إن وُجد الوسم من preload
+    unmuteOnFirstGesture();      // يضمن العمل بعد الرجوع حتى لو احتاج تفاعل
   })();
 
   window.addEventListener('beforeunload', () => {
@@ -664,33 +708,38 @@ function showOkeyPopup({title, desc}) {
   document.getElementById("popup-okey-btn").onclick = closePopup;
 }
 
-// ========== شكل الأيقونات العائمة (ستايل فقط، بدون تغيير الميكانيك) ==========
+// ========== شكل الأيقونات العائمة (تصغير شامل + شفافية أكثر مع الحفاظ على التباعد) ==========
 (function injectFloatingIconsStyles(){
   const id = 'floating-icons-polish';
   if (document.getElementById(id)) return;
   const s = document.createElement('style');
   s.id = id;
   s.textContent = `
+    /* الحفاظ على نفس التباعد بين الأيقونات */
     .floating-icons-wrap, #floating-icons-area { gap: 10px !important; }
+
+    /* تصغير الحاوية العامة */
     .floating-icon-outer {
-      width: 78px !important;
+      width: 66px !important; /* كان 78 */
       background: transparent !important;
       border: none !important;
-      border-radius: 14px !important;
+      border-radius: 12px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
       justify-content: flex-start !important;
-      padding: 6px 4px 8px 4px !important;
+      padding: 5px 3px 6px 3px !important; /* كان 6px 4px 8px */
       box-shadow: none !important;
       backdrop-filter: none !important;
     }
+
+    /* صورة دائرية أصغر وشفافية أعلى قليلاً */
     .floating-icon-img {
-      width: 64px !important;
-      height: 64px !important;
+      width: 54px !important;  /* كان 64 */
+      height: 54px !important; /* كان 64 */
       border-radius: 50% !important;
       object-fit: cover !important;
-      opacity: 0.9 !important;
+      opacity: 0.82 !important; /* كان 0.9 */
       border: 1px solid rgba(255, 215, 130, 0.35) !important;
       box-shadow: 0 6px 16px rgba(0,0,0,0.35) !important;
       background: radial-gradient(110% 110% at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%) !important;
@@ -703,30 +752,34 @@ function showOkeyPopup({title, desc}) {
       box-shadow: 0 10px 22px rgba(0,0,0,0.45);
       opacity: 1;
     }
+
+    /* عداد الوقت أصغر */
     .floating-icon-timer {
-      margin-top: 6px !important;
-      font-size: 11px !important;
+      margin-top: 5px !important;
+      font-size: 10px !important;      /* كان 11 */
       line-height: 1 !important;
       color: #e9f1ff !important;
-      background: rgba(8, 12, 16, 0.55) !important;
-      border: 1px solid rgba(140, 190, 255, 0.25) !important;
-      padding: 3px 7px !important;
+      background: rgba(8, 12, 16, 0.50) !important;
+      border: 1px solid rgba(140, 190, 255, 0.22) !important;
+      padding: 2px 6px !important;      /* كان 3px 7px */
       border-radius: 999px !important;
       letter-spacing: .2px !important;
       box-shadow: 0 2px 6px rgba(0,0,0,0.25) inset, 0 2px 10px rgba(0,0,0,0.2);
-      min-width: 64px;
+      min-width: 54px;                  /* كان 64 */
       text-align: center;
     }
+
+    /* زر الـ Claim أصغر */
     .floating-claim-btn {
-      margin-top: 6px !important;
-      font-size: 12px !important;
+      margin-top: 5px !important;
+      font-size: 11px !important;       /* كان 12 */
       font-weight: 700 !important;
-      padding: 7px 12px !important;
-      border-radius: 10px !important;
+      padding: 6px 10px !important;     /* كان 7px 12px */
+      border-radius: 9px !important;    /* كان 10px */
       border: none !important;
       color: #222 !important;
       background: linear-gradient(90deg, #ffd36a, #fff2c3) !important;
-      box-shadow: 0 4px 16px rgba(255, 210, 80, 0.35) !important;
+      box-shadow: 0 3px 12px rgba(255, 210, 80, 0.32) !important;
       transition: transform .08s ease-out, box-shadow .12s ease-out, filter .12s ease-out;
     }
     .floating-claim-btn:active {
