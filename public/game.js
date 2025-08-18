@@ -117,80 +117,67 @@ window.addEventListener('beforeunload', () => {
   assetBlobUrlCache.clear();
 });
 
-// =========== الموسيقى: تشغيل مضمون بعد الانتقال ===========
+// =========== الموسيقى: استمرار بعد الانتقال من preload ===========
 (function setupMusic() {
-  // أنشئ أو استخدم العنصر
   let audioEl = document.getElementById('preloadAudio');
   if (!audioEl) {
     audioEl = document.createElement('audio');
     audioEl.id = 'preloadAudio';
-    audioEl.src = 'assets/preload.mp3'; // أبقيها مباشرة لضمان الجهوزية
     audioEl.loop = true;
     audioEl.preload = 'auto';
     audioEl.style.display = 'none';
     document.body.appendChild(audioEl);
   }
 
-  // محاولة تشغيل مع fallback
-  const tryPlay = async (unmute = false) => {
+  // حاول استخدام نسخة الكاش من IndexedDB لبدء فوري
+  (async () => {
     try {
-      if (unmute) audioEl.muted = false;
-      audioEl.volume = 0.76;
-      await audioEl.play();
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  // تهيئة صامتة (لـ autoplay policies) ثم تفعيل بالصوت عند أول تفاعل
-  const primeMuted = async () => {
-    try {
-      audioEl.muted = true;
-      await audioEl.play().catch(()=>{});
-    } catch {}
-  };
-
-  let armed = true; // لا نكرر فك الكتم بعد أول تفاعل ناجح
-  const armUnmuteOnFirstGesture = () => {
-    if (!armed) return;
-    armed = false;
-    const ensureAudible = async () => {
-      // حاول مباشرة غير مكتوم، وإن فشل أعد التسليح مرة أخرى
-      const ok = await tryPlay(true);
-      if (!ok) {
-        // لو فشل لأي سبب، أعد التسليح لمحاولة تالية
-        armed = true;
+      const blob = await idbGet('asset:assets/preload.mp3');
+      if (blob instanceof Blob) {
+        const url = URL.createObjectURL(blob);
+        audioEl.src = url;
       } else {
-        // إزالة المستمعات بعد النجاح
-        offAll();
+        audioEl.src = 'assets/preload.mp3';
       }
+    } catch {
+      audioEl.src = 'assets/preload.mp3';
+    }
+
+    const tryResumeFromSession = () => {
+      try {
+        const startedAtMs = parseInt(sessionStorage.getItem('wlc_music_started_at_ms') || '0', 10);
+        const track = sessionStorage.getItem('wlc_music_track') || '';
+        if (!startedAtMs || track !== 'assets/preload.mp3') return;
+
+        const elapsedSec = Math.max(0, (Date.now() - startedAtMs) / 1000);
+        const dur = audioEl.duration;
+        if (Number.isFinite(dur) && dur > 1) {
+          const pos = elapsedSec % dur;
+          // بعض المتصفحات ترفض set currentTime قبل canplay
+          try { audioEl.currentTime = pos; } catch {}
+        } else {
+          audioEl.addEventListener('loadedmetadata', () => {
+            const d = audioEl.duration;
+            if (Number.isFinite(d) && d > 1) {
+              const pos = elapsedSec % d;
+              try { audioEl.currentTime = pos; } catch {}
+            }
+          }, { once: true });
+        }
+      } catch {}
     };
 
-    const handlers = [
-      ['pointerdown', ensureAudible, { once: true, passive: true }],
-      ['touchstart', ensureAudible, { once: true, passive: true }],
-      ['click', ensureAudible, { once: true, passive: true }],
-      ['keydown', ensureAudible, { once: true }]
-    ];
-    const offAll = () => {
-      handlers.forEach(([ev, fn, opts]) => document.removeEventListener(ev, fn, opts));
-      if (window.tapCharacter) tapCharacter.removeEventListener('pointerdown', ensureAudible);
-    };
-    handlers.forEach(([ev, fn, opts]) => document.addEventListener(ev, fn, opts));
-    if (window.tapCharacter) tapCharacter.addEventListener('pointerdown', ensureAudible, { once: true });
-  };
+    // ابدأ التشغيل فورًا + جرّب الاستئناف الزمني إن توفّر
+    audioEl.volume = 0.76;
+    tryResumeFromSession();
+    audioEl.play().catch(()=>{});
 
-  // شغّل “priming” عند التحميل، وفَعِّل المحاولة عند أول تفاعل
-  document.addEventListener('DOMContentLoaded', primeMuted);
-  armUnmuteOnFirstGesture();
-
-  // محاولات إضافية صغيرة عندما تعود النافذة للفوكس
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) tryPlay(false);
-  });
-  window.addEventListener('focus', () => { tryPlay(false); });
-})();
+    // إعادة المحاولة إذا علّق الصوت بعد الانتقال
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) audioEl.play().catch(()=>{});
+    });
+    window.addEventListener('focus', () => audioEl.play().catch(()=>{}));
+  })();
 })();
 
 // -------------- Firebase & Telegram --------------
