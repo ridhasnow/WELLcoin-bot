@@ -68,24 +68,22 @@ function idbGet(key) {
   }));
 }
 
-// ========== تحميل الصور والايقونات من الكاش بسرعة (بدون وميض) ==========
-const assetBlobUrlCache = new Map(); // assetPath -> objectURL واحد يعاد استعماله
+// ========== Cache لعناوين Blob الخاصة بالأصول ==========
+const assetBlobUrlCache = new Map(); // assetPath -> objectURL
 function setImgAttrsFast(imgEl) {
   try {
     imgEl.loading = 'eager';
     imgEl.decoding = 'async';
     imgEl.referrerPolicy = 'no-referrer';
+    imgEl.draggable = false;
   } catch {}
 }
 async function setImgFromCache(imgEl, assetPath) {
   if (!imgEl || !assetPath) return;
-
-  // لو نفس الأصل مضبوط مسبقًا، لا تعمل شيء
   if (imgEl.getAttribute('data-asset') === assetPath) return;
 
   setImgAttrsFast(imgEl);
 
-  // 1) ذاكرة: لو لدينا URL جاهز لهذا الأصل، اعرضه فورًا
   const memUrl = assetBlobUrlCache.get(assetPath);
   if (memUrl) {
     imgEl.src = memUrl;
@@ -94,7 +92,6 @@ async function setImgFromCache(imgEl, assetPath) {
     return;
   }
 
-  // 2) IndexedDB: حمّل الـ Blob مرة واحدة وأنشئ URL ذاكرته
   try {
     const blob = await idbGet('asset:' + assetPath);
     if (blob instanceof Blob) {
@@ -107,7 +104,6 @@ async function setImgFromCache(imgEl, assetPath) {
     }
   } catch {}
 
-  // 3) شبكة كملاذ أخير
   imgEl.src = assetPath;
   imgEl.setAttribute('data-asset', assetPath);
   imgEl.removeAttribute('data-cached');
@@ -121,32 +117,67 @@ window.addEventListener('beforeunload', () => {
   assetBlobUrlCache.clear();
 });
 
-// =========== الموسيقى: استمرار من preload ===========
+// =========== الموسيقى: استمرار بعد الانتقال من preload ===========
 (function setupMusic() {
-  let preloadAudio = document.getElementById('preloadAudio');
-  if (!preloadAudio) {
-    preloadAudio = document.createElement('audio');
-    preloadAudio.id = 'preloadAudio';
-    preloadAudio.src = 'assets/preload.mp3';
-    preloadAudio.loop = true;
-    preloadAudio.preload = 'auto';
-    preloadAudio.style.display = 'none';
-    document.body.appendChild(preloadAudio);
+  let audioEl = document.getElementById('preloadAudio');
+  if (!audioEl) {
+    audioEl = document.createElement('audio');
+    audioEl.id = 'preloadAudio';
+    audioEl.loop = true;
+    audioEl.preload = 'auto';
+    audioEl.style.display = 'none';
+    document.body.appendChild(audioEl);
   }
-  function ensureAudioLoop() {
-    if (!preloadAudio) return;
-    preloadAudio.volume = 0.76;
-    preloadAudio.loop = true;
-    preloadAudio.onended = () => {
-      preloadAudio.currentTime = 0;
-      preloadAudio.play().catch(()=>{});
-    };
-    if (preloadAudio.paused) {
-      preloadAudio.play().catch(()=>{});
+
+  // حاول استخدام نسخة الكاش من IndexedDB لبدء فوري
+  (async () => {
+    try {
+      const blob = await idbGet('asset:assets/preload.mp3');
+      if (blob instanceof Blob) {
+        const url = URL.createObjectURL(blob);
+        audioEl.src = url;
+      } else {
+        audioEl.src = 'assets/preload.mp3';
+      }
+    } catch {
+      audioEl.src = 'assets/preload.mp3';
     }
-  }
-  document.addEventListener('DOMContentLoaded', ensureAudioLoop);
-  window.addEventListener('focus', ensureAudioLoop);
+
+    const tryResumeFromSession = () => {
+      try {
+        const startedAtMs = parseInt(sessionStorage.getItem('wlc_music_started_at_ms') || '0', 10);
+        const track = sessionStorage.getItem('wlc_music_track') || '';
+        if (!startedAtMs || track !== 'assets/preload.mp3') return;
+
+        const elapsedSec = Math.max(0, (Date.now() - startedAtMs) / 1000);
+        const dur = audioEl.duration;
+        if (Number.isFinite(dur) && dur > 1) {
+          const pos = elapsedSec % dur;
+          // بعض المتصفحات ترفض set currentTime قبل canplay
+          try { audioEl.currentTime = pos; } catch {}
+        } else {
+          audioEl.addEventListener('loadedmetadata', () => {
+            const d = audioEl.duration;
+            if (Number.isFinite(d) && d > 1) {
+              const pos = elapsedSec % d;
+              try { audioEl.currentTime = pos; } catch {}
+            }
+          }, { once: true });
+        }
+      } catch {}
+    };
+
+    // ابدأ التشغيل فورًا + جرّب الاستئناف الزمني إن توفّر
+    audioEl.volume = 0.76;
+    tryResumeFromSession();
+    audioEl.play().catch(()=>{});
+
+    // إعادة المحاولة إذا علّق الصوت بعد الانتقال
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) audioEl.play().catch(()=>{});
+    });
+    window.addEventListener('focus', () => audioEl.play().catch(()=>{}));
+  })();
 })();
 
 // -------------- Firebase & Telegram --------------
@@ -163,13 +194,14 @@ const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.
 const db = firebase.database(app);
 const tg = window.Telegram.WebApp;
 tg.ready();
-const userId = tg.initDataUnsafe?.user?.id;
+const tgUser = tg.initDataUnsafe?.user;
+const userId = tgUser?.id;
 if (!userId) {
   window.location.href = "welcome.html";
 }
 
 // عناصر واجهة
-const usernameBox = document.getElementById("username-inside");
+const usernameBox = document.getElementById("username-inside"); // سيُلغى لاحقًا بعد تعديل HTML
 const balanceDisplay = document.getElementById("balance-amount");
 const energyBarContainer = document.getElementById("energy-bar-container");
 const energyBarInner = document.getElementById("energy-bar-inner");
@@ -184,32 +216,45 @@ function cacheSet(key, val) {
   return idbSet(key, val);
 }
 const CACHE_KEYS = {
-  username: `wlc:${userId}:username`,
+  username: `wlc:${userId}:username`, // قد لا نستخدمه بعد الآن
   balance:  `wlc:${userId}:balance`,
   shop:     `wlc:${userId}:shopItems`,
-  activeCharacterSrc: `wlc:${userId}:activeCharacterSrc`
+  activeCharacterSrc: `wlc:${userId}:activeCharacterSrc`,
+  tgName: `wlc:${userId}:tgName`,
+  tgAvatarBlob: `wlc:${userId}:tgAvatarBlob`
 };
 
 // ========== تحميل الأصول من الكاش على الواجهة ==========
 document.addEventListener('DOMContentLoaded', async () => {
-  // صور الهيدر
+  // أخفي كادر التنين إن وُجد (سنرتب الهيدر الجديد في HTML لاحقًا)
+  (function hideDragonFrame() {
+    const styleId = 'hide-dragon-frame';
+    if (document.getElementById(styleId)) return;
+    const s = document.createElement('style');
+    s.id = styleId;
+    s.textContent = `
+      .dragon-frame, .dragon-frame-img { display: none !important; }
+    `;
+    document.head.appendChild(s);
+  })();
+
+  // صور الهيدر الافتراضية القديمة (إن بقيت)
   setImgFromCache(document.getElementById("ranked"), 'assets/ranked-icon.png');
-  setImgFromCache(document.querySelector(".coin-icon"), 'assets/wellcoin-icon.png');
-  setImgFromCache(document.querySelector(".dragon-frame-img"), 'assets/dragon-frame.png');
+
   // صورة الشخصية الأساسية
   let savedChar = await cacheGet(CACHE_KEYS.activeCharacterSrc, null);
   if (!savedChar) savedChar = "assets/character.png";
   setImgFromCache(tapCharacter, savedChar);
 
-  // بيانات الواجهة
-  const cachedUsername = await cacheGet(CACHE_KEYS.username, null);
-  if (usernameBox && cachedUsername) usernameBox.textContent = cachedUsername;
-
+  // بيانات الواجهة: رصيد
   const cachedBalance = await cacheGet(CACHE_KEYS.balance, null);
   if (balanceDisplay != null && typeof cachedBalance === 'number') {
     balanceDisplay.textContent = formatWLC(cachedBalance);
     balance = cachedBalance;
   }
+
+  // هيدر المستخدم الجديد من Telegram (name + last_name + avatar)
+  hydrateUserHeaderFromTelegram();
 });
 
 // ====== SHOP ICONS & CHARACTER IMAGE LOGIC ======
@@ -239,7 +284,7 @@ const CHARACTER_PRODUCTS = [
 let balance = 0;
 let energyTaps = 300;
 let maxTaps = 300;
-let tapValue = 100.0000000000; // يمكنك تعديلها إلى 100 كما رغبت
+let tapValue = 100.0000000000;
 let replenishInterval = null;
 let tapReplenishTime = 20000;
 let tapCooldown = 6000;
@@ -283,7 +328,7 @@ function sendBalanceToDB() {
   }
 }
 
-// تحميل بيانات المستخدم من السيرفر مع تهيئة فورية
+// تحميل بيانات المستخدم من السيرفر مع تهيئة فورية (الرصيد والطاقة فقط)
 window.addEventListener("load", async () => {
   const userRef = db.ref("users/" + userId);
   userRef.once("value").then(async (snapshot) => {
@@ -293,12 +338,7 @@ window.addEventListener("load", async () => {
     }
     const userData = snapshot.val();
 
-    // اسم المستخدم + كاش
-    const uname = userData.username || "Unknown Player";
-    if (usernameBox) usernameBox.textContent = uname;
-    cacheSet(CACHE_KEYS.username, uname);
-
-    // رصيد من السيرفر + كاش + مزامنة حية
+    // الرصيد + مزامنة حية
     balance = parseFloat(userData.balance || 0);
     lastSentBalance = balance;
     updateBalanceDisplay();
@@ -458,7 +498,6 @@ window.addEventListener("beforeunload", function() {
     } catch {}
   }
   saveEnergyToDB();
-  // ملاحظة: روابط الـ Blob تُنظَّف في مستمع beforeunload الأعلى
 });
 
 // زر اللعب ونافذة الكول داون
@@ -583,6 +622,140 @@ function showOkeyPopup({title, desc}) {
     actions: `<button class="popup-okey-btn" id="popup-okey-btn">Okey</button>`
   });
   document.getElementById("popup-okey-btn").onclick = closePopup;
+}
+
+// ========== شكل الأيقونات العائمة (ستايل فقط، بدون تغيير الميكانيك) ==========
+(function injectFloatingIconsStyles(){
+  const id = 'floating-icons-polish';
+  if (document.getElementById(id)) return;
+  const s = document.createElement('style');
+  s.id = id;
+  s.textContent = `
+    /* حاوية أيقونة أصغر ودائرية وحديثة */
+    .floating-icons-wrap, #floating-icons-area { gap: 10px !important; }
+    .floating-icon-outer {
+      width: 78px !important;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 14px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      padding: 6px 4px 8px 4px !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+    }
+    .floating-icon-img {
+      width: 64px !important;
+      height: 64px !important;
+      border-radius: 50% !important;
+      object-fit: cover !important;
+      opacity: 0.9 !important; /* شفافية خفيفة للصورة */
+      border: 1px solid rgba(255, 215, 130, 0.35) !important; /* لمسة ذهبية رقيقة */
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35) !important;
+      background: radial-gradient(110% 110% at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%) !important;
+      transition: transform .12s ease-out, box-shadow .12s ease-out, opacity .12s ease-out;
+      pointer-events: none;
+      user-select: none;
+    }
+    .floating-icon-outer:hover .floating-icon-img {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.45);
+      opacity: 1;
+    }
+    .floating-icon-timer {
+      margin-top: 6px !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
+      color: #e9f1ff !important;
+      background: rgba(8, 12, 16, 0.55) !important;
+      border: 1px solid rgba(140, 190, 255, 0.25) !important;
+      padding: 3px 7px !important;
+      border-radius: 999px !important;
+      letter-spacing: .2px !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25) inset, 0 2px 10px rgba(0,0,0,0.2);
+      min-width: 64px;
+      text-align: center;
+    }
+    .floating-claim-btn {
+      margin-top: 6px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      padding: 7px 12px !important;
+      border-radius: 10px !important;
+      border: none !important;
+      color: #222 !important;
+      background: linear-gradient(90deg, #ffd36a, #fff2c3) !important;
+      box-shadow: 0 4px 16px rgba(255, 210, 80, 0.35) !important;
+      transition: transform .08s ease-out, box-shadow .12s ease-out, filter .12s ease-out;
+    }
+    .floating-claim-btn:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 2px 10px rgba(255, 210, 80, 0.25);
+    }
+    .floating-claim-btn.disabled, .floating-claim-btn:disabled {
+      background: #2a2a2a !important;
+      color: #aaa !important;
+      box-shadow: none !important;
+      filter: grayscale(0.3);
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+// ========== منطق اللاعب: الاسم واللقب والصورة من تلغرام ==========
+async function hydrateUserHeaderFromTelegram() {
+  try {
+    const avatarEl = document.getElementById('user-avatar');    // <img>
+    const nameEl = document.getElementById('user-name');         // <div> أو <span>
+    const rankEl = document.getElementById('user-rank-icon');    // <img> صغير
+
+    // الاسم الكامل: first_name + last_name (أو first_name فقط)
+    const fullName = [tgUser?.first_name || '', tgUser?.last_name || ''].filter(Boolean).join(' ').trim();
+    const displayName = fullName || (tgUser?.first_name || 'Player');
+
+    if (nameEl) nameEl.textContent = displayName;
+    // رتبة (الأيقونة الصغيرة)
+    if (rankEl) setImgFromCache(rankEl, 'assets/ranked-icon.png');
+
+    // الصورة الشخصية
+    const photoUrl = tgUser?.photo_url || '';
+    if (avatarEl) {
+      // جرّب حفظها كـ Blob في الكاش (اختياري؛ إذا فشل CORS نعرض الرابط مباشرة)
+      try {
+        const cachedBlob = await cacheGet(CACHE_KEYS.tgAvatarBlob, null);
+        if (cachedBlob instanceof Blob) {
+          const url = URL.createObjectURL(cachedBlob);
+          avatarEl.src = url;
+        } else if (photoUrl) {
+          const resp = await fetch(photoUrl, { mode: 'cors' }).catch(()=>null);
+          if (resp && resp.ok) {
+            const blob = await resp.blob();
+            await cacheSet(CACHE_KEYS.tgAvatarBlob, blob);
+            const url = URL.createObjectURL(blob);
+            avatarEl.src = url;
+          } else {
+            avatarEl.src = photoUrl; // fallback مباشر
+          }
+        }
+      } catch {
+        if (photoUrl) avatarEl.src = photoUrl;
+      }
+      avatarEl.alt = displayName;
+      avatarEl.decoding = 'async';
+      avatarEl.loading = 'eager';
+      avatarEl.referrerPolicy = 'no-referrer';
+    }
+
+    // خزّن الاسم لسرعة الظهور لاحقًا (اختياري)
+    await cacheSet(CACHE_KEYS.tgName, displayName);
+
+    // أبقِ التوافق القديم مؤقتًا إن بقي عنصر username-inside
+    if (usernameBox) usernameBox.textContent = displayName;
+  } catch (e) {
+    console.warn('hydrateUserHeaderFromTelegram failed', e);
+  }
 }
 
 // ========== SHOP FLOATING ICONS & CHARACTER MAIN LOGIC ==========
