@@ -23,7 +23,7 @@
       top: 0; left: 0;
       width: 100vw; height: 100vh;
       object-fit: cover;
-      z-index: -1;
+      z-index: 0; /* كان -1 وتحت خلفية الصفحة */
     }
     .overlay {
       position: absolute; inset: 0;
@@ -80,9 +80,9 @@
 
     .security-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #fff; display: none; align-items: center; justify-content: center; z-index: 100000; text-align: center; padding: 20px; font-size: 1rem; }
 
-    /* Pre-welcome gate overlay */
+    /* Pre-welcome gate overlay: شفاف حتى لا يحجب الفيديو */
     #pre-welcome {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+      position: fixed; inset: 0; background: transparent;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       z-index: 100000;
     }
@@ -92,11 +92,11 @@
       border-top-color: #ffd700; animation: spin 0.9s linear infinite; margin-bottom: 14px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .pre-msg { color: #fff7cc; font-size: 14px; letter-spacing: .4px; opacity: 0.9; }
+    .pre-msg { color: #fff7cc; font-size: 14px; letter-spacing: .4px; opacity: 0.95; }
 
   </style>
 
-  <!-- حماية أساسية: تعطيل قائمة الزر الأيمن والاختصارات الشائعة + مؤشّر DevTools -->
+  <!-- حماية أساسية -->
   <script>
     "use strict";
     (function harden() {
@@ -151,7 +151,7 @@
     <source src="assets/background.mp4" type="video/mp4" />
   </video>
 
-  <!-- Simple pre-welcome overlay -->
+  <!-- Simple pre-welcome overlay (transparent) -->
   <div id="pre-welcome">
     <div class="loader-ring"></div>
     <div class="pre-msg" id="pre-msg">Preparing...</div>
@@ -249,7 +249,6 @@
     async function startMusic() {
       if (!bgMusic) return;
       try {
-        // mark session start for later pages to resume position
         if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
           sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now()));
           sessionStorage.setItem('wlc_music_track', 'assets/preload.mp3');
@@ -260,11 +259,8 @@
     }
 
     function readyUI() {
-      // reveal overlay after pre-welcome
       overlay.style.visibility = 'visible';
-      // "I'm Ready" -> show popup
       readyBtn.onclick = showPopup;
-      // input shows display name (read-only)
       usernameField.value = displayName;
     }
 
@@ -294,7 +290,10 @@
       // Start quick tasks in parallel: check user + warm video + start music
       const t0 = Date.now();
       const userPromise = getPlayerDataFromFirebase(userId);
-      try { video.load(); } catch {}
+      try {
+        video.muted = true; // يضمن autoplay
+        video.play().catch(()=>{}); // بدء الفيديو فورًا
+      } catch {}
       startMusic();
 
       preMsg.textContent = "Checking your profile...";
@@ -321,7 +320,6 @@
 
     // ----- Initialize -----
     window.addEventListener("load", () => {
-      // disable Save button until pre-welcome completes
       saveBtn.disabled = true;
       initWelcome();
     });
