@@ -16,146 +16,84 @@
       overflow: hidden;
       position: relative;
       color: white;
+      background: #000;
     }
     video.bg-video {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       object-fit: cover;
       z-index: -1;
     }
     .overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      position: absolute; inset: 0;
       background: transparent;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-      z-index: 2;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      text-align: center; padding: 20px; z-index: 2;
     }
     .animated-text {
-      font-size: 22px;
-      max-width: 500px;
-      margin-bottom: 40px;
-      line-height: 1.5;
-      color: #fff8dc;
+      font-size: 22px; max-width: 500px; margin-bottom: 40px;
+      line-height: 1.5; color: #fff8dc;
       text-shadow: 0 1px 1px #000, 0 0 8px #ffd700;
       animation: fadeIn 4s ease-in-out;
     }
-    @keyframes fadeIn {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeIn { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
     .agree-btn {
-      padding: 12px 30px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #fff;
-      background: #007bff;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      box-shadow: 0 0 10px #007bff;
-      transition: background 0.3s;
-    }
-    .top-text {
-      position: absolute;
-      top: 30px;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      z-index: 2;
-    }
-    .bottom-btn {
-      position: absolute;
-      bottom: 40px;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      z-index: 2;
+      padding: 12px 30px; font-size: 16px; font-weight: bold; color: #fff;
+      background: #007bff; border: none; border-radius: 10px; cursor: pointer;
+      box-shadow: 0 0 10px #007bff; transition: background .3s;
+      -webkit-tap-highlight-color: transparent;
     }
     .agree-btn:hover { background: #0056b3; }
+    .top-text { position: absolute; top: 30px; width: 100%; display: flex; justify-content: center; z-index: 2; }
+    .bottom-btn { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: center; z-index: 2; }
+
     .popup {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #111;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px gold;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      z-index: 999;
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #111; padding: 30px; border-radius: 12px; box-shadow: 0 0 20px gold;
+      display: none; flex-direction: column; align-items: center; z-index: 999;
     }
     .popup input {
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
-      margin-bottom: 20px;
-      width: 200px;
-      text-align: center;
+      padding: 10px; border-radius: 6px; border: none; margin-bottom: 20px; width: 240px; text-align: center;
+      background: #000; color: #fff; box-shadow: inset 0 0 0 1px #444;
     }
     .popup button {
-      background: gold;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
+      background: gold; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #222;
+      -webkit-tap-highlight-color: transparent;
     }
     .close-btn {
-      position: absolute;
-      top: 8px;
-      right: 12px;
-      font-size: 22px;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-      z-index: 1000;
+      position: absolute; top: 8px; right: 12px; font-size: 22px; color: white; cursor: pointer; font-weight: bold; z-index: 1000;
+      -webkit-tap-highlight-color: transparent;
     }
+
     .block-access {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #111;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.4rem;
-      z-index: 99999;
-      text-align: center;
-      padding: 0 16px;
+      position: fixed; inset: 0; background: #111; color: #fff;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      font-size: 1.4rem; z-index: 99999; text-align: center; padding: 0 16px;
     }
     .block-access a {
-      background: #007bff;
-      color: #fff;
-      padding: 12px 32px;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: bold;
-      margin-top: 35px;
-      font-size: 1.1rem;
-      box-shadow: 0 0 10px #007bff;
-      transition: background 0.2s;
+      background: #007bff; color: #fff; padding: 12px 32px; border-radius: 10px; text-decoration: none; font-weight: bold;
+      margin-top: 35px; font-size: 1.1rem; box-shadow: 0 0 10px #007bff; transition: background 0.2s;
     }
     .block-access a:hover { background: #0056b3; }
-    /* Optional subtle overlay when DevTools suspected (anti-inspect) */
-    .security-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-      color: #fff; display: none; align-items: center; justify-content: center; z-index: 100000;
-      text-align: center; padding: 20px; font-size: 1rem;
+
+    .security-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); color: #fff; display: none; align-items: center; justify-content: center; z-index: 100000; text-align: center; padding: 20px; font-size: 1rem; }
+
+    /* Pre-welcome gate overlay */
+    #pre-welcome {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 100000;
     }
+    .loader-ring {
+      width: 56px; height: 56px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: #ffd700; animation: spin 0.9s linear infinite; margin-bottom: 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pre-msg { color: #fff7cc; font-size: 14px; letter-spacing: .4px; opacity: 0.9; }
+
   </style>
 
   <!-- حماية أساسية: تعطيل قائمة الزر الأيمن والاختصارات الشائعة + مؤشّر DevTools -->
@@ -163,22 +101,14 @@
     "use strict";
     (function harden() {
       document.addEventListener('contextmenu', e => e.preventDefault());
-      ['copy','cut','paste','dragstart','selectstart'].forEach(ev => {
-        document.addEventListener(ev, e => e.preventDefault());
-      });
+      ['copy','cut','paste','dragstart','selectstart'].forEach(ev => { document.addEventListener(ev, e => e.preventDefault()); });
       document.addEventListener('keydown', function(e) {
         const k = (e.key || '').toLowerCase();
-        if (
-          k === 'f12' ||
-          (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(k)) ||
-          (e.metaKey && e.altKey && ['i','j','c'].includes(k)) ||
-          (e.ctrlKey && k === 'u') || (e.metaKey && k === 'u')
-        ) {
+        if (k === 'f12' || (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(k)) || (e.metaKey && e.altKey && ['i','j','c'].includes(k)) || (e.ctrlKey && k === 'u') || (e.metaKey && k === 'u')) {
           e.preventDefault(); e.stopPropagation(); return false;
         }
       }, true);
 
-      // مؤشر بسيط لفتح DevTools (اختياري)
       const secOverlay = document.createElement('div');
       secOverlay.className = 'security-overlay';
       secOverlay.innerHTML = 'Security mode active';
@@ -190,18 +120,10 @@
           const hDiff = Math.abs(window.outerHeight - window.innerHeight);
           if (wDiff > 140 || hDiff > 160) opened = true;
         }
-        try {
-          const el = new Image();
-          Object.defineProperty(el, 'id', { get() { opened = true; return ''; } });
-          console.log('%c', el);
-        } catch(_) {}
+        try { const el = new Image(); Object.defineProperty(el, 'id', { get() { opened = true; return ''; } }); console.log('%c', el); } catch(_) {}
         return opened;
       }
-      setInterval(() => {
-        try {
-          secOverlay.style.display = devtoolsOpen() ? 'flex' : 'none';
-        } catch(_) {}
-      }, 900);
+      setInterval(() => { try { secOverlay.style.display = devtoolsOpen() ? 'flex' : 'none'; } catch(_) {} }, 900);
     })();
   </script>
 
@@ -216,7 +138,6 @@
           '</div>';
         throw new Error("Access blocked: must open from Telegram.");
       }
-      // نحاول التحقق مبكرًا قدر الإمكان
       const tg = window.Telegram && window.Telegram.WebApp;
       if (!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
         window.addEventListener('DOMContentLoaded', block);
@@ -225,11 +146,21 @@
   </script>
 </head>
 <body>
+  <!-- Background video -->
   <video id="bg-video" class="bg-video" autoplay muted playsinline loop>
     <source src="assets/background.mp4" type="video/mp4" />
   </video>
 
-  <div class="overlay">
+  <!-- Simple pre-welcome overlay -->
+  <div id="pre-welcome">
+    <div class="loader-ring"></div>
+    <div class="pre-msg" id="pre-msg">Preparing...</div>
+  </div>
+
+  <!-- Hidden audio for background music (best-effort autoplay) -->
+  <audio id="bg-music" src="assets/preload.mp3" preload="auto" loop style="display:none"></audio>
+
+  <div class="overlay" id="main-overlay" style="visibility:hidden">
     <div class="top-text">
       <div class="animated-text">
         Welcome, You Are Now On The Edge Of A New Gaming Realm. Soon, Your Skills Will Become A Source Of Real Wealth.<br />
@@ -237,14 +168,14 @@
       </div>
     </div>
     <div class="bottom-btn">
-      <button class="agree-btn" onclick="showPopup()">I'm Ready</button>
+      <button class="agree-btn" id="readyBtn">I'm Ready</button>
     </div>
   </div>
 
   <div class="popup" id="usernamePopup">
     <span class="close-btn" onclick="closePopup()">×</span>
-    <input type="text" id="usernameInput" placeholder="Enter your username" readonly />
-    <button id="saveBtn" onclick="handleSaveOrReturn()">Save</button>
+    <input type="text" id="usernameInput" placeholder="Your name" readonly />
+    <button id="saveBtn">Save</button>
   </div>
 
   <script>
@@ -266,90 +197,134 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     const tgUser = tg.initDataUnsafe?.user;
-    let tgUsername = "Player";
-    if (tgUser) {
-      if (tgUser.username && tgUser.username.trim() !== "") {
-        tgUsername = tgUser.username;
-      } else if ((tgUser.first_name && tgUser.first_name.trim() !== "") || (tgUser.last_name && tgUser.last_name.trim() !== "")) {
-        tgUsername = `${tgUser.first_name ? tgUser.first_name : ""}${tgUser.last_name ? " " + tgUser.last_name : ""}`.trim();
-      }
-    }
-    const userId = tgUser?.id ? tgUser.id.toString() : null;
+    const userId = tgUser?.id ? String(tgUser.id) : null;
+
+    // compute display name from Telegram (first + last), no username fallback
+    const firstName = (tgUser?.first_name || '').trim();
+    const lastName  = (tgUser?.last_name  || '').trim();
+    const displayName = (firstName || lastName) ? [firstName, lastName].filter(Boolean).join(' ').trim() : 'Player';
+    const photoUrl = tgUser?.photo_url || '';
+
     const usernameField = document.getElementById("usernameInput");
     const saveBtn = document.getElementById("saveBtn");
+    const readyBtn = document.getElementById("readyBtn");
+    const preGate = document.getElementById('pre-welcome');
+    const preMsg  = document.getElementById('pre-msg');
+    const overlay = document.getElementById('main-overlay');
+    const video   = document.getElementById("bg-video");
+    const bgMusic = document.getElementById("bg-music");
 
-    // ----- Helper: Fetch player from Firebase -----
-    async function getPlayerDataFromFirebase(userId) {
+    // ----- Helpers -----
+    async function getPlayerDataFromFirebase(uid) {
       try {
-        const snapshot = await db.ref("users/" + userId).get();
+        const snapshot = await db.ref("users/" + uid).get();
         return snapshot.exists() ? snapshot.val() : null;
       } catch (err) {
         return null;
       }
     }
-
-    // ----- Register user in Firebase -----
     async function registerNewUserInFirebase() {
-      return db.ref("users/" + userId).set({
-        username: tgUsername,
+      const payload = {
+        firstName, lastName,
+        fullName: displayName,
+        photoUrl: photoUrl || null,
         balance: 0,
         coinCount: 0,
         countdown: 10800,
         lastPlayed: Date.now(),
         joinedAt: new Date().toISOString()
-      });
+      };
+      return db.ref("users/" + userId).set(payload);
     }
 
-    // ----- Main Logic -----
-    async function checkIfUserExists() {
-      if (!userId) return;
-
-      // Fetch player data from Firebase
-      let playerData = await getPlayerDataFromFirebase(userId);
-
-      if (playerData) {
-        usernameField.value = playerData.username || tgUsername;
-        saveBtn.textContent = "I'm Back";
-        // تأكيد المرور عبر welcome دائمًا بإضافة from=welcome
-        saveBtn.onclick = () => window.location.href = "preload.html?from=welcome";
-      } else {
-        usernameField.value = tgUsername;
-        saveBtn.textContent = "Save";
-        saveBtn.onclick = handleSaveOrReturn;
-      }
-    }
-
-    // ----- Show/Hide Popup -----
     function showPopup() {
-      const video = document.getElementById("bg-video");
-      video.muted = false;
-      video.currentTime = 0;
-      video.play();
       document.getElementById("usernamePopup").style.display = "flex";
+      try { video.muted = false; video.currentTime = 0; video.play().catch(()=>{}); } catch {}
     }
     function closePopup() {
       document.getElementById("usernamePopup").style.display = "none";
     }
 
-    // ----- Handle Save/Return -----
+    // Start background music softly (best-effort; may require user gesture on some devices)
+    async function startMusic() {
+      if (!bgMusic) return;
+      try {
+        // mark session start for later pages to resume position
+        if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
+          sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now()));
+          sessionStorage.setItem('wlc_music_track', 'assets/preload.mp3');
+        }
+      } catch {}
+      bgMusic.volume = 0.76;
+      try { await bgMusic.play(); } catch (e) { /* autoplay may be blocked; ignore */ }
+    }
+
+    function readyUI() {
+      // reveal overlay after pre-welcome
+      overlay.style.visibility = 'visible';
+      // "I'm Ready" -> show popup
+      readyBtn.onclick = showPopup;
+      // input shows display name (read-only)
+      usernameField.value = displayName;
+    }
+
     async function handleSaveOrReturn() {
       if (!userId) return;
-      const existsInFirebase = await getPlayerDataFromFirebase(userId);
-      // دائمًا الانتقال مع from=welcome
-      if (existsInFirebase) {
+      const exists = await getPlayerDataFromFirebase(userId);
+      if (exists) {
         window.location.href = "preload.html?from=welcome";
       } else {
         try {
           await registerNewUserInFirebase();
           window.location.href = "preload.html?from=welcome";
         } catch (error) {
-          alert("Error saving data: " + error.message);
+          alert("Error saving data: " + (error?.message || error));
         }
       }
     }
 
+    async function initWelcome() {
+      if (!userId) {
+        document.body.innerHTML =
+          '<div class="block-access">Access denied.<br>Please open WELLcoin from Telegram app.<br>' +
+          '<a href="https://t.me/WELLcoinGameBot?start=play" target="_blank" rel="noopener noreferrer">Open in Telegram</a></div>';
+        return;
+      }
+
+      // Start quick tasks in parallel: check user + warm video + start music
+      const t0 = Date.now();
+      const userPromise = getPlayerDataFromFirebase(userId);
+      try { video.load(); } catch {}
+      startMusic();
+
+      preMsg.textContent = "Checking your profile...";
+      const playerData = await userPromise;
+
+      // Configure Save / I'm Back strictly after we know the state
+      if (playerData) {
+        saveBtn.textContent = "I'm Back";
+      } else {
+        saveBtn.textContent = "Save";
+      }
+      saveBtn.onclick = handleSaveOrReturn;
+      saveBtn.disabled = false;
+
+      // little min time to avoid flicker
+      const minDelay = 300;
+      const elapsed = Date.now() - t0;
+      if (elapsed < minDelay) await new Promise(r => setTimeout(r, minDelay - elapsed));
+
+      // Hide pre-gate and show main overlay
+      preGate.style.display = 'none';
+      readyUI();
+    }
+
     // ----- Initialize -----
-    window.addEventListener("load", checkIfUserExists);
+    window.addEventListener("load", () => {
+      // disable Save button until pre-welcome completes
+      saveBtn.disabled = true;
+      initWelcome();
+    });
   </script>
 </body>
 </html>
