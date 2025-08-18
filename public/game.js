@@ -1,3 +1,4 @@
+game.js
 // --- منع الزوم والسكرول ---
 document.addEventListener('touchmove', function(event) {
   if (event.scale !== 1) { event.preventDefault(); }
@@ -117,7 +118,7 @@ window.addEventListener('beforeunload', () => {
   assetBlobUrlCache.clear();
 });
 
-// =========== الموسيقى: جودة أعلى + تشغيل مضمون بعد الانتقال من preload ===========
+// =========== الموسيقى: استمرار مضمون بعد الانتقال من preload ===========
 (function setupMusic() {
   let audioEl = document.getElementById('preloadAudio');
   if (!audioEl) {
@@ -129,12 +130,22 @@ window.addEventListener('beforeunload', () => {
     document.body.appendChild(audioEl);
   }
 
-  // 1) المصدر مباشر لأفضل جودة (سيأتي من كاش المتصفح بعد preload)
+  let audioBlobUrl = null;
+
   async function loadAudioSrc() {
-    audioEl.src = 'assets/preload.mp3';
+    try {
+      const blob = await idbGet('asset:assets/preload.mp3');
+      if (blob instanceof Blob) {
+        audioBlobUrl = URL.createObjectURL(blob);
+        audioEl.src = audioBlobUrl;
+      } else {
+        audioEl.src = 'assets/preload.mp3';
+      }
+    } catch {
+      audioEl.src = 'assets/preload.mp3';
+    }
   }
 
-  // 2) استئناف من الجلسة (دقة أعلى: أولاً currentTime المحفوظ ثم startedAtMs)
   function applySessionResume() {
     try {
       const track = sessionStorage.getItem('wlc_music_track') || '';
@@ -163,7 +174,6 @@ window.addEventListener('beforeunload', () => {
     } catch {}
   }
 
-  // 3) تشغيل صامت (priming) لتجاوز سياسات autoplay
   function primeMutedAutoplay() {
     try {
       audioEl.muted = true;
@@ -172,14 +182,12 @@ window.addEventListener('beforeunload', () => {
     } catch {}
   }
 
-  // 4) فك الكتم
   function unmuteNow() {
     audioEl.muted = false;
     audioEl.volume = 0.76;
     audioEl.play().catch(()=>{});
   }
 
-  // 5) فك الكتم عند أول تفاعل
   function unmuteOnFirstGesture() {
     let armed = true;
     const ensureAudible = () => {
@@ -197,39 +205,33 @@ window.addEventListener('beforeunload', () => {
     ['pointerdown','touchstart','click','keydown'].forEach(ev => document.addEventListener(ev, ensureAudible, opts));
     const tc = document.getElementById('tap-character');
     if (tc) tc.addEventListener('pointerdown', ensureAudible, opts);
-
-    // إبقائه حيّاً عند العودة للتركيز
     document.addEventListener('visibilitychange', () => { if (!document.hidden) audioEl.play().catch(()=>{}); });
     window.addEventListener('focus', () => audioEl.play().catch(()=>{}));
   }
 
-  // 6) محاولة فك الكتم مباشرة إن أتينا من preload (اختياري)
   function maybeAutoUnmuteFromPreload() {
     const fromPreload = sessionStorage.getItem('wlc_from_preload') === '1';
     if (!fromPreload) return;
+    // نحاول فورًا ثم عند pageshow/focus كتعزيز
     unmuteNow();
     window.addEventListener('pageshow', () => unmuteNow(), { once: true });
     window.addEventListener('focus', () => unmuteNow(), { once: true });
   }
 
-  // 7) حفظ الموضع الزمني قبل المغادرة/الإخفاء (لتجربة رجوع دقيقة)
-  function persistCT() {
-    try {
-      sessionStorage.setItem('wlc_music_ct', String(audioEl.currentTime || 0));
-      sessionStorage.setItem('wlc_music_track', 'assets/preload.mp3');
-    } catch {}
-  }
-  window.addEventListener('pagehide', persistCT);
-  window.addEventListener('beforeunload', persistCT);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) persistCT(); });
-
   (async () => {
     await loadAudioSrc();
     applySessionResume();
-    primeMutedAutoplay();        // يبدأ صامتًا
-    maybeAutoUnmuteFromPreload();// إن أتينا من preload
-    unmuteOnFirstGesture();      // ضمان أكيد على أول تفاعل
+    primeMutedAutoplay();        // يبدأ صامتًا لتجاوز سياسات autoplay
+    maybeAutoUnmuteFromPreload();// إن أتينا من preload نحاول فك الكتم مباشرة
+    unmuteOnFirstGesture();      // ضمان أكيد عند أول تفاعل
   })();
+
+  window.addEventListener('beforeunload', () => {
+    if (audioBlobUrl) {
+      try { URL.revokeObjectURL(audioBlobUrl); } catch {}
+      audioBlobUrl = null;
+    }
+  });
 })();
 
 // -------------- Firebase & Telegram --------------
@@ -662,7 +664,6 @@ function showOkeyPopup({title, desc}) {
   });
   document.getElementById("popup-okey-btn").onclick = closePopup;
 }
-
 // ========== شكل الأيقونات العائمة (تصغير شامل + شفافية أكثر مع الحفاظ على التباعد) ==========
 (function injectFloatingIconsStyles(){
   const id = 'floating-icons-polish';
