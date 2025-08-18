@@ -117,7 +117,7 @@ window.addEventListener('beforeunload', () => {
   assetBlobUrlCache.clear();
 });
 
-// =========== الموسيقى: استمرار مضمون بعد الانتقال من preload ===========
+// =========== الموسيقى: جودة أعلى + تشغيل مضمون بعد الانتقال من preload ===========
 (function setupMusic() {
   let audioEl = document.getElementById('preloadAudio');
   if (!audioEl) {
@@ -129,22 +129,12 @@ window.addEventListener('beforeunload', () => {
     document.body.appendChild(audioEl);
   }
 
-  let audioBlobUrl = null;
-
+  // 1) المصدر مباشر لأفضل جودة (سيأتي من كاش المتصفح بعد preload)
   async function loadAudioSrc() {
-    try {
-      const blob = await idbGet('asset:assets/preload.mp3');
-      if (blob instanceof Blob) {
-        audioBlobUrl = URL.createObjectURL(blob);
-        audioEl.src = audioBlobUrl;
-      } else {
-        audioEl.src = 'assets/preload.mp3';
-      }
-    } catch {
-      audioEl.src = 'assets/preload.mp3';
-    }
+    audioEl.src = 'assets/preload.mp3';
   }
 
+  // 2) استئناف من الجلسة (دقة أعلى: أولاً currentTime المحفوظ ثم startedAtMs)
   function applySessionResume() {
     try {
       const track = sessionStorage.getItem('wlc_music_track') || '';
@@ -173,6 +163,7 @@ window.addEventListener('beforeunload', () => {
     } catch {}
   }
 
+  // 3) تشغيل صامت (priming) لتجاوز سياسات autoplay
   function primeMutedAutoplay() {
     try {
       audioEl.muted = true;
@@ -181,12 +172,14 @@ window.addEventListener('beforeunload', () => {
     } catch {}
   }
 
+  // 4) فك الكتم
   function unmuteNow() {
     audioEl.muted = false;
     audioEl.volume = 0.76;
     audioEl.play().catch(()=>{});
   }
 
+  // 5) فك الكتم عند أول تفاعل
   function unmuteOnFirstGesture() {
     let armed = true;
     const ensureAudible = () => {
@@ -204,33 +197,39 @@ window.addEventListener('beforeunload', () => {
     ['pointerdown','touchstart','click','keydown'].forEach(ev => document.addEventListener(ev, ensureAudible, opts));
     const tc = document.getElementById('tap-character');
     if (tc) tc.addEventListener('pointerdown', ensureAudible, opts);
+
+    // إبقائه حيّاً عند العودة للتركيز
     document.addEventListener('visibilitychange', () => { if (!document.hidden) audioEl.play().catch(()=>{}); });
     window.addEventListener('focus', () => audioEl.play().catch(()=>{}));
   }
 
+  // 6) محاولة فك الكتم مباشرة إن أتينا من preload (اختياري)
   function maybeAutoUnmuteFromPreload() {
     const fromPreload = sessionStorage.getItem('wlc_from_preload') === '1';
     if (!fromPreload) return;
-    // نحاول فورًا ثم عند pageshow/focus كتعزيز
     unmuteNow();
     window.addEventListener('pageshow', () => unmuteNow(), { once: true });
     window.addEventListener('focus', () => unmuteNow(), { once: true });
   }
 
+  // 7) حفظ الموضع الزمني قبل المغادرة/الإخفاء (لتجربة رجوع دقيقة)
+  function persistCT() {
+    try {
+      sessionStorage.setItem('wlc_music_ct', String(audioEl.currentTime || 0));
+      sessionStorage.setItem('wlc_music_track', 'assets/preload.mp3');
+    } catch {}
+  }
+  window.addEventListener('pagehide', persistCT);
+  window.addEventListener('beforeunload', persistCT);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) persistCT(); });
+
   (async () => {
     await loadAudioSrc();
     applySessionResume();
-    primeMutedAutoplay();        // يبدأ صامتًا لتجاوز سياسات autoplay
-    maybeAutoUnmuteFromPreload();// إن أتينا من preload نحاول فك الكتم مباشرة
-    unmuteOnFirstGesture();      // ضمان أكيد عند أول تفاعل
+    primeMutedAutoplay();        // يبدأ صامتًا
+    maybeAutoUnmuteFromPreload();// إن أتينا من preload
+    unmuteOnFirstGesture();      // ضمان أكيد على أول تفاعل
   })();
-
-  window.addEventListener('beforeunload', () => {
-    if (audioBlobUrl) {
-      try { URL.revokeObjectURL(audioBlobUrl); } catch {}
-      audioBlobUrl = null;
-    }
-  });
 })();
 
 // -------------- Firebase & Telegram --------------
@@ -664,33 +663,38 @@ function showOkeyPopup({title, desc}) {
   document.getElementById("popup-okey-btn").onclick = closePopup;
 }
 
-// ========== شكل الأيقونات العائمة (ستايل فقط، بدون تغيير الميكانيك) ==========
+// ========== شكل الأيقونات العائمة (تصغير شامل + شفافية أكثر مع الحفاظ على التباعد) ==========
 (function injectFloatingIconsStyles(){
   const id = 'floating-icons-polish';
   if (document.getElementById(id)) return;
   const s = document.createElement('style');
   s.id = id;
   s.textContent = `
+    /* الحفاظ على نفس التباعد بين الأيقونات */
     .floating-icons-wrap, #floating-icons-area { gap: 10px !important; }
+
+    /* تصغير الحاوية العامة */
     .floating-icon-outer {
-      width: 78px !important;
+      width: 66px !important; /* كان 78 */
       background: transparent !important;
       border: none !important;
-      border-radius: 14px !important;
+      border-radius: 12px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
       justify-content: flex-start !important;
-      padding: 6px 4px 8px 4px !important;
+      padding: 5px 3px 6px 3px !important; /* كان 6px 4px 8px */
       box-shadow: none !important;
       backdrop-filter: none !important;
     }
+
+    /* صورة دائرية أصغر وشفافية أعلى قليلاً */
     .floating-icon-img {
-      width: 64px !important;
-      height: 64px !important;
+      width: 54px !important;  /* كان 64 */
+      height: 54px !important; /* كان 64 */
       border-radius: 50% !important;
       object-fit: cover !important;
-      opacity: 0.9 !important;
+      opacity: 0.82 !important; /* كان 0.9 */
       border: 1px solid rgba(255, 215, 130, 0.35) !important;
       box-shadow: 0 6px 16px rgba(0,0,0,0.35) !important;
       background: radial-gradient(110% 110% at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%) !important;
@@ -703,30 +707,34 @@ function showOkeyPopup({title, desc}) {
       box-shadow: 0 10px 22px rgba(0,0,0,0.45);
       opacity: 1;
     }
+
+    /* عداد الوقت أصغر */
     .floating-icon-timer {
-      margin-top: 6px !important;
-      font-size: 11px !important;
+      margin-top: 5px !important;
+      font-size: 10px !important;      /* كان 11 */
       line-height: 1 !important;
       color: #e9f1ff !important;
-      background: rgba(8, 12, 16, 0.55) !important;
-      border: 1px solid rgba(140, 190, 255, 0.25) !important;
-      padding: 3px 7px !important;
+      background: rgba(8, 12, 16, 0.50) !important;
+      border: 1px solid rgba(140, 190, 255, 0.22) !important;
+      padding: 2px 6px !important;      /* كان 3px 7px */
       border-radius: 999px !important;
       letter-spacing: .2px !important;
       box-shadow: 0 2px 6px rgba(0,0,0,0.25) inset, 0 2px 10px rgba(0,0,0,0.2);
-      min-width: 64px;
+      min-width: 54px;                  /* كان 64 */
       text-align: center;
     }
+
+    /* زر الـ Claim أصغر */
     .floating-claim-btn {
-      margin-top: 6px !important;
-      font-size: 12px !important;
+      margin-top: 5px !important;
+      font-size: 11px !important;       /* كان 12 */
       font-weight: 700 !important;
-      padding: 7px 12px !important;
-      border-radius: 10px !important;
+      padding: 6px 10px !important;     /* كان 7px 12px */
+      border-radius: 9px !important;    /* كان 10px */
       border: none !important;
       color: #222 !important;
       background: linear-gradient(90deg, #ffd36a, #fff2c3) !important;
-      box-shadow: 0 4px 16px rgba(255, 210, 80, 0.35) !important;
+      box-shadow: 0 3px 12px rgba(255, 210, 80, 0.32) !important;
       transition: transform .08s ease-out, box-shadow .12s ease-out, filter .12s ease-out;
     }
     .floating-claim-btn:active {
