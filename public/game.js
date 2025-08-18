@@ -13,6 +13,27 @@ window.addEventListener('scroll', function() { window.scrollTo(0, 0); });
 document.body.style.overflow = "hidden";
 document.documentElement.style.overflow = "hidden";
 
+// --- حقن ستايل لإزالة الوميض الأزرق والتركيز على الأزرار/الروابط ---
+(function injectNoTapFlashCSS(){
+  if (document.getElementById('no-tap-flash')) return;
+  const style = document.createElement('style');
+  style.id = 'no-tap-flash';
+  style.textContent = `
+    * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+    a, button, [role="button"], .floating-claim-btn, #play-btn, .popup-action-btn, .popup-okey-btn, .popup-close, #cooldown-close {
+      -webkit-tap-highlight-color: transparent !important;
+      outline: none !important;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+    }
+    a:focus, button:focus, [role="button"]:focus, .floating-claim-btn:focus, #play-btn:focus,
+    .popup-action-btn:focus, .popup-okey-btn:focus, .popup-close:focus, #cooldown-close:focus {
+      outline: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
 // =========== IndexedDB Helper ===========
 // صغير وعملي للتعامل مع indexedDB مثل localStorage
 const IDB_NAME = 'wellcoin_game_cache';
@@ -52,24 +73,47 @@ function idbGet(key) {
   });
 }
 
-// ========== تحميل الصور والايقونات من الكاش ==========
+// ========== تحميل الصور والايقونات من الكاش (بدون وميض) ==========
+const __imgObjUrlMap = new WeakMap(); // يجمع آخر blob URL لكل عنصر <img> لتفريغه لاحقًا
 async function setImgFromCache(imgEl, assetPath) {
   if (!imgEl) return;
   try {
+    // 1) جرّب الكاش
     let blob = await idbGet('asset:' + assetPath);
+    let candidateUrl = assetPath;
+    let isBlobUrl = false;
+
     if (blob && blob instanceof Blob) {
-      imgEl.src = URL.createObjectURL(blob);
-      imgEl.setAttribute('data-cached', '1');
-    } else {
-      imgEl.src = assetPath;
+      candidateUrl = URL.createObjectURL(blob);
+      isBlobUrl = true;
     }
+
+    // 2) حمّل/فك ترميز الصورة في الخلفية قبل الاستبدال لتجنب الوميض
+    await new Promise(res => {
+      const tmp = new Image();
+      tmp.decoding = 'async';
+      tmp.onload = () => res();
+      tmp.onerror = () => res();
+      tmp.src = candidateUrl;
+    });
+
+    // 3) أزل الـ blob URL السابق المرتبط بهذا العنصر إن وجد
+    const prevUrl = __imgObjUrlMap.get(imgEl);
+    if (prevUrl) {
+      try { URL.revokeObjectURL(prevUrl); } catch {}
+      __imgObjUrlMap.delete(imgEl);
+    }
+
+    // 4) عيّن الصورة الجديدة فورًا
+    imgEl.src = candidateUrl;
+    if (isBlobUrl) __imgObjUrlMap.set(imgEl, candidateUrl);
+    imgEl.setAttribute('data-cached', isBlobUrl ? '1' : '0');
   } catch {
     imgEl.src = assetPath;
   }
 }
 
 // =========== الموسيقى: استمرار من preload ===========
-// عند كل جلسة جديدة، نعيد تشغيل الموسيقى من جديد لأن الصفحة reload
 (function setupMusic() {
   let preloadAudio = document.getElementById('preloadAudio');
   if (!preloadAudio) {
@@ -213,7 +257,6 @@ function scheduleFlush() {
         return cur + delta;
       });
     } catch (e) {
-      // يمكن إضافة إعادة محاولة لاحقاً
       console.error("Balance flush failed", e);
     }
   }, 400);
@@ -226,7 +269,6 @@ function saveEnergyToDB() {
   lastEnergySaveTime = Date.now();
 }
 function sendBalanceToDB() {
-  // تُستخدم يدوياً فقط، التجميع هو الأساس الآن
   if (balance !== lastSentBalance) {
     db.ref("users/" + userId).update({ balance: balance });
     lastSentBalance = balance;
@@ -385,7 +427,7 @@ tapCharacter.addEventListener("pointerdown", function(e) {
   updateEnergyBar();
   cacheSet(CACHE_KEYS.balance, balance);
 
-  // حفظ طاقة النقر (ممكن لاحقاً نخفّفه)
+  // حفظ طاقة النقر
   saveEnergyToDB();
 
   // جدولة كتابة الرصيد مجمّعة
@@ -395,15 +437,12 @@ tapCharacter.addEventListener("pointerdown", function(e) {
 
 // حفظ الرصيد والطاقة عند الخروج
 window.addEventListener("beforeunload", function() {
-  // محاولة سريعة لتصفير الدفعة المجمعّة قبل الخروج
   if (pendingDelta !== 0) {
-    // جدولة فورية
     clearTimeout(flushTimer);
     flushTimer = null;
     const delta = pendingDelta;
     pendingDelta = 0;
     try {
-      // لن تنتظر الإكمال، لكنها تحاول
       balanceRef.transaction(cur => {
         if (typeof cur !== "number") cur = 0;
         return cur + delta;
@@ -595,7 +634,7 @@ function renderFloatingIcons(shopData) {
           <button class="floating-claim-btn${claimable ? "" : " disabled"}" id="${iconId}" ${claimable ? "" : "disabled"}>Claim</button>
         </div>
       `;
-      // حمّل الصورة من الكاش بعد إضافة العنصر (لضمان وجوده)
+      // حمّل الصورة من الكاش بعد إضافة العنصر (لضمان وجوده) بدون وميض
       setTimeout(() => {
         setImgFromCache(document.querySelector(`#floating-${prod.id} .floating-icon-img`), prod.img);
         const claimBtn = document.getElementById(iconId);
