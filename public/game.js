@@ -212,7 +212,6 @@ window.addEventListener('beforeunload', () => {
         armed = false;
         off();
       } catch {
-        // لو فشل بسبب السياسة، نبقي المستمعات لتجربة لاحقة
         armed = true;
       }
     };
@@ -246,7 +245,6 @@ window.addEventListener('beforeunload', () => {
       sessionStorage.setItem('wlc_music_ct', String(audioEl.currentTime || 0));
       sessionStorage.setItem('wlc_music_track', 'assets/preload.mp3');
       if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
-        // تقدير بدائي لبداية التشغيل
         sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (audioEl.currentTime || 0) * 1000));
       }
     } catch {}
@@ -255,9 +253,8 @@ window.addEventListener('beforeunload', () => {
   window.addEventListener('beforeunload', persistCT);
   document.addEventListener('visibilitychange', () => { if (document.hidden) persistCT(); });
 
-  // إعادة المحاولة عند العودة من صفحات أخرى (bfcache أو تنشيط)
+  // إعادة المحاولة عند العودة من صفحات أخرى
   window.addEventListener('pageshow', () => {
-    // نبدأ صامت ثم يَفك الكتم المستخدم على أول تفاعل
     primeMutedAutoplay();
   });
 
@@ -345,6 +342,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   hydrateUserHeaderFromTelegram();
+
+  // تجهيز أزرار التنقل (Me + Ranked)
+  setupNavShortcuts();
 });
 
 // ====== SHOP ICONS & CHARACTER IMAGE LOGIC ======
@@ -840,6 +840,60 @@ async function hydrateUserHeaderFromTelegram() {
     if (usernameBox) usernameBox.textContent = displayName;
   } catch (e) {
     console.warn('hydrateUserHeaderFromTelegram failed', e);
+  }
+}
+
+// ====== تجهيز أزرار Me + Ranked ======
+function setupNavShortcuts() {
+  const firstSel = (arr) => {
+    for (const s of arr) { const el = document.querySelector(s); if (el) return el; }
+    return null;
+  };
+  const go = (url) => {
+    try {
+      const a = document.getElementById('preloadAudio');
+      if (a) {
+        sessionStorage.setItem('wlc_music_ct', String(a.currentTime || 0));
+        sessionStorage.setItem('wlc_music_track', 'assets/preload.mp3');
+        if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
+          sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (a.currentTime || 0) * 1000));
+        }
+      }
+    } catch {}
+    window.location.href = url;
+  };
+
+  // زر Me
+  const meBtn = firstSel(['#me-btn', '#me', '#btn-me', '[data-nav="me"]', '.nav-me']);
+  if (meBtn && !meBtn.__wlc_bound) {
+    meBtn.__wlc_bound = true;
+    meBtn.style.cursor = 'pointer';
+    meBtn.style.touchAction = 'manipulation';
+    meBtn.addEventListener('click', () => go('me.html'));
+    meBtn.addEventListener('touchend', () => go('me.html'), { passive: true });
+  }
+
+  // أيقونة Ranked
+  let rank = document.getElementById('user-rank-icon') || document.getElementById('ranked');
+  if (rank && !rank.__wlc_bound) {
+    rank.__wlc_bound = true;
+    // زيادة الحجم +6px دون الحاجة لمعرفة الحجم الأصلي
+    try {
+      const rect = rank.getBoundingClientRect();
+      if (rect.width && rect.height) {
+        rank.style.width = Math.round(rect.width + 6) + 'px';
+        rank.style.height = Math.round(rect.height + 6) + 'px';
+      } else {
+        // fallback حجم مريح للنقر
+        rank.style.width = '30px';
+        rank.style.height = '30px';
+      }
+    } catch {}
+    rank.style.cursor = 'pointer';
+    rank.style.touchAction = 'manipulation';
+    rank.style.pointerEvents = 'auto';
+    rank.addEventListener('click', () => go('ranked.html'));
+    rank.addEventListener('touchend', () => go('ranked.html'), { passive: true });
   }
 }
 
