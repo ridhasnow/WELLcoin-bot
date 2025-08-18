@@ -117,7 +117,7 @@ window.addEventListener('beforeunload', () => {
   assetBlobUrlCache.clear();
 });
 
-// =========== الموسيقى: استمرار بعد الانتقال من preload ===========
+// =========== الموسيقى: استمرار مضمون بعد الانتقال من preload ===========
 (function setupMusic() {
   let audioEl = document.getElementById('preloadAudio');
   if (!audioEl) {
@@ -129,55 +129,108 @@ window.addEventListener('beforeunload', () => {
     document.body.appendChild(audioEl);
   }
 
-  // حاول استخدام نسخة الكاش من IndexedDB لبدء فوري
-  (async () => {
+  let audioBlobUrl = null;
+
+  async function loadAudioSrc() {
     try {
       const blob = await idbGet('asset:assets/preload.mp3');
       if (blob instanceof Blob) {
-        const url = URL.createObjectURL(blob);
-        audioEl.src = url;
+        audioBlobUrl = URL.createObjectURL(blob);
+        audioEl.src = audioBlobUrl;
       } else {
         audioEl.src = 'assets/preload.mp3';
       }
     } catch {
       audioEl.src = 'assets/preload.mp3';
     }
+  }
 
-    const tryResumeFromSession = () => {
-      try {
-        const startedAtMs = parseInt(sessionStorage.getItem('wlc_music_started_at_ms') || '0', 10);
-        const track = sessionStorage.getItem('wlc_music_track') || '';
-        if (!startedAtMs || track !== 'assets/preload.mp3') return;
+  function applySessionResume() {
+    try {
+      const track = sessionStorage.getItem('wlc_music_track') || '';
+      if (track && track !== 'assets/preload.mp3') return;
 
+      const ct = parseFloat(sessionStorage.getItem('wlc_music_ct') || 'NaN');
+      if (Number.isFinite(ct) && ct > 0) {
+        const setCT = () => { try { audioEl.currentTime = ct % (audioEl.duration || ct); } catch {} };
+        if (audioEl.readyState >= 1) setCT();
+        else audioEl.addEventListener('loadedmetadata', setCT, { once: true });
+        return;
+      }
+
+      const startedAtMs = parseInt(sessionStorage.getItem('wlc_music_started_at_ms') || '0', 10);
+      if (startedAtMs) {
         const elapsedSec = Math.max(0, (Date.now() - startedAtMs) / 1000);
-        const dur = audioEl.duration;
-        if (Number.isFinite(dur) && dur > 1) {
-          const pos = elapsedSec % dur;
-          // بعض المتصفحات ترفض set currentTime قبل canplay
-          try { audioEl.currentTime = pos; } catch {}
-        } else {
-          audioEl.addEventListener('loadedmetadata', () => {
-            const d = audioEl.duration;
-            if (Number.isFinite(d) && d > 1) {
-              const pos = elapsedSec % d;
-              try { audioEl.currentTime = pos; } catch {}
-            }
-          }, { once: true });
-        }
-      } catch {}
-    };
+        const setPos = () => {
+          const d = audioEl.duration;
+          if (Number.isFinite(d) && d > 1) {
+            try { audioEl.currentTime = (elapsedSec % d); } catch {}
+          }
+        };
+        if (audioEl.readyState >= 1) setPos();
+        else audioEl.addEventListener('loadedmetadata', setPos, { once: true });
+      }
+    } catch {}
+  }
 
-    // ابدأ التشغيل فورًا + جرّب الاستئناف الزمني إن توفّر
+  function primeMutedAutoplay() {
+    try {
+      audioEl.muted = true;
+      audioEl.volume = 0.76;
+      audioEl.play().catch(()=>{});
+    } catch {}
+  }
+
+  function unmuteNow() {
+    audioEl.muted = false;
     audioEl.volume = 0.76;
-    tryResumeFromSession();
     audioEl.play().catch(()=>{});
+  }
 
-    // إعادة المحاولة إذا علّق الصوت بعد الانتقال
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) audioEl.play().catch(()=>{});
-    });
+  function unmuteOnFirstGesture() {
+    let armed = true;
+    const ensureAudible = () => {
+      if (!armed) return;
+      armed = false;
+      unmuteNow();
+      off();
+    };
+    const opts = { once: true, passive: true };
+    function off() {
+      ['pointerdown','touchstart','click','keydown'].forEach(ev => document.removeEventListener(ev, ensureAudible, opts));
+      const tc = document.getElementById('tap-character');
+      if (tc) tc.removeEventListener('pointerdown', ensureAudible, opts);
+    }
+    ['pointerdown','touchstart','click','keydown'].forEach(ev => document.addEventListener(ev, ensureAudible, opts));
+    const tc = document.getElementById('tap-character');
+    if (tc) tc.addEventListener('pointerdown', ensureAudible, opts);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) audioEl.play().catch(()=>{}); });
     window.addEventListener('focus', () => audioEl.play().catch(()=>{}));
+  }
+
+  function maybeAutoUnmuteFromPreload() {
+    const fromPreload = sessionStorage.getItem('wlc_from_preload') === '1';
+    if (!fromPreload) return;
+    // نحاول فورًا ثم عند pageshow/focus كتعزيز
+    unmuteNow();
+    window.addEventListener('pageshow', () => unmuteNow(), { once: true });
+    window.addEventListener('focus', () => unmuteNow(), { once: true });
+  }
+
+  (async () => {
+    await loadAudioSrc();
+    applySessionResume();
+    primeMutedAutoplay();        // يبدأ صامتًا لتجاوز سياسات autoplay
+    maybeAutoUnmuteFromPreload();// إن أتينا من preload نحاول فك الكتم مباشرة
+    unmuteOnFirstGesture();      // ضمان أكيد عند أول تفاعل
   })();
+
+  window.addEventListener('beforeunload', () => {
+    if (audioBlobUrl) {
+      try { URL.revokeObjectURL(audioBlobUrl); } catch {}
+      audioBlobUrl = null;
+    }
+  });
 })();
 
 // -------------- Firebase & Telegram --------------
@@ -216,7 +269,7 @@ function cacheSet(key, val) {
   return idbSet(key, val);
 }
 const CACHE_KEYS = {
-  username: `wlc:${userId}:username`, // قد لا نستخدمه بعد الآن
+  username: `wlc:${userId}:username`,
   balance:  `wlc:${userId}:balance`,
   shop:     `wlc:${userId}:shopItems`,
   activeCharacterSrc: `wlc:${userId}:activeCharacterSrc`,
@@ -226,34 +279,27 @@ const CACHE_KEYS = {
 
 // ========== تحميل الأصول من الكاش على الواجهة ==========
 document.addEventListener('DOMContentLoaded', async () => {
-  // أخفي كادر التنين إن وُجد (سنرتب الهيدر الجديد في HTML لاحقًا)
   (function hideDragonFrame() {
     const styleId = 'hide-dragon-frame';
     if (document.getElementById(styleId)) return;
     const s = document.createElement('style');
     s.id = styleId;
-    s.textContent = `
-      .dragon-frame, .dragon-frame-img { display: none !important; }
-    `;
+    s.textContent = `.dragon-frame, .dragon-frame-img { display: none !important; }`;
     document.head.appendChild(s);
   })();
 
-  // صور الهيدر الافتراضية القديمة (إن بقيت)
   setImgFromCache(document.getElementById("ranked"), 'assets/ranked-icon.png');
 
-  // صورة الشخصية الأساسية
   let savedChar = await cacheGet(CACHE_KEYS.activeCharacterSrc, null);
   if (!savedChar) savedChar = "assets/character.png";
   setImgFromCache(tapCharacter, savedChar);
 
-  // بيانات الواجهة: رصيد
   const cachedBalance = await cacheGet(CACHE_KEYS.balance, null);
   if (balanceDisplay != null && typeof cachedBalance === 'number') {
     balanceDisplay.textContent = formatWLC(cachedBalance);
     balance = cachedBalance;
   }
 
-  // هيدر المستخدم الجديد من Telegram (name + last_name + avatar)
   hydrateUserHeaderFromTelegram();
 });
 
@@ -338,7 +384,6 @@ window.addEventListener("load", async () => {
     }
     const userData = snapshot.val();
 
-    // الرصيد + مزامنة حية
     balance = parseFloat(userData.balance || 0);
     lastSentBalance = balance;
     updateBalanceDisplay();
@@ -350,7 +395,6 @@ window.addEventListener("load", async () => {
       cacheSet(CACHE_KEYS.balance, val);
     });
 
-    // طاقة النقر
     if (userData.energyTaps !== undefined && userData.lastEnergySaveTime !== undefined) {
       let prevTaps = parseInt(userData.energyTaps);
       let prevSave = parseInt(userData.lastEnergySaveTime);
@@ -368,14 +412,13 @@ window.addEventListener("load", async () => {
     updateEnergyBar();
     startEnergyReplenish();
 
-    // متجر: هيدرِيت من الكاش ثم اسمع للحيّ
     const cachedShop = await cacheGet(CACHE_KEYS.shop, null);
     if (cachedShop) {
       shopDataCache = cachedShop;
       renderFloatingIcons(shopDataCache);
       updateCharacterImage(shopDataCache);
     }
-    setupShopLogic(); // يبدأ الاستماع لبيانات المتجر الحية
+    setupShopLogic();
   });
 });
 
@@ -470,15 +513,12 @@ tapCharacter.addEventListener("pointerdown", function(e) {
   energyTaps -= 1;
   balance += tapValue;
 
-  // تحديث فوري في الواجهة + كاش
   updateBalanceDisplay();
   updateEnergyBar();
   cacheSet(CACHE_KEYS.balance, balance);
 
-  // حفظ طاقة النقر
   saveEnergyToDB();
 
-  // جدولة كتابة الرصيد مجمّعة
   pendingDelta += tapValue;
   scheduleFlush();
 });
@@ -631,7 +671,6 @@ function showOkeyPopup({title, desc}) {
   const s = document.createElement('style');
   s.id = id;
   s.textContent = `
-    /* حاوية أيقونة أصغر ودائرية وحديثة */
     .floating-icons-wrap, #floating-icons-area { gap: 10px !important; }
     .floating-icon-outer {
       width: 78px !important;
@@ -651,8 +690,8 @@ function showOkeyPopup({title, desc}) {
       height: 64px !important;
       border-radius: 50% !important;
       object-fit: cover !important;
-      opacity: 0.9 !important; /* شفافية خفيفة للصورة */
-      border: 1px solid rgba(255, 215, 130, 0.35) !important; /* لمسة ذهبية رقيقة */
+      opacity: 0.9 !important;
+      border: 1px solid rgba(255, 215, 130, 0.35) !important;
       box-shadow: 0 6px 16px rgba(0,0,0,0.35) !important;
       background: radial-gradient(110% 110% at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%) !important;
       transition: transform .12s ease-out, box-shadow .12s ease-out, opacity .12s ease-out;
@@ -707,22 +746,18 @@ function showOkeyPopup({title, desc}) {
 // ========== منطق اللاعب: الاسم واللقب والصورة من تلغرام ==========
 async function hydrateUserHeaderFromTelegram() {
   try {
-    const avatarEl = document.getElementById('user-avatar');    // <img>
-    const nameEl = document.getElementById('user-name');         // <div> أو <span>
-    const rankEl = document.getElementById('user-rank-icon');    // <img> صغير
+    const avatarEl = document.getElementById('user-avatar');
+    const nameEl = document.getElementById('user-name');
+    const rankEl = document.getElementById('user-rank-icon');
 
-    // الاسم الكامل: first_name + last_name (أو first_name فقط)
     const fullName = [tgUser?.first_name || '', tgUser?.last_name || ''].filter(Boolean).join(' ').trim();
     const displayName = fullName || (tgUser?.first_name || 'Player');
 
     if (nameEl) nameEl.textContent = displayName;
-    // رتبة (الأيقونة الصغيرة)
     if (rankEl) setImgFromCache(rankEl, 'assets/ranked-icon.png');
 
-    // الصورة الشخصية
     const photoUrl = tgUser?.photo_url || '';
     if (avatarEl) {
-      // جرّب حفظها كـ Blob في الكاش (اختياري؛ إذا فشل CORS نعرض الرابط مباشرة)
       try {
         const cachedBlob = await cacheGet(CACHE_KEYS.tgAvatarBlob, null);
         if (cachedBlob instanceof Blob) {
@@ -736,7 +771,7 @@ async function hydrateUserHeaderFromTelegram() {
             const url = URL.createObjectURL(blob);
             avatarEl.src = url;
           } else {
-            avatarEl.src = photoUrl; // fallback مباشر
+            avatarEl.src = photoUrl;
           }
         }
       } catch {
@@ -748,10 +783,7 @@ async function hydrateUserHeaderFromTelegram() {
       avatarEl.referrerPolicy = 'no-referrer';
     }
 
-    // خزّن الاسم لسرعة الظهور لاحقًا (اختياري)
     await cacheSet(CACHE_KEYS.tgName, displayName);
-
-    // أبقِ التوافق القديم مؤقتًا إن بقي عنصر username-inside
     if (usernameBox) usernameBox.textContent = displayName;
   } catch (e) {
     console.warn('hydrateUserHeaderFromTelegram failed', e);
