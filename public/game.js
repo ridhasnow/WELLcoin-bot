@@ -1,3 +1,4 @@
+Game.js
 // --- منع الزوم والسكرول ---
 document.addEventListener('touchmove', function(event) {
   if (event.scale !== 1) { event.preventDefault(); }
@@ -6,143 +7,15 @@ document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, 
 document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
 document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 window.addEventListener('keydown', function(e) {
-  if (["ArrowLeft", "ArrowRight", " "].includes(e.key)) { e.preventDefault(); }
+  if(["ArrowLeft", "ArrowRight", " "].includes(e.key)) { e.preventDefault(); }
 }, { passive: false });
 window.addEventListener('wheel', function(e) { e.preventDefault(); }, { passive: false });
 window.addEventListener('scroll', function() { window.scrollTo(0, 0); });
 document.body.style.overflow = "hidden";
 document.documentElement.style.overflow = "hidden";
 
-// --- حقن ستايل لإزالة الوميض الأزرق والتركيز على الأزرار/الروابط ---
-(function injectNoTapFlashCSS(){
-  if (document.getElementById('no-tap-flash')) return;
-  const style = document.createElement('style');
-  style.id = 'no-tap-flash';
-  style.textContent = `
-    * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
-    a, button, [role="button"], .floating-claim-btn, #play-btn, .popup-action-btn, .popup-okey-btn, .popup-close, #cooldown-close {
-      -webkit-tap-highlight-color: transparent !important;
-      outline: none !important;
-      -webkit-user-select: none; user-select: none;
-      -webkit-touch-callout: none;
-    }
-    a:focus, button:focus, [role="button"]:focus, .floating-claim-btn:focus, #play-btn:focus,
-    .popup-action-btn:focus, .popup-okey-btn:focus, .popup-close:focus, #cooldown-close:focus {
-      outline: none !important;
-    }
-  `;
-  document.head.appendChild(style);
-})();
-
-// =========== IndexedDB Helper ===========
-// صغير وعملي للتعامل مع indexedDB مثل localStorage
-const IDB_NAME = 'wellcoin_game_cache';
-const IDB_STORE = 'cache';
-
-function openIDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_NAME, 1);
-    req.onupgradeneeded = function(e) {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(IDB_STORE)) {
-        db.createObjectStore(IDB_STORE);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-function idbSet(key, val) {
-  return openIDB().then(db => {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(IDB_STORE, 'readwrite');
-      tx.objectStore(IDB_STORE).put(val, key);
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
-    });
-  });
-}
-function idbGet(key) {
-  return openIDB().then(db => {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(IDB_STORE, 'readonly');
-      const req = tx.objectStore(IDB_STORE).get(key);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  });
-}
-
-// ========== تحميل الصور والايقونات من الكاش (بدون وميض) ==========
-const __imgObjUrlMap = new WeakMap(); // يجمع آخر blob URL لكل عنصر <img> لتفريغه لاحقًا
-async function setImgFromCache(imgEl, assetPath) {
-  if (!imgEl) return;
-  try {
-    // 1) جرّب الكاش
-    let blob = await idbGet('asset:' + assetPath);
-    let candidateUrl = assetPath;
-    let isBlobUrl = false;
-
-    if (blob && blob instanceof Blob) {
-      candidateUrl = URL.createObjectURL(blob);
-      isBlobUrl = true;
-    }
-
-    // 2) حمّل/فك ترميز الصورة في الخلفية قبل الاستبدال لتجنب الوميض
-    await new Promise(res => {
-      const tmp = new Image();
-      tmp.decoding = 'async';
-      tmp.onload = () => res();
-      tmp.onerror = () => res();
-      tmp.src = candidateUrl;
-    });
-
-    // 3) أزل الـ blob URL السابق المرتبط بهذا العنصر إن وجد
-    const prevUrl = __imgObjUrlMap.get(imgEl);
-    if (prevUrl) {
-      try { URL.revokeObjectURL(prevUrl); } catch {}
-      __imgObjUrlMap.delete(imgEl);
-    }
-
-    // 4) عيّن الصورة الجديدة فورًا
-    imgEl.src = candidateUrl;
-    if (isBlobUrl) __imgObjUrlMap.set(imgEl, candidateUrl);
-    imgEl.setAttribute('data-cached', isBlobUrl ? '1' : '0');
-  } catch {
-    imgEl.src = assetPath;
-  }
-}
-
-// =========== الموسيقى: استمرار من preload ===========
-(function setupMusic() {
-  let preloadAudio = document.getElementById('preloadAudio');
-  if (!preloadAudio) {
-    preloadAudio = document.createElement('audio');
-    preloadAudio.id = 'preloadAudio';
-    preloadAudio.src = 'assets/preload.mp3';
-    preloadAudio.loop = true;
-    preloadAudio.preload = 'auto';
-    preloadAudio.style.display = 'none';
-    document.body.appendChild(preloadAudio);
-  }
-  function ensureAudioLoop() {
-    if (!preloadAudio) return;
-    preloadAudio.volume = 0.76;
-    preloadAudio.loop = true;
-    preloadAudio.onended = () => {
-      preloadAudio.currentTime = 0;
-      preloadAudio.play().catch(()=>{});
-    };
-    if (preloadAudio.paused) {
-      preloadAudio.play().catch(()=>{});
-    }
-  }
-  document.addEventListener('DOMContentLoaded', ensureAudioLoop);
-  window.addEventListener('focus', ensureAudioLoop);
-})();
-
 // -------------- Firebase & Telegram --------------
-const firebaseConfig = {
+const app = firebase.initializeApp({
   apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
   authDomain: "wellcoinbotgame.firebaseapp.com",
   databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
@@ -150,67 +23,39 @@ const firebaseConfig = {
   storageBucket: "wellcoinbotgame.appspot.com",
   messagingSenderId: "108640533638",
   appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-};
-const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
+});
 const db = firebase.database(app);
 const tg = window.Telegram.WebApp;
 tg.ready();
 const userId = tg.initDataUnsafe?.user?.id;
-if (!userId) {
-  window.location.href = "welcome.html";
-}
-
-// عناصر واجهة
 const usernameBox = document.getElementById("username-inside");
 const balanceDisplay = document.getElementById("balance-amount");
+
+let balance = 0;
+let energyTaps = 300;
+let maxTaps = 300;
+let tapValue = 100.0000000000; // يمكنك تعديلها إلى 100 كما رغبت
+let replenishInterval = null;
+let tapReplenishTime = 20000;
+let tapCooldown = 6000;
+let lastSentBalance = 0;
+let tapTimeoutId = null;
+let lastEnergyTapsDB = 0;
+let lastEnergySaveTime = 0;
+
 const energyBarContainer = document.getElementById("energy-bar-container");
 const energyBarInner = document.getElementById("energy-bar-inner");
 const energyBarLabel = document.getElementById("energy-bar-label");
 const tapCharacter = document.getElementById("tap-character");
 
-// ========== كاش محلي سريع (معتمد على IndexedDB) ==========
-function cacheGet(key, fallback = null) {
-  return idbGet(key).then(v => (v === undefined ? fallback : v)).catch(() => fallback);
-}
-function cacheSet(key, val) {
-  return idbSet(key, val);
-}
-const CACHE_KEYS = {
-  username: `wlc:${userId}:username`,
-  balance:  `wlc:${userId}:balance`,
-  shop:     `wlc:${userId}:shopItems`,
-  activeCharacterSrc: `wlc:${userId}:activeCharacterSrc`
-};
-
-// ========== تحميل الأصول من الكاش على الواجهة ==========
-document.addEventListener('DOMContentLoaded', async () => {
-  // صور الهيدر
-  setImgFromCache(document.getElementById("ranked"), 'assets/ranked-icon.png');
-  setImgFromCache(document.querySelector(".coin-icon"), 'assets/wellcoin-icon.png');
-  setImgFromCache(document.querySelector(".dragon-frame-img"), 'assets/dragon-frame.png');
-  // صورة الشخصية الأساسية
-  let savedChar = await cacheGet(CACHE_KEYS.activeCharacterSrc, null);
-  if (!savedChar) savedChar = "assets/character.png";
-  setImgFromCache(tapCharacter, savedChar);
-
-  // بيانات الواجهة
-  const cachedUsername = await cacheGet(CACHE_KEYS.username, null);
-  if (usernameBox && cachedUsername) usernameBox.textContent = cachedUsername;
-
-  const cachedBalance = await cacheGet(CACHE_KEYS.balance, null);
-  if (balanceDisplay != null && typeof cachedBalance === 'number') {
-    balanceDisplay.textContent = formatWLC(cachedBalance);
-    balance = cachedBalance;
-  }
-});
-
 // ====== SHOP ICONS & CHARACTER IMAGE LOGIC ======
 const FLOATING_PRODUCTS = [
-  { id: "shop",       img: "assets/shop.jpg",       mining: 0.000007, displayName: "Business Property" },
-  { id: "bmwcar",     img: "assets/bmwcar.jpg",     mining: 0.000009, displayName: "BMW Car" },
-  { id: "yacht",      img: "assets/yacht.jpg",      mining: 0.000060, displayName: "Yacht" },
-  { id: "helicopter", img: "assets/helicopter.jpg", mining: 0.000073, displayName: "Helicopter" },
+  { id: "shop",       img: "assets/shop.jpg",      mining: 0.000007, displayName: "Business Property" },
+  { id: "bmwcar",     img: "assets/bmwcar.jpg",    mining: 0.000009, displayName: "BMW Car" },
+  { id: "yacht",      img: "assets/yacht.jpg",     mining: 0.000060, displayName: "Yacht" },
+  { id: "helicopter", img: "assets/helicopter.jpg",mining: 0.000073, displayName: "Helicopter" },
 ];
+
 const CHARACTER_PRODUCTS = [
   { id: "suit",        img: "assets/character1.png" },
   { id: "house",       img: "assets/character2.png" },
@@ -227,47 +72,13 @@ const CHARACTER_PRODUCTS = [
   { id: "palace",      img: "assets/character13.png" }
 ];
 
-// ========== ENERGY/BALANCE STATE ==========
-let balance = 0;
-let energyTaps = 300;
-let maxTaps = 300;
-let tapValue = 100.0000000000; // يمكنك تعديلها إلى 100 كما رغبت
-let replenishInterval = null;
-let tapReplenishTime = 20000;
-let tapCooldown = 6000;
-let lastSentBalance = balance;
-let tapTimeoutId = null;
-let lastEnergyTapsDB = 0;
-let lastEnergySaveTime = 0;
-
-// تجميع تحديث الرصيد لتقليل الكتابات
-let pendingDelta = 0;
-let flushTimer = null;
-const balanceRef = db.ref("users/" + userId + "/balance");
-function scheduleFlush() {
-  if (flushTimer) return;
-  flushTimer = setTimeout(async () => {
-    const delta = pendingDelta;
-    pendingDelta = 0;
-    flushTimer = null;
-    if (delta === 0) return;
-    try {
-      await balanceRef.transaction(cur => {
-        if (typeof cur !== "number") cur = 0;
-        return cur + delta;
-      });
-    } catch (e) {
-      console.error("Balance flush failed", e);
-    }
-  }, 400);
-}
-
 // ========== ENERGY/BALANCE FUNCTIONS ==========
 function saveEnergyToDB() {
   db.ref("users/" + userId).update({ energyTaps: energyTaps, lastEnergySaveTime: Date.now() });
   lastEnergyTapsDB = energyTaps;
   lastEnergySaveTime = Date.now();
 }
+
 function sendBalanceToDB() {
   if (balance !== lastSentBalance) {
     db.ref("users/" + userId).update({ balance: balance });
@@ -275,34 +86,21 @@ function sendBalanceToDB() {
   }
 }
 
-// تحميل بيانات المستخدم من السيرفر مع تهيئة فورية
-window.addEventListener("load", async () => {
+window.addEventListener("load", () => {
+  if (!userId) {
+    window.location.href = "welcome.html";
+    return;
+  }
   const userRef = db.ref("users/" + userId);
-  userRef.once("value").then(async (snapshot) => {
+  userRef.once("value").then((snapshot) => {
     if (!snapshot.exists()) {
       window.location.href = "welcome.html";
       return;
     }
     const userData = snapshot.val();
-
-    // اسم المستخدم + كاش
-    const uname = userData.username || "Unknown Player";
-    if (usernameBox) usernameBox.textContent = uname;
-    cacheSet(CACHE_KEYS.username, uname);
-
-    // رصيد من السيرفر + كاش + مزامنة حية
+    usernameBox.textContent = userData.username || "Unknown Player";
     balance = parseFloat(userData.balance || 0);
     lastSentBalance = balance;
-    updateBalanceDisplay();
-    cacheSet(CACHE_KEYS.balance, balance);
-    balanceRef.on("value", s => {
-      const val = typeof s.val() === "number" ? s.val() : 0;
-      balance = val;
-      updateBalanceDisplay();
-      cacheSet(CACHE_KEYS.balance, val);
-    });
-
-    // طاقة النقر
     if (userData.energyTaps !== undefined && userData.lastEnergySaveTime !== undefined) {
       let prevTaps = parseInt(userData.energyTaps);
       let prevSave = parseInt(userData.lastEnergySaveTime);
@@ -317,17 +115,10 @@ window.addEventListener("load", async () => {
       energyTaps = maxTaps;
       saveEnergyToDB();
     }
+    updateBalanceDisplay();
     updateEnergyBar();
     startEnergyReplenish();
-
-    // متجر: هيدرِيت من الكاش ثم اسمع للحيّ
-    const cachedShop = await cacheGet(CACHE_KEYS.shop, null);
-    if (cachedShop) {
-      shopDataCache = cachedShop;
-      renderFloatingIcons(shopDataCache);
-      updateCharacterImage(shopDataCache);
-    }
-    setupShopLogic(); // يبدأ الاستماع لبيانات المتجر الحية
+    setupShopLogic();
   });
 });
 
@@ -360,10 +151,9 @@ function updateEnergyBar() {
 }
 
 function updateBalanceDisplay() {
-  if (balanceDisplay) balanceDisplay.textContent = formatWLC(balance);
+  balanceDisplay.textContent = balance.toFixed(10);
 }
 
-// اهتزاز خفيف
 function vibrate(ms = 10) {
   if (window.navigator?.vibrate) window.navigator.vibrate(ms);
 }
@@ -413,42 +203,21 @@ tapCharacter.addEventListener("pointerdown", function(e) {
   let x = (e.touches ? e.touches[0].clientX : e.clientX);
   let y = (e.touches ? e.touches[0].clientY : e.clientY);
   if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return;
-
   showTapEffect(x, y);
   vibrate(7);
   tapCharacter.style.transform = "scale(0.99) rotate(" + (Math.random()*0.7-0.35) + "deg)";
   setTimeout(() => { tapCharacter.style.transform = ""; }, 45);
-
   energyTaps -= 1;
   balance += tapValue;
-
-  // تحديث فوري في الواجهة + كاش
   updateBalanceDisplay();
   updateEnergyBar();
-  cacheSet(CACHE_KEYS.balance, balance);
-
-  // حفظ طاقة النقر
   saveEnergyToDB();
-
-  // جدولة كتابة الرصيد مجمّعة
-  pendingDelta += tapValue;
-  scheduleFlush();
+  sendBalanceToDB();
 });
 
 // حفظ الرصيد والطاقة عند الخروج
 window.addEventListener("beforeunload", function() {
-  if (pendingDelta !== 0) {
-    clearTimeout(flushTimer);
-    flushTimer = null;
-    const delta = pendingDelta;
-    pendingDelta = 0;
-    try {
-      balanceRef.transaction(cur => {
-        if (typeof cur !== "number") cur = 0;
-        return cur + delta;
-      });
-    } catch {}
-  }
+  sendBalanceToDB();
   saveEnergyToDB();
 });
 
@@ -508,6 +277,7 @@ function showCooldownOverlay(remainingMs) {
 }
 document.getElementById("play-btn").onclick = async function(e) {
   e.preventDefault();
+  if (!userId) return;
   const userRef = db.ref("users/" + userId + "/nextPlayTime");
   const snap = await userRef.get();
   const nextPlayTime = parseInt(snap.val() || "0");
@@ -601,18 +371,14 @@ function getMiningStatus(product, data) {
 function isClaimable(data) {
   if (!data?.bought) return false;
   const now = Date.now();
-  return now - (data.startTime || 0) >= MINING_DURATION;
+  return now - data.startTime >= MINING_DURATION;
 }
-
-let shopDataCache = {};
 
 function setupShopLogic() {
   db.ref("users/" + userId + "/shopItems").on("value", snap => {
     const shopData = snap.val() || {};
-    cacheSet(CACHE_KEYS.shop, shopData);
-    shopDataCache = shopData;
-    renderFloatingIcons(shopDataCache);
-    updateCharacterImage(shopDataCache);
+    renderFloatingIcons(shopData);
+    updateCharacterImage(shopData);
   });
 }
 
@@ -620,23 +386,20 @@ function renderFloatingIcons(shopData) {
   const area = document.getElementById("floating-icons-area");
   if (!area) return;
   area.innerHTML = "";
-  FLOATING_PRODUCTS.forEach(async prod => {
+  FLOATING_PRODUCTS.forEach(prod => {
     const data = shopData[prod.id];
     if (data && data.bought) {
       const { timeLeft } = getMiningStatus(prod, data);
       const claimable = isClaimable(data);
       const iconId = `floating-claim-${prod.id}`;
-      let imgTag = `<img class="floating-icon-img" alt="${prod.displayName}" />`;
       area.innerHTML += `
         <div class="floating-icon-outer" id="floating-${prod.id}" title="${prod.displayName}">
-          ${imgTag}
+          <img class="floating-icon-img" src="${prod.img}" alt="${prod.displayName}" />
           <div class="floating-icon-timer" id="floating-timer-${prod.id}">${timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00"}</div>
           <button class="floating-claim-btn${claimable ? "" : " disabled"}" id="${iconId}" ${claimable ? "" : "disabled"}>Claim</button>
         </div>
       `;
-      // حمّل الصورة من الكاش بعد إضافة العنصر (لضمان وجوده) بدون وميض
       setTimeout(() => {
-        setImgFromCache(document.querySelector(`#floating-${prod.id} .floating-icon-img`), prod.img);
         const claimBtn = document.getElementById(iconId);
         if (claimBtn) claimBtn.onclick = () => floatingClaimHandler(prod);
       }, 0);
@@ -649,20 +412,17 @@ function updateCharacterImage(shopData) {
   for (let i = CHARACTER_PRODUCTS.length - 1; i >= 0; --i) {
     const prod = CHARACTER_PRODUCTS[i];
     if (shopData[prod.id] && shopData[prod.id].bought) {
-      setImgFromCache(tapCharacter, prod.img);
-      cacheSet(CACHE_KEYS.activeCharacterSrc, prod.img);
+      tapCharacter.src = prod.img;
       updated = true;
       break;
     }
   }
-  if (!updated) {
-    setImgFromCache(tapCharacter, "assets/character.png");
-    cacheSet(CACHE_KEYS.activeCharacterSrc, "assets/character.png");
-  }
+  if (!updated) tapCharacter.src = "assets/character.png";
 }
 
 // Floating claim with popup + restart mining
 async function floatingClaimHandler(prod) {
+  // re-read item to be safe
   const snap = await db.ref(`users/${userId}/shopItems/${prod.id}`).once("value");
   const data = snap.val();
   if (!data || !data.bought) return;
@@ -683,6 +443,7 @@ async function floatingClaimHandler(prod) {
   });
   document.getElementById("popup-claim-confirm").onclick = async () => {
     closePopup();
+    // read balance
     const balSnap = await db.ref("users/" + userId + "/balance").once("value");
     const currentBal = typeof balSnap.val() === "number" ? balSnap.val() : 0;
     const now = Date.now();
@@ -691,8 +452,6 @@ async function floatingClaimHandler(prod) {
       [`users/${userId}/shopItems/${prod.id}/startTime`]: now,
       [`users/${userId}/shopItems/${prod.id}/claimed`]: false
     });
-    cacheSet(CACHE_KEYS.balance, currentBal + prod.mining);
-
     showOkeyPopup({
       title: "Claimed!",
       desc: `You received <b style="color:#0cf">+${formatWLC(prod.mining)} WLC</b>.<br>Mining restarted for the next 24 hours.`
@@ -700,20 +459,24 @@ async function floatingClaimHandler(prod) {
   };
 }
 
+// Live refresh for floating timers/claim state
 setInterval(() => {
   const area = document.getElementById("floating-icons-area");
   if (!area) return;
   FLOATING_PRODUCTS.forEach(prod => {
-    const data = shopDataCache[prod.id];
-    if (!data || !data.bought) return;
     const timerEl = document.getElementById(`floating-timer-${prod.id}`);
     const claimBtn = document.getElementById(`floating-claim-${prod.id}`);
-    const { timeLeft } = getMiningStatus(prod, data);
-    if (timerEl) timerEl.textContent = timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00";
-    if (claimBtn) {
-      const can = isClaimable(data);
-      claimBtn.disabled = !can;
-      claimBtn.classList.toggle("disabled", !can);
-    }
+    db.ref(`users/${userId}/shopItems/${prod.id}`).once("value").then(snap => {
+      const data = snap.val();
+      if (data && data.bought) {
+        const { timeLeft } = getMiningStatus(prod, data);
+        if (timerEl) timerEl.textContent = timeLeft > 0 ? formatTimeLeft(timeLeft) : "00:00:00";
+        if (claimBtn) {
+          const can = isClaimable(data);
+          claimBtn.disabled = !can;
+          claimBtn.classList.toggle("disabled", !can);
+        }
+      }
+    });
   });
 }, 1000);
