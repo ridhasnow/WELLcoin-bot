@@ -7,7 +7,6 @@
   <meta name="color-scheme" content="dark">
   <style>
     :root{
-      /* Palette */
       --bg:#05070b;
       --glass:rgba(20,24,32,0.62);
       --glass-2:rgba(26,30,42,0.55);
@@ -22,27 +21,18 @@
       --danger:#ff6b6b;
       --shadow-1:0 12px 40px rgba(0,0,0,.55);
       --shadow-2:0 6px 18px rgba(0,0,0,.40);
-
-      /* Radii */
-      --r-lg:22px;
-      --r-md:14px;
-      --r-sm:10px;
-
-      /* Motion */
-      --t-fast:.12s ease-out;
-      --t-med:.18s ease-out;
+      --r-lg:22px; --r-md:14px; --r-sm:10px;
+      --t-fast:.12s ease-out; --t-med:.18s ease-out;
     }
 
     html,body{height:100%}
     body{
-      margin:0;
-      background: #000;
-      color:var(--text);
+      margin:0; background:#000; color:var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
       overflow:hidden;
     }
 
-    /* Cinematic ambient glow (subtle, premium) */
+    /* Ambient glow */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
@@ -57,8 +47,7 @@
         radial-gradient(36vw 36vw at var(--x1,22%) var(--y1,28%), rgba(140,255,180,0.12), transparent 60%),
         radial-gradient(30vw 30vw at var(--x2,70%) var(--y2,48%), rgba(255,255,140,0.09), transparent 60%),
         radial-gradient(44vw 44vw at var(--x3,52%) var(--y3,72%), rgba(120,255,160,0.09), transparent 60%);
-      mix-blend-mode: screen;
-      animation: drift 18s ease-in-out infinite alternate;
+      mix-blend-mode: screen; animation: drift 18s ease-in-out infinite alternate;
     }
     .glow::after{ animation-duration: 26s; opacity:.85; }
     @keyframes drift{
@@ -69,8 +58,7 @@
 
     /* Shell */
     .wrap{
-      position:relative; z-index:1;
-      width:100%; height:100%;
+      position:relative; z-index:1; width:100%; height:100%;
       display:flex; align-items:center; justify-content:center;
       padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
       background:
@@ -85,11 +73,9 @@
       border: 1px solid var(--glass-border);
       box-shadow: var(--shadow-1);
       backdrop-filter: blur(10px) saturate(120%);
-      position:relative; overflow:hidden;
-      display:flex; flex-direction:column;
+      position:relative; overflow:hidden; display:flex; flex-direction:column;
+      margin-inline:auto; /* تأكيد التمركز */
     }
-
-    /* Gradient border accent */
     .card::before{
       content:""; position:absolute; inset:0; border-radius: var(--r-lg);
       padding:1px; background:
@@ -103,8 +89,7 @@
     .topbar{
       position:absolute; inset:0 0 auto 0; height:56px;
       display:flex; align-items:center; justify-content:space-between;
-      padding: 10px 12px;
-      z-index:2;
+      padding: 10px 12px; z-index:2;
     }
     .icon-btn{
       width:38px; height:38px; border-radius:12px;
@@ -113,8 +98,7 @@
       border: 1px solid rgba(255,255,255,0.12);
       color:#fff; cursor:pointer; user-select:none;
       transition: transform var(--t-fast), background var(--t-med), border-color var(--t-med);
-      box-shadow: var(--shadow-2);
-      backdrop-filter: blur(6px);
+      box-shadow: var(--shadow-2); backdrop-filter: blur(6px);
     }
     .icon-btn:hover{ background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
     .icon-btn:active{ transform: scale(.97); }
@@ -144,7 +128,6 @@
       object-fit:cover; border:2px solid rgba(255,255,255,.18); background:#121418;
       box-shadow: 0 10px 26px rgba(0,0,0,.55);
     }
-
     .namebox{
       display:inline-flex; flex-direction:column; gap:4px; align-items:center;
       padding:10px 16px;
@@ -160,22 +143,16 @@
       -webkit-background-clip: text; background-clip:text; color: transparent;
       text-shadow: 0 1px 2px rgba(0,0,0,.35);
     }
-    .subnick{ color:var(--muted); font-size:.92rem; }
 
     /* Balances */
     .balances{
-      margin-top:14px;
-      display:grid; grid-template-columns: 1fr 1fr; gap:12px;
+      margin-top:14px; display:grid; grid-template-columns: 1fr 1fr; gap:12px;
     }
-    @media (max-width: 420px){
-      .balances{ grid-template-columns: 1fr; }
-    }
+    @media (max-width: 420px){ .balances{ grid-template-columns: 1fr; } }
     .bal{
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
       border:1px solid rgba(255,255,255,.14);
-      border-radius: var(--r-md);
-      padding: 12px;
-      box-shadow: var(--shadow-2);
+      border-radius: var(--r-md); padding: 12px; box-shadow: var(--shadow-2);
       display:flex; flex-direction:column; gap:10px;
     }
     .bal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -189,19 +166,12 @@
     .bal-wlc .bal-amt{ color: var(--gold); }
     .bal-usdt .bal-amt{ color: var(--green); }
     .bal-cta{
-      align-self:flex-start;
-      border:none; border-radius: 10px; padding:8px 13px; font-weight:900; cursor:pointer;
+      align-self:flex-start; border:none; border-radius: 10px; padding:8px 13px; font-weight:900; cursor:pointer;
       transition: transform var(--t-fast), box-shadow var(--t-med), filter var(--t-fast);
     }
     .bal-cta:active{ transform: translateY(1px) scale(0.99); }
-    .bal-cta.wlc{
-      background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222;
-      box-shadow: 0 6px 16px rgba(255, 210, 90, .30);
-    }
-    .bal-cta.usdt{
-      background: linear-gradient(90deg, var(--green), var(--green-2)); color:#0d2418;
-      box-shadow: 0 6px 16px rgba(60, 220, 130, .28);
-    }
+    .bal-cta.wlc{ background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222; box-shadow: 0 6px 16px rgba(255, 210, 90, .30); }
+    .bal-cta.usdt{ background: linear-gradient(90deg, var(--green), var(--green-2)); color:#0d2418; box-shadow: 0 6px 16px rgba(60, 220, 130, .28); }
 
     /* Section title */
     .section-title{
@@ -214,76 +184,69 @@
       box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    /* Achievements grid */
+    /* Achievements grid (7 per row) */
     .ach{
-      display:grid; grid-template-columns: repeat(10, 1fr); gap:8px;
+      display:grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap:10px;
     }
-    @media (max-width: 560px){
-      .ach{ gap:7px; }
-    }
+
+    /* Day card (visual only; logic unchanged) */
     .day{
-      position:relative; aspect-ratio:1/1; border-radius:12px; overflow:hidden; cursor:default;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
-      border:1px solid rgba(255,255,255,.12);
-      display:flex; align-items:center; justify-content:center;
-      transition: transform var(--t-fast), box-shadow var(--t-med), border-color var(--t-med), background var(--t-med);
+      position:relative; border-radius:14px; overflow:hidden; user-select:none;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: 0 6px 18px rgba(0,0,0,.40);
+      display:flex; flex-direction:column; min-height: 104px;
     }
-    .label{
-      position:absolute; top:5px; left:0; right:0; text-align:center; font-size:10px; font-weight:800; color:#dbe4ff; opacity:.92;
-      text-shadow: 0 1px 2px rgba(0,0,0,.45); pointer-events:none;
-    }
-    .gift{ font-size:22px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+    .day.special{ transform: scale(1.04); }
 
-    .day.special{ transform: scale(1.06); }
-    .day.locked{
-      background: rgba(0,0,0,0.32); border-color: rgba(255,255,255,0.10); opacity:.88;
+    /* Top cap */
+    .cap{
+      position:relative; height: 28px; display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(180deg, #5aa4ff, #3385ff);
+      color:#eaf3ff; font-weight:900; letter-spacing:.3px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
+      border-bottom: 1px solid rgba(0,0,0,.25);
     }
-    .day.locked::after{
-      content:"?"; position:absolute; font-weight:900; color:#d0e7ff; opacity:.12; font-size:58px; pointer-events:none;
+    .day.special .cap{
+      background: linear-gradient(180deg, #ffcb5a, #ffad33);
+      color:#2a1a00; text-shadow: 0 1px 1px rgba(255,255,255,.35);
     }
-    .timer{ position:absolute; bottom:5px; left:0; right:0; text-align:center; font-size:10px; font-weight:800; color:#d3ddff; opacity:.95; }
+    .cap .pin{
+      position:absolute; top: -6px; width:10px; height:10px; border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, #fff, #bcd, #566); box-shadow: 0 1px 2px rgba(0,0,0,.5);
+    }
+    .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
 
+    /* Body with gift and timer */
+    .body{
+      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 6px 6px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    }
+    .gift-img{
+      width: 58%; max-width: 86px; height:auto; object-fit:contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
+    }
+    .timer{
+      margin-top:4px; font-size:11px; font-weight:800; color:#d3ddff; opacity:.95; text-align:center;
+    }
+
+    /* States */
+    .day.locked{ filter: brightness(.92) saturate(.9); }
     .day.claimable{
-      background:
-        radial-gradient(120% 120% at 50% 30%, rgba(255,235,120,.18), rgba(0,0,0,.04)),
-        linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.05));
       border-color: rgba(255,210,90,.55);
       box-shadow: 0 10px 24px rgba(255,210,90,.22), inset 0 0 0 1px rgba(255,255,255,.05);
-      cursor:pointer;
       animation: pulse 1.4s ease-in-out infinite alternate;
     }
-    @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.40)); } }
+    @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.36)); } }
 
-    .day.claimed{
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
-      border-color: rgba(120,200,255,.35);
-      box-shadow: inset 0 0 0 9999px rgba(10,20,30,.20);
-      opacity:.96;
+    .check{
+      position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
+      font-size:46px; font-weight:900; color:#5df076; text-shadow: 0 0 16px rgba(60,240,140,.45);
+      opacity:0; transform: scale(.9); transition: opacity .18s ease, transform .18s ease;
     }
+    .day.claimed .check{ opacity:1; transform: scale(1); }
+    .day.claimed{ filter: brightness(.90) saturate(.9); }
 
-    /* Popup */
-    .mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:10; }
-    .pop{
-      width:min(92vw, 480px);
-      background: rgba(18,22,30,.95);
-      border:1px solid rgba(255,255,255,.14);
-      border-radius:16px; padding:18px 16px 16px 16px; text-align:center;
-      box-shadow: var(--shadow-1);
-    }
-    .pop h3{ margin:8px 0 6px 0; }
-    .pop .desc{ color:#cfe3ff; opacity:.95; font-size:.96rem; margin-bottom:12px; }
-    .reward{
-      margin:12px auto; padding:10px 14px; border-radius: 12px;
-      background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
-      display:inline-flex; gap:10px; align-items:center; font-weight:900;
-    }
-    .ok{
-      margin-top:6px; border:none; border-radius:10px; padding:9px 16px; font-weight:900; cursor:pointer;
-      background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222;
-      box-shadow: 0 6px 16px rgba(255,210,90,.30);
-    }
-    .confetti{ position:fixed; inset:0; pointer-events:none; z-index:11; }
-
+    .spacer{ height:14px; }
     * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
   </style>
 </head>
@@ -305,7 +268,7 @@
           </div>
           <div class="namebox">
             <div id="player-name" class="nickname">Player</div>
-            <div id="player-sub" class="subnick">@telegram</div>
+            <!-- subnick أزيل بناءً على طلبك -->
           </div>
         </section>
 
@@ -336,11 +299,13 @@
           <div class="section-title">Daily Achievements</div>
           <div id="ach" class="ach"></div>
         </section>
+
+        <div class="spacer"></div>
       </div>
     </div>
   </div>
 
-  <div id="mask" class="mask">
+  <div id="mask" class="mask" style="display:none">
     <div class="pop">
       <h3 id="pop-title">Congratulations!</h3>
       <div id="pop-desc" class="desc">You’ve received a reward.</div>
@@ -396,7 +361,6 @@
     function ensureUserId(cb){
       if (!userId) userId = storedId();
       if (userId) return cb();
-      // retry briefly before redirect
       setTimeout(()=>{
         tgUser = tg?.initDataUnsafe?.user || tgUser;
         userId = tgUser?.id || storedId();
@@ -415,7 +379,6 @@
     const cfgBtn  = document.getElementById('cfg-btn');
     const avatarEl = document.getElementById('avatar');
     const nameEl = document.getElementById('player-name');
-    const subEl  = document.getElementById('player-sub');
     const wlcEl  = document.getElementById('wlc-amount');
     const usdtEl = document.getElementById('usdt-amount');
     const achGrid= document.getElementById('ach');
@@ -440,7 +403,7 @@
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
-    // Build achievements tiles
+    // Build achievements tiles (visual markup only; logic unchanged)
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -448,7 +411,18 @@
         const d = document.createElement('div');
         d.className = 'day' + (SPECIAL.has(i)?' special':'');
         d.dataset.day = i;
-        d.innerHTML = `<div class="label">Day ${i}</div><div class="gift">🎁</div><div class="timer" style="display:none"></div>`;
+        d.innerHTML = `
+          <div class="cap">
+            <span class="pin l"></span>
+            <span class="pin r"></span>
+            Day ${i}
+          </div>
+          <div class="body">
+            <img class="gift-img" src="assets/gift.png" alt="gift">
+            <div class="timer" style="display:none"></div>
+          </div>
+          <div class="check">✓</div>
+        `;
         achGrid.appendChild(d);
       }
     }
@@ -481,8 +455,8 @@
         u.meDailyState = {
           currentDay: 1,
           lastClaimAt: 0,
-          nextAvailableAt: tNow,             // Day1 available immediately
-          expiresAt: tNow + 8*3600*1000,     // 8h window
+          nextAvailableAt: tNow,
+          expiresAt: tNow + 8*3600*1000,
           claimedDays: {},
           version: 1
         };
@@ -490,12 +464,9 @@
         const st = u.meDailyState;
         if (tNow > (st.expiresAt||0) && tNow >= (st.nextAvailableAt||0)){
           u.meDailyState = {
-            currentDay: 1,
-            lastClaimAt: 0,
-            nextAvailableAt: tNow,
-            expiresAt: tNow + 8*3600*1000,
-            claimedDays: {},
-            version: (st.version||1)
+            currentDay: 1, lastClaimAt: 0,
+            nextAvailableAt: tNow, expiresAt: tNow + 8*3600*1000,
+            claimedDays: {}, version: (st.version||1)
           };
         }
       }
@@ -543,6 +514,7 @@
       });
     }
 
+    // Confetti
     function confetti(){
       const c = document.getElementById('confetti'), x = c.getContext('2d');
       let W = c.width = innerWidth, H = c.height = innerHeight;
@@ -647,7 +619,6 @@
       daily = s.val().meDailyState; render();
 
       if (reward){
-        // Update local view
         if (reward.type.startsWith('WLC')){
           const newW = s.val().balance || 0;
           wlcEl.textContent = fmtWLC(newW);
@@ -667,11 +638,10 @@
         localStorage.setItem('wlc_user_id', String(userId));
       }catch{}
 
-      // Quick header hydrate
+      // Header hydrate from Telegram + cache (no @telegram line)
       (async ()=>{
         const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
         nameEl.textContent = fullName;
-        subEl.textContent  = tgUser?.username ? '@'+tgUser.username : (subEl.textContent||'Player');
 
         const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
         if (cachedName) nameEl.textContent = cachedName;
@@ -682,7 +652,7 @@
         else avatarEl.src = 'assets/player1.png';
       })();
 
-      // Balances
+      // Balances quick cache + realtime
       (async ()=>{
         const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
         if (typeof cached === 'number') wlcEl.textContent = fmtWLC(cached);
