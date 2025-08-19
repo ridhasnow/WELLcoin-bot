@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Me</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="color-scheme" content="dark">
+  <style>
+    :root{
+      --bg:#0a0b10;
+      --glass:rgba(32,34,42,0.55);
+      --glass-border:rgba(120,140,200,0.22);
+      --text:#eef3ff;
+      --muted:#b9c3d9;
+      --gold:#ffd36a;
+      --gold-strong:#ffea9a;
+      --green:#3fe28a;
+      --green-strong:#8affc2;
+      --danger:#ff6b6b;
+      --accent:#7aa5ff;
+      --shadow:0 10px 30px rgba(0,0,0,.45);
+    }
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:#000; /* black base */
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+      overflow:hidden;
+    }
+
+    /* Animated nebulous glow behind the glass card */
+    .glow-bg{
+      position:fixed; inset:0; pointer-events:none; z-index:0;
+      background:
+        radial-gradient(60vw 60vw at 20% 20%, rgba(80,255,120,0.08), transparent 70%),
+        radial-gradient(50vw 50vw at 80% 30%, rgba(255,255,120,0.05), transparent 70%),
+        radial-gradient(70vw 70vw at 50% 80%, rgba(120,255,180,0.06), transparent 70%);
+      filter: blur(6px) saturate(110%);
+    }
+    .glow-bg::before, .glow-bg::after{
+      content:"";
+      position:absolute; inset:-20%;
+      background:
+        radial-gradient(35vw 35vw at var(--x1,20%) var(--y1,30%), rgba(140,255,180,0.10), transparent 60%),
+        radial-gradient(30vw 30vw at var(--x2,70%) var(--y2,50%), rgba(255,255,140,0.08), transparent 60%),
+        radial-gradient(40vw 40vw at var(--x3,50%) var(--y3,70%), rgba(120,255,160,0.07), transparent 60%);
+      animation: drift 16s ease-in-out infinite alternate;
+      mix-blend-mode:screen;
+    }
+    .glow-bg::after{
+      animation-duration: 22s;
+      opacity: .8;
+    }
+    @keyframes drift{
+      0%   { --x1:18%; --y1:28%; --x2:72%; --y2:46%; --x3:52%; --y3:72%; filter:hue-rotate(0deg); }
+      50%  { --x1:22%; --y1:38%; --x2:68%; --y2:54%; --x3:48%; --y3:65%; filter:hue-rotate(25deg); }
+      100% { --x1:26%; --y1:32%; --x2:62%; --y2:58%; --x3:54%; --y3:68%; filter:hue-rotate(-20deg); }
+    }
+
+    /* Glass card "paper" */
+    .wrap{
+      position:relative; z-index:1;
+      width:100%; height:100%;
+      display:flex; align-items:center; justify-content:center; padding:16px;
+    }
+    .card{
+      position:relative;
+      width:min(96vw, 560px);
+      max-height: calc(100vh - 24px);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px) saturate(120%);
+      overflow:hidden;
+      display:flex; flex-direction:column;
+    }
+    .scroll{
+      overflow:auto; -webkit-overflow-scrolling: touch;
+      padding: 18px 16px 20px 16px;
+    }
+
+    /* Top bar */
+    .topbar{
+      position:absolute; z-index:2; left:0; top:0; right:0; height:54px;
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 8px 10px;
+    }
+    .icon-btn{
+      width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color:#fff; cursor:pointer; user-select:none;
+      transition: transform .1s ease-out, background .2s, border-color .2s;
+      backdrop-filter: blur(4px);
+    }
+    .icon-btn:active{ transform: scale(0.97); }
+    .icon-btn:hover{ background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.2); }
+
+    /* Header profile */
+    .profile{
+      padding-top:56px; /* leave space for topbar */
+      display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px;
+    }
+    .avatar-wrap{
+      width:112px; height:112px; border-radius:50%; position:relative;
+      display:grid; place-items:center;
+    }
+    .avatar-ring{
+      position:absolute; inset:-4px; border-radius:50%;
+      background:
+        conic-gradient(from 0deg, #8a5, #c96, #dba, #c96, #8a5);
+      filter: saturate(120%);
+      animation: spin-slow 9s linear infinite;
+    }
+    .avatar-ring::after{
+      content:""; position:absolute; inset:3px; border-radius:50%;
+      background: radial-gradient(120% 120% at 50% 25%, rgba(255,255,255,0.18), rgba(0,0,0,0.18));
+    }
+    @keyframes spin-slow{ to{ transform: rotate(360deg);} }
+    .avatar{
+      position:relative; z-index:1;
+      width:100px; height:100px; border-radius:50%;
+      object-fit:cover; border:2px solid rgba(255,255,255,0.15);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+      background:#111;
+    }
+
+    .namebox{
+      margin-top:4px;
+      padding:10px 14px;
+      border-radius:12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      display:inline-flex; flex-direction:column; gap:4px;
+      min-width: 60%;
+    }
+    .nickname{ font-weight:800; letter-spacing:.2px; font-size:1.1rem; }
+    .subnick{ color:var(--muted); font-size:.9rem; }
+
+    /* Balances row */
+    .balances{
+      margin-top:16px;
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    }
+    .bal-card{
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius:14px; padding:12px 12px 10px 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+      display:flex; flex-direction:column; gap:8px; align-items:flex-start;
+    }
+    .bal-row{ display:flex; align-items:center; gap:8px; }
+    .bal-icon{ width:18px; height:18px; object-fit:contain; }
+    .bal-name{ font-weight:800; letter-spacing:.3px; font-size:.86rem; color:#eaefff; opacity:.95 }
+    .bal-value{
+      font-size:1.0rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-weight:800; letter-spacing:.2px;
+      display:flex; align-items:center; gap:6px;
+      text-shadow: 0 0 8px rgba(255,255,255,0.08);
+    }
+    .bal-wlc .bal-value{ color: var(--gold); }
+    .bal-usdt .bal-value{ color: var(--green); }
+
+    .btn{
+      border:none; border-radius:10px; padding:7px 12px; font-weight:800; cursor:pointer;
+      background: linear-gradient(90deg, #ffd36a, #fff2c3); color:#222;
+      box-shadow: 0 4px 14px rgba(255, 210, 80, 0.35);
+      transition: transform .12s ease-out, box-shadow .12s ease-out, filter .12s ease-out;
+    }
+    .btn:active{ transform: translateY(1px) scale(0.99); box-shadow: 0 3px 10px rgba(255,210,80,.25); }
+    .btn.usdt{
+      background: linear-gradient(90deg, #36d47a, #a9ffd0); color:#102016;
+      box-shadow: 0 4px 14px rgba(60, 220, 130, 0.30);
+    }
+
+    /* Achievements */
+    .section-title{
+      margin: 16px 2px 10px 2px; font-weight:900; letter-spacing:.3px; font-size:.98rem; color:#e9f1ff;
+    }
+    .ach-grid{
+      display:grid; grid-template-columns: repeat(10, 1fr);
+      gap:8px;
+    }
+    .day{
+      position:relative; aspect-ratio: 1 / 1; border-radius:10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; cursor: default; user-select:none;
+      transition: transform .12s ease-out, box-shadow .12s ease-out, border-color .2s, background .2s;
+    }
+    .day .gift{
+      font-size: 20px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35));
+    }
+    .day .label{
+      position:absolute; top:4px; left:0; right:0; text-align:center;
+      font-size: 10px; color:#dbe4ff; opacity:.9; font-weight:700; text-shadow: 0 1px 2px rgba(0,0,0,.45);
+      pointer-events:none;
+    }
+    .day.special{ transform: scale(1.06); }
+    .day.locked{
+      background: rgba(0,0,0,0.35);
+      border-color: rgba(255,255,255,0.10);
+      opacity:.85;
+    }
+    .day.locked::after{
+      content:"?"; position:absolute; font-weight:900; color:#d0e7ff; opacity:.12; font-size: 60px; pointer-events:none;
+    }
+    .day.claimable{
+      background: radial-gradient(120% 120% at 50% 30%, rgba(255, 235, 120, .16), rgba(0,0,0,.05));
+      border-color: rgba(255, 210, 90, .55);
+      box-shadow: 0 8px 22px rgba(255, 210, 90, .20);
+      cursor:pointer;
+      animation: glow 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes glow{
+      from{ filter: drop-shadow(0 0 0 rgba(255,220,100,.0)); }
+      to{   filter: drop-shadow(0 0 8px rgba(255,220,100,.45)); }
+    }
+    .day.claimed{
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(120,200,255,0.35);
+      box-shadow: inset 0 0 0 9999px rgba(10,20,30,.25);
+      opacity:.95;
+    }
+    .timer{
+      position:absolute; bottom:4px; left:0; right:0; text-align:center;
+      font-size: 10px; color:#d3ddff; opacity:.9; font-weight:700;
+    }
+
+    /* Popup */
+    .popup-mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:10; }
+    .popup{
+      width:min(92vw, 460px);
+      background: rgba(22,24,32,.95);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 18px 16px 16px 16px;
+      text-align:center;
+      box-shadow: 0 10px 40px rgba(0,0,0,.55);
+    }
+    .popup h3{ margin: 8px 0 6px 0; }
+    .popup .desc{ color:#cfe3ff; opacity:.95; font-size:.95rem; margin-bottom:12px; }
+    .popup .reward{
+      margin: 10px auto 12px auto; padding:10px 12px; border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      display:inline-flex; gap:10px; align-items:center;
+      font-weight:900;
+    }
+    .popup .ok{
+      margin-top:6px;
+      border:none; border-radius:10px; padding:7px 14px; font-weight:900; cursor:pointer;
+      background: linear-gradient(90deg, #ffd36a, #fff2c3); color:#222;
+      box-shadow: 0 4px 14px rgba(255, 210, 80, 0.35);
+    }
+    .confetti{ position:fixed; inset:0; pointer-events:none; z-index:11; }
+
+    /* Top spacing at bottom */
+    .spacer{ height:14px; }
+
+    /* Hide tap highlight */
+    * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+  </style>
+</head>
+<body>
+  <div class="glow-bg"></div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="topbar">
+        <div class="icon-btn" id="back-btn" title="Back">⬅</div>
+        <div class="icon-btn" id="cfg-btn" title="Settings">⚙</div>
+      </div>
+
+      <div class="scroll">
+        <section class="profile">
+          <div class="avatar-wrap">
+            <div class="avatar-ring"></div>
+            <img id="avatar" class="avatar" src="" alt="avatar">
+          </div>
+          <div class="namebox">
+            <div id="player-name" class="nickname">Player</div>
+            <div id="player-sub" class="subnick">@telegram</div>
+          </div>
+        </section>
+
+        <section class="balances">
+          <div class="bal-card bal-wlc">
+            <div class="bal-row">
+              <img class="bal-icon" src="assets/wellcoin-icon.png" alt="WLC">
+              <div class="bal-name">WLC</div>
+            </div>
+            <div class="bal-value" id="wlc-amount">0.000000</div>
+            <button class="btn" id="wlc-withdraw">Withdraw</button>
+          </div>
+          <div class="bal-card bal-usdt">
+            <div class="bal-row">
+              <img class="bal-icon" src="assets/usdt.png" alt="USDT">
+              <div class="bal-name">USDT</div>
+            </div>
+            <div class="bal-value" id="usdt-amount">0.000</div>
+            <button class="btn usdt" id="usdt-withdraw">Withdraw</button>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-title">Daily Achievements</div>
+          <div id="ach-grid" class="ach-grid"></div>
+        </section>
+
+        <div class="spacer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="popup-mask" class="popup-mask">
+    <div class="popup">
+      <h3 id="pop-title">Congratulations!</h3>
+      <div id="pop-desc" class="desc">You’ve received a reward.</div>
+      <div id="pop-reward" class="reward">+ 0.000000 WLC</div>
+      <button id="pop-ok" class="ok">Claim</button>
+    </div>
+  </div>
+  <canvas id="confetti" class="confetti"></canvas>
+
+  <!-- Firebase and Telegram WebApp (same major as project) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    // Telegram bootstrap
+    const tg = window.Telegram?.WebApp || {};
+    try { tg.ready && tg.ready(); } catch(e){}
+    const tgUser = tg.initDataUnsafe?.user;
+    const userId = tgUser?.id;
+    if (!userId) { window.location.href = "welcome.html"; }
+
+    // Firebase config (same as main)
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+    };
+    const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
+  </script>
+
+  <!-- Minimal audio boot so music continues across pages -->
+  <script>
+    (function audioBoot(){
+      let a = document.getElementById('preloadAudio');
+      if (!a) {
+        a = document.createElement('audio');
+        a.id = 'preloadAudio';
+        a.loop = true; a.preload='auto'; a.style.display='none';
+        a.src = 'assets/preload.mp3';
+        document.body.appendChild(a);
+      }
+      function persist(){ try{
+        sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
+        sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
+      }catch{}}
+      function prime(){ try{ a.muted = true; a.volume=.76; a.play().catch(()=>{});}catch{}}
+      function unmute(){ a.muted=false; a.volume=.76; a.play().catch(()=>{}); }
+      prime();
+      const ensure = ()=>{ unmute(); off(); };
+      function off(){ ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.removeEventListener(ev,ensure,{passive:true})); }
+      ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,ensure,{passive:true, once:true}));
+      window.addEventListener('pagehide', persist); window.addEventListener('beforeunload', persist);
+      document.addEventListener('visibilitychange', ()=>{ if (document.hidden) persist(); else a.play().catch(()=>{}); });
+    })();
+  </script>
+
+  <!-- Page Logic -->
+  <script>
+    // --- IndexedDB mini helpers for quick hydrate ---
+    const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
+    function openIDB(){ return new Promise((res,rej)=>{ const r = indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });}
+    function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
+    function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
+
+    // --- UI refs ---
+    const avatarEl = document.getElementById('avatar');
+    const nameEl = document.getElementById('player-name');
+    const subEl = document.getElementById('player-sub');
+    const wlcAmountEl = document.getElementById('wlc-amount');
+    const usdtAmountEl = document.getElementById('usdt-amount');
+    const achGrid = document.getElementById('ach-grid');
+    const backBtn = document.getElementById('back-btn');
+    const cfgBtn = document.getElementById('cfg-btn');
+
+    backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
+    cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
+
+    function go(url){
+      try{
+        const a = document.getElementById('preloadAudio');
+        if (a) {
+          sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
+          sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
+        }
+      }catch{}
+      window.location.href = url;
+    }
+
+    // Formatters
+    function formatWLC(v){ return Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6}); }
+    function formatUSDT(v){ return Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3}); }
+    function msToHMS(ms){ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+
+    // Quick hydrate from Telegram + IDB
+    (async function hydrateHeader(){
+      try{
+        const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
+        nameEl.textContent = fullName;
+        subEl.textContent = tgUser?.username ? '@'+tgUser.username : 'Player';
+        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
+        if (cachedName) nameEl.textContent = cachedName;
+
+        const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
+        if (cachedBlob instanceof Blob){
+          avatarEl.src = URL.createObjectURL(cachedBlob);
+        }else if (tgUser?.photo_url){
+          avatarEl.src = tgUser.photo_url;
+        } else {
+          avatarEl.src = 'assets/player1.png';
+        }
+      }catch(e){}
+    })();
+
+    // Balances realtime + quick cache
+    const userRef = db.ref('users/'+userId);
+    const wlcRef  = db.ref('users/'+userId+'/balance');
+    const usdtRef = db.ref('users/'+userId+'/usdtBalance');
+
+    (async function quickBalance(){
+      try {
+        const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
+        if (typeof cached === 'number') wlcAmountEl.textContent = formatWLC(cached);
+      }catch{}
+    })();
+    wlcRef.on('value', s=>{
+      const v = typeof s.val()==='number' ? s.val() : 0;
+      wlcAmountEl.textContent = formatWLC(v);
+      idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
+    });
+    usdtRef.on('value', s=>{
+      const v = typeof s.val()==='number' ? s.val() : 0;
+      usdtAmountEl.textContent = formatUSDT(v);
+    });
+
+    // Withdraw buttons (UI only for now)
+    document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
+    document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
+
+    // Server time offset (anti device clock drift)
+    let serverOffset = 0;
+    db.ref(".info/serverTimeOffset").on("value", s=>{ serverOffset = s.val()||0; });
+    const now = ()=> Date.now() + serverOffset;
+
+    // Achievements grid build
+    const SPECIAL = new Set([7,15,24,30]);
+    function buildGrid(){
+      achGrid.innerHTML = '';
+      for(let i=1;i<=30;i++){
+        const d = document.createElement('div');
+        d.className = 'day';
+        if (SPECIAL.has(i)) d.classList.add('special');
+        d.dataset.day=i;
+        d.innerHTML = `<div class="label">Day ${i}</div><div class="gift">🎁</div><div class="timer" style="display:none"></div>`;
+        achGrid.appendChild(d);
+      }
+    }
+    buildGrid();
+
+    // State and timers
+    let dailyState = null;
+    let timerId = null;
+
+    function ensureStateInit(u, tNow){
+      if (!u) u = {};
+      if (!u.meDailyState){
+        u.meDailyState = {
+          currentDay: 1,
+          lastClaimAt: 0,
+          nextAvailableAt: tNow,       // day1 available immediately
+          expiresAt: tNow + 8*3600*1000,
+          claimedDays: {},
+          version: 1
+        };
+      } else {
+        // auto reset if expired window passed for current day
+        const st = u.meDailyState;
+        if (tNow > (st.expiresAt||0) && tNow >= (st.nextAvailableAt||0)){
+          u.meDailyState = {
+            currentDay: 1,
+            lastClaimAt: 0,
+            nextAvailableAt: tNow,
+            expiresAt: tNow + 8*3600*1000,
+            claimedDays: {},
+            version: (st.version||1)
+          };
+        }
+      }
+      if (typeof u.usdtBalance !== 'number') u.usdtBalance = 0;
+      if (typeof u.balance !== 'number') u.balance = 0;
+      return u;
+    }
+
+    function rewardForDay(day){
+      if (day===7)  return { type:'WLC', amount:0.1,  label:'+0.100000 WLC' };
+      if (day===15) return { type:'USDT',amount:0.2,  label:'+0.200 USDT' };
+      if (day===24) return { type:'WLC', amount:1.0,  label:'+1.000000 WLC' };
+      if (day===30) return { type:'WLC_MEDAL', amount:2.0, label:'+2.000000 WLC + Medal' };
+      // random small rewards
+      const pool = [
+        {type:'WLC', amount:0.000005, label:'+0.000005 WLC'},
+        {type:'WLC', amount:0.00004,  label:'+0.000040 WLC'},
+        {type:'USDT',amount:0.002,    label:'+0.002 USDT'},
+        {type:'USDT',amount:0.01,     label:'+0.010 USDT'},
+      ];
+      return pool[Math.floor(Math.random()*pool.length)];
+    }
+
+    function renderState(){
+      const t = now();
+      const st = dailyState;
+      document.querySelectorAll('.day').forEach(tile=>{
+        const day = Number(tile.dataset.day);
+        tile.classList.remove('locked','claimable','claimed');
+        const timerEl = tile.querySelector('.timer');
+        timerEl.style.display='none';
+        timerEl.textContent='';
+
+        const claimed = !!(st.claimedDays && st.claimedDays[day]);
+        if (claimed){
+          tile.classList.add('claimed');
+          return;
+        }
+        if (day < st.currentDay){
+          tile.classList.add('claimed');
+          return;
+        }
+        if (day > st.currentDay){
+          tile.classList.add('locked');
+          return;
+        }
+        // day === currentDay
+        if (t >= st.nextAvailableAt && t <= st.expiresAt){
+          tile.classList.add('claimable');
+        } else if (t < st.nextAvailableAt){
+          tile.classList.add('locked');
+          if (day === st.currentDay){
+            timerEl.style.display='';
+            timerEl.textContent = 'In ' + msToHMS(st.nextAvailableAt - t);
+          }
+        } else {
+          // expired -> locked visual; logic reset happens in sync loop
+          tile.classList.add('locked');
+        }
+      });
+    }
+
+    function attachTileHandlers(){
+      achGrid.addEventListener('click', (e)=>{
+        const tile = e.target.closest('.day');
+        if (!tile) return;
+        const day = Number(tile.dataset.day);
+        if (day !== dailyState.currentDay) return;
+        const t = now();
+        if (t < dailyState.nextAvailableAt || t > dailyState.expiresAt) return;
+        claimDay(day);
+      });
+    }
+    attachTileHandlers();
+
+    // Confetti
+    function shootConfetti(){
+      const canvas = document.getElementById('confetti');
+      const ctx = canvas.getContext('2d');
+      let W = canvas.width = window.innerWidth;
+      let H = canvas.height = window.innerHeight;
+      const P = Array.from({length: 90}, ()=>({
+        x: Math.random()*W, y: -10-Math.random()*H*0.2,
+        r: 3+Math.random()*4,
+        c: `hsl(${Math.random()*360}, 90%, 60%)`,
+        vx: -1+Math.random()*2, vy: 1+Math.random()*2.5, g:.05+Math.random()*.1, a:1
+      }));
+      let run = true; let t0 = performance.now();
+      function frame(t){
+        if (!run) return;
+        ctx.clearRect(0,0,W,H);
+        for (const p of P){
+          p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a -= 0.004;
+          ctx.globalAlpha = Math.max(0,p.a);
+          ctx.fillStyle = p.c;
+          ctx.fillRect(p.x, p.y, p.r, p.r);
+        }
+        if (t - t0 < 2500) requestAnimationFrame(frame); else { run=false; ctx.clearRect(0,0,W,H); }
+      }
+      requestAnimationFrame(frame);
+      window.addEventListener('resize', ()=>{ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }, { once:true });
+    }
+
+    // Popup
+    const popMask = document.getElementById('popup-mask');
+    const popOk = document.getElementById('pop-ok');
+    function showPopup(title, desc, reward){
+      document.getElementById('pop-title').textContent = title || 'Congratulations!';
+      document.getElementById('pop-desc').innerHTML = desc || 'You’ve received a reward.';
+      document.getElementById('pop-reward').textContent = reward || '';
+      popMask.style.display='flex';
+      shootConfetti();
+    }
+    popOk.addEventListener('click', ()=>{ popMask.style.display='none'; });
+
+    // Sync loop (init + periodic)
+    async function syncState(enforce=false){
+      const tNow = now();
+      await userRef.transaction(u=>{
+        u = ensureStateInit(u, tNow);
+        const st = u.meDailyState;
+
+        // Auto reset if expired window passed
+        if (tNow > st.expiresAt && tNow >= st.nextAvailableAt){
+          u.meDailyState = {
+            currentDay: 1,
+            lastClaimAt: 0,
+            nextAvailableAt: tNow,
+            expiresAt: tNow + 8*3600*1000,
+            claimedDays: {},
+            version: st.version||1
+          };
+        }
+        return u;
+      });
+      const snap = await userRef.once('value');
+      dailyState = snap.val().meDailyState || {currentDay:1,nextAvailableAt:tNow,expiresAt:tNow+8*3600*1000,claimedDays:{}};
+      renderState();
+
+      if (!timerId){
+        timerId = setInterval(()=>{
+          // lightweight refresh
+          const t = now();
+          // when we cross a boundary, resync to apply reset or availability
+          const st = dailyState;
+          const needResync = (t >= st.nextAvailableAt && t <= st.expiresAt) || (t > st.expiresAt);
+          renderState();
+          if (t > st.expiresAt) { syncState().catch(()=>{}); }
+        }, 1000);
+      }
+    }
+    syncState().catch(console.warn);
+
+    // Claim logic with atomic transaction on the whole user subtree
+    async function claimDay(day){
+      const tNow = now();
+      let result = null;
+      await userRef.transaction(u=>{
+        u = ensureStateInit(u, tNow);
+        const st = u.meDailyState;
+
+        // validate correct day and window
+        if (day !== st.currentDay) return u; // ignore
+        if (tNow < st.nextAvailableAt || tNow > st.expiresAt) return u; // not allowed
+
+        const rw = rewardForDay(day);
+        // apply reward
+        if (rw.type.startsWith('WLC')){
+          u.balance = (typeof u.balance==='number'?u.balance:0) + rw.amount;
+        }
+        if (rw.type==='USDT'){
+          u.usdtBalance = (typeof u.usdtBalance==='number'?u.usdtBalance:0) + rw.amount;
+        }
+
+        // mark claimed
+        st.claimedDays = st.claimedDays || {};
+        st.claimedDays[String(day)] = tNow;
+        st.lastClaimAt = tNow;
+
+        // next state
+        if (day >= 30){
+          st.currentDay = 1;
+          st.nextAvailableAt = tNow + 24*3600*1000;
+          st.expiresAt = st.nextAvailableAt + 8*3600*1000;
+          st.claimedDays = {}; // reset streak map for new cycle
+        } else {
+          st.currentDay = day + 1;
+          st.nextAvailableAt = tNow + 24*3600*1000;
+          st.expiresAt = st.nextAvailableAt + 8*3600*1000;
+        }
+        u.meDailyState = st;
+        result = rw;
+        return u;
+      }, (error, committed, snap)=>{
+        if (error) console.warn('transaction error', error);
+      });
+
+      // refresh UI from DB
+      const s = await userRef.once('value');
+      dailyState = s.val().meDailyState;
+      renderState();
+
+      if (result){
+        // Update quick cache for WLC if changed
+        if (result.type.startsWith('WLC')){
+          const newW = s.val().balance || 0;
+          wlcAmountEl.textContent = formatWLC(newW);
+          idbSet(`wlc:${userId}:balance`, newW).catch(()=>{});
+        } else {
+          const newU = s.val().usdtBalance || 0;
+          usdtAmountEl.textContent = formatUSDT(newU);
+        }
+
+        // Show popup
+        showPopup('Congratulations!', 'Your daily reward has been added to your balance.', result.label);
+      }
+    }
+
+    // Improve tap responsiveness
+    document.addEventListener('gesturestart', e=>e.preventDefault(), {passive:false});
+    document.addEventListener('gesturechange', e=>e.preventDefault(), {passive:false});
+    document.addEventListener('gestureend', e=>e.preventDefault(), {passive:false});
+  </script>
+</body>
+</html>
