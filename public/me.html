@@ -3,267 +3,292 @@
 <head>
   <meta charset="utf-8">
   <title>Me</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <style>
     :root{
-      --bg:#0a0b10;
-      --glass:rgba(32,34,42,0.55);
-      --glass-border:rgba(120,140,200,0.22);
+      /* Palette */
+      --bg:#05070b;
+      --glass:rgba(20,24,32,0.62);
+      --glass-2:rgba(26,30,42,0.55);
+      --glass-border:rgba(150,175,250,0.20);
       --text:#eef3ff;
       --muted:#b9c3d9;
       --gold:#ffd36a;
-      --gold-strong:#ffea9a;
-      --green:#3fe28a;
-      --green-strong:#8affc2;
+      --gold-2:#ffe9a8;
+      --green:#39e58a;
+      --green-2:#9dffd0;
+      --blue:#70a0ff;
       --danger:#ff6b6b;
-      --accent:#7aa5ff;
-      --shadow:0 10px 30px rgba(0,0,0,.45);
+      --shadow-1:0 12px 40px rgba(0,0,0,.55);
+      --shadow-2:0 6px 18px rgba(0,0,0,.40);
+
+      /* Radii */
+      --r-lg:22px;
+      --r-md:14px;
+      --r-sm:10px;
+
+      /* Motion */
+      --t-fast:.12s ease-out;
+      --t-med:.18s ease-out;
     }
+
     html,body{height:100%}
     body{
       margin:0;
-      background:#000; /* black base */
+      background: #000;
       color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
       overflow:hidden;
     }
 
-    /* Animated nebulous glow behind the glass card */
-    .glow-bg{
-      position:fixed; inset:0; pointer-events:none; z-index:0;
+    /* Cinematic ambient glow (subtle, premium) */
+    .glow{
+      position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
-        radial-gradient(60vw 60vw at 20% 20%, rgba(80,255,120,0.08), transparent 70%),
-        radial-gradient(50vw 50vw at 80% 30%, rgba(255,255,120,0.05), transparent 70%),
-        radial-gradient(70vw 70vw at 50% 80%, rgba(120,255,180,0.06), transparent 70%);
-      filter: blur(6px) saturate(110%);
+        radial-gradient(60vw 60vw at 18% 18%, rgba(120,255,160,0.08), transparent 70%),
+        radial-gradient(50vw 50vw at 82% 22%, rgba(255,240,140,0.06), transparent 70%),
+        radial-gradient(70vw 70vw at 50% 86%, rgba(90,180,255,0.07), transparent 70%);
+      filter: blur(8px) saturate(110%);
     }
-    .glow-bg::before, .glow-bg::after{
-      content:"";
-      position:absolute; inset:-20%;
+    .glow::before, .glow::after{
+      content:""; position:absolute; inset:-20%;
       background:
-        radial-gradient(35vw 35vw at var(--x1,20%) var(--y1,30%), rgba(140,255,180,0.10), transparent 60%),
-        radial-gradient(30vw 30vw at var(--x2,70%) var(--y2,50%), rgba(255,255,140,0.08), transparent 60%),
-        radial-gradient(40vw 40vw at var(--x3,50%) var(--y3,70%), rgba(120,255,160,0.07), transparent 60%);
-      animation: drift 16s ease-in-out infinite alternate;
-      mix-blend-mode:screen;
+        radial-gradient(36vw 36vw at var(--x1,22%) var(--y1,28%), rgba(140,255,180,0.12), transparent 60%),
+        radial-gradient(30vw 30vw at var(--x2,70%) var(--y2,48%), rgba(255,255,140,0.09), transparent 60%),
+        radial-gradient(44vw 44vw at var(--x3,52%) var(--y3,72%), rgba(120,255,160,0.09), transparent 60%);
+      mix-blend-mode: screen;
+      animation: drift 18s ease-in-out infinite alternate;
     }
-    .glow-bg::after{
-      animation-duration: 22s;
-      opacity: .8;
-    }
+    .glow::after{ animation-duration: 26s; opacity:.85; }
     @keyframes drift{
-      0%   { --x1:18%; --y1:28%; --x2:72%; --y2:46%; --x3:52%; --y3:72%; filter:hue-rotate(0deg); }
-      50%  { --x1:22%; --y1:38%; --x2:68%; --y2:54%; --x3:48%; --y3:65%; filter:hue-rotate(25deg); }
-      100% { --x1:26%; --y1:32%; --x2:62%; --y2:58%; --x3:54%; --y3:68%; filter:hue-rotate(-20deg); }
+      0%{ --x1:18%; --y1:24%; --x2:74%; --y2:44%; --x3:50%; --y3:72%; filter:hue-rotate(0deg); }
+      50%{ --x1:24%; --y1:36%; --x2:68%; --y2:54%; --x3:48%; --y3:64%; filter:hue-rotate(24deg); }
+      100%{ --x1:28%; --y1:30%; --x2:60%; --y2:58%; --x3:54%; --y3:70%; filter:hue-rotate(-20deg); }
     }
 
-    /* Glass card "paper" */
+    /* Shell */
     .wrap{
       position:relative; z-index:1;
       width:100%; height:100%;
-      display:flex; align-items:center; justify-content:center; padding:16px;
+      display:flex; align-items:center; justify-content:center;
+      padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
+      background:
+        radial-gradient(40vw 40vw at 80% 8%, rgba(20,30,60,.25), rgba(0,0,0,0)),
+        radial-gradient(32vw 32vw at 10% 92%, rgba(20,50,40,.22), rgba(0,0,0,0));
     }
     .card{
-      position:relative;
-      width:min(96vw, 560px);
-      max-height: calc(100vh - 24px);
-      background: var(--glass);
+      width:min(96vw, 620px);
+      height: min(96vh, 900px);
+      background: linear-gradient(180deg, rgba(30,36,50,0.50), rgba(18,22,30,0.58));
+      border-radius: var(--r-lg);
       border: 1px solid var(--glass-border);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(8px) saturate(120%);
-      overflow:hidden;
+      box-shadow: var(--shadow-1);
+      backdrop-filter: blur(10px) saturate(120%);
+      position:relative; overflow:hidden;
       display:flex; flex-direction:column;
     }
-    .scroll{
-      overflow:auto; -webkit-overflow-scrolling: touch;
-      padding: 18px 16px 20px 16px;
+
+    /* Gradient border accent */
+    .card::before{
+      content:""; position:absolute; inset:0; border-radius: var(--r-lg);
+      padding:1px; background:
+        linear-gradient(135deg, rgba(255,220,120,.28), rgba(120,190,255,.22), rgba(80,255,170,.25));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events:none; opacity:.85;
     }
 
-    /* Top bar */
+    /* Topbar */
     .topbar{
-      position:absolute; z-index:2; left:0; top:0; right:0; height:54px;
+      position:absolute; inset:0 0 auto 0; height:56px;
       display:flex; align-items:center; justify-content:space-between;
-      padding: 8px 10px;
+      padding: 10px 12px;
+      z-index:2;
     }
     .icon-btn{
-      width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;
-      background: rgba(255,255,255,0.06);
+      width:38px; height:38px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
       border: 1px solid rgba(255,255,255,0.12);
       color:#fff; cursor:pointer; user-select:none;
-      transition: transform .1s ease-out, background .2s, border-color .2s;
-      backdrop-filter: blur(4px);
+      transition: transform var(--t-fast), background var(--t-med), border-color var(--t-med);
+      box-shadow: var(--shadow-2);
+      backdrop-filter: blur(6px);
     }
-    .icon-btn:active{ transform: scale(0.97); }
-    .icon-btn:hover{ background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.2); }
+    .icon-btn:hover{ background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+    .icon-btn:active{ transform: scale(.97); }
+
+    /* Scroll area */
+    .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px 18px 16px; }
 
     /* Header profile */
-    .profile{
-      padding-top:56px; /* leave space for topbar */
-      display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px;
+    .profile{ display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; }
+    .avatar-halo{
+      width:122px; height:122px; border-radius:50%; position:relative; display:grid; place-items:center;
+      filter: saturate(115%);
     }
-    .avatar-wrap{
-      width:112px; height:112px; border-radius:50%; position:relative;
-      display:grid; place-items:center;
+    .ring{
+      position:absolute; inset:-5px; border-radius:50%;
+      background: conic-gradient(from 0deg, #8b5, #d99, #e9c, #d99, #8b5);
+      animation: spin 8.8s linear infinite;
+      box-shadow: 0 0 14px rgba(255,220,140,.25);
     }
-    .avatar-ring{
-      position:absolute; inset:-4px; border-radius:50%;
-      background:
-        conic-gradient(from 0deg, #8a5, #c96, #dba, #c96, #8a5);
-      filter: saturate(120%);
-      animation: spin-slow 9s linear infinite;
+    .ring::after{
+      content:""; position:absolute; inset:4px; border-radius:50%;
+      background: radial-gradient(140% 140% at 50% 25%, rgba(255,255,255,.16), rgba(0,0,0,.16));
     }
-    .avatar-ring::after{
-      content:""; position:absolute; inset:3px; border-radius:50%;
-      background: radial-gradient(120% 120% at 50% 25%, rgba(255,255,255,0.18), rgba(0,0,0,0.18));
-    }
-    @keyframes spin-slow{ to{ transform: rotate(360deg);} }
+    @keyframes spin{ to{ transform: rotate(360deg);} }
     .avatar{
-      position:relative; z-index:1;
-      width:100px; height:100px; border-radius:50%;
-      object-fit:cover; border:2px solid rgba(255,255,255,0.15);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.45);
-      background:#111;
+      position:relative; z-index:1; width:110px; height:110px; border-radius:50%;
+      object-fit:cover; border:2px solid rgba(255,255,255,.18); background:#121418;
+      box-shadow: 0 10px 26px rgba(0,0,0,.55);
     }
 
     .namebox{
-      margin-top:4px;
-      padding:10px 14px;
-      border-radius:12px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      display:inline-flex; flex-direction:column; gap:4px;
-      min-width: 60%;
+      display:inline-flex; flex-direction:column; gap:4px; align-items:center;
+      padding:10px 16px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+      min-width: 62%;
     }
-    .nickname{ font-weight:800; letter-spacing:.2px; font-size:1.1rem; }
-    .subnick{ color:var(--muted); font-size:.9rem; }
+    .nickname{
+      font-weight:900; letter-spacing:.2px; font-size:1.15rem;
+      background: linear-gradient(90deg, #fff, #dfe9ff);
+      -webkit-background-clip: text; background-clip:text; color: transparent;
+      text-shadow: 0 1px 2px rgba(0,0,0,.35);
+    }
+    .subnick{ color:var(--muted); font-size:.92rem; }
 
-    /* Balances row */
+    /* Balances */
     .balances{
-      margin-top:16px;
-      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+      margin-top:14px;
+      display:grid; grid-template-columns: 1fr 1fr; gap:12px;
     }
-    .bal-card{
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius:14px; padding:12px 12px 10px 12px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
-      display:flex; flex-direction:column; gap:8px; align-items:flex-start;
+    @media (max-width: 420px){
+      .balances{ grid-template-columns: 1fr; }
     }
-    .bal-row{ display:flex; align-items:center; gap:8px; }
-    .bal-icon{ width:18px; height:18px; object-fit:contain; }
-    .bal-name{ font-weight:800; letter-spacing:.3px; font-size:.86rem; color:#eaefff; opacity:.95 }
-    .bal-value{
-      font-size:1.0rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-weight:800; letter-spacing:.2px;
-      display:flex; align-items:center; gap:6px;
-      text-shadow: 0 0 8px rgba(255,255,255,0.08);
+    .bal{
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: var(--r-md);
+      padding: 12px;
+      box-shadow: var(--shadow-2);
+      display:flex; flex-direction:column; gap:10px;
     }
-    .bal-wlc .bal-value{ color: var(--gold); }
-    .bal-usdt .bal-value{ color: var(--green); }
+    .bal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .bal-id{ display:flex; align-items:center; gap:8px; font-weight:800; letter-spacing:.3px; color:#eef3ff; }
+    .bal-id img{ width:18px; height:18px; object-fit:contain; }
+    .bal-amt{
+      display:flex; align-items:baseline; gap:6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-weight:900; letter-spacing:.3px; text-shadow: 0 0 10px rgba(255,255,255,.06);
+    }
+    .bal-wlc .bal-amt{ color: var(--gold); }
+    .bal-usdt .bal-amt{ color: var(--green); }
+    .bal-cta{
+      align-self:flex-start;
+      border:none; border-radius: 10px; padding:8px 13px; font-weight:900; cursor:pointer;
+      transition: transform var(--t-fast), box-shadow var(--t-med), filter var(--t-fast);
+    }
+    .bal-cta:active{ transform: translateY(1px) scale(0.99); }
+    .bal-cta.wlc{
+      background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222;
+      box-shadow: 0 6px 16px rgba(255, 210, 90, .30);
+    }
+    .bal-cta.usdt{
+      background: linear-gradient(90deg, var(--green), var(--green-2)); color:#0d2418;
+      box-shadow: 0 6px 16px rgba(60, 220, 130, .28);
+    }
 
-    .btn{
-      border:none; border-radius:10px; padding:7px 12px; font-weight:800; cursor:pointer;
-      background: linear-gradient(90deg, #ffd36a, #fff2c3); color:#222;
-      box-shadow: 0 4px 14px rgba(255, 210, 80, 0.35);
-      transition: transform .12s ease-out, box-shadow .12s ease-out, filter .12s ease-out;
-    }
-    .btn:active{ transform: translateY(1px) scale(0.99); box-shadow: 0 3px 10px rgba(255,210,80,.25); }
-    .btn.usdt{
-      background: linear-gradient(90deg, #36d47a, #a9ffd0); color:#102016;
-      box-shadow: 0 4px 14px rgba(60, 220, 130, 0.30);
-    }
-
-    /* Achievements */
+    /* Section title */
     .section-title{
-      margin: 16px 2px 10px 2px; font-weight:900; letter-spacing:.3px; font-size:.98rem; color:#e9f1ff;
+      margin: 18px 2px 10px 4px; font-weight:900; letter-spacing:.3px; font-size:1.02rem; color:#e9f1ff;
+      display:flex; align-items:center; gap:8px;
     }
-    .ach-grid{
-      display:grid; grid-template-columns: repeat(10, 1fr);
-      gap:8px;
+    .section-title::before{
+      content:""; width:8px; height:8px; border-radius:999px;
+      background: radial-gradient(circle, #ffd36a, #8affc2);
+      box-shadow: 0 0 10px rgba(255,211,106,.45);
+    }
+
+    /* Achievements grid */
+    .ach{
+      display:grid; grid-template-columns: repeat(10, 1fr); gap:8px;
+    }
+    @media (max-width: 560px){
+      .ach{ gap:7px; }
     }
     .day{
-      position:relative; aspect-ratio: 1 / 1; border-radius:10px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.12);
+      position:relative; aspect-ratio:1/1; border-radius:12px; overflow:hidden; cursor:default;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.12);
       display:flex; align-items:center; justify-content:center;
-      overflow:hidden; cursor: default; user-select:none;
-      transition: transform .12s ease-out, box-shadow .12s ease-out, border-color .2s, background .2s;
+      transition: transform var(--t-fast), box-shadow var(--t-med), border-color var(--t-med), background var(--t-med);
     }
-    .day .gift{
-      font-size: 20px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35));
+    .label{
+      position:absolute; top:5px; left:0; right:0; text-align:center; font-size:10px; font-weight:800; color:#dbe4ff; opacity:.92;
+      text-shadow: 0 1px 2px rgba(0,0,0,.45); pointer-events:none;
     }
-    .day .label{
-      position:absolute; top:4px; left:0; right:0; text-align:center;
-      font-size: 10px; color:#dbe4ff; opacity:.9; font-weight:700; text-shadow: 0 1px 2px rgba(0,0,0,.45);
-      pointer-events:none;
-    }
+    .gift{ font-size:22px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+
     .day.special{ transform: scale(1.06); }
     .day.locked{
-      background: rgba(0,0,0,0.35);
-      border-color: rgba(255,255,255,0.10);
-      opacity:.85;
+      background: rgba(0,0,0,0.32); border-color: rgba(255,255,255,0.10); opacity:.88;
     }
     .day.locked::after{
-      content:"?"; position:absolute; font-weight:900; color:#d0e7ff; opacity:.12; font-size: 60px; pointer-events:none;
+      content:"?"; position:absolute; font-weight:900; color:#d0e7ff; opacity:.12; font-size:58px; pointer-events:none;
     }
+    .timer{ position:absolute; bottom:5px; left:0; right:0; text-align:center; font-size:10px; font-weight:800; color:#d3ddff; opacity:.95; }
+
     .day.claimable{
-      background: radial-gradient(120% 120% at 50% 30%, rgba(255, 235, 120, .16), rgba(0,0,0,.05));
-      border-color: rgba(255, 210, 90, .55);
-      box-shadow: 0 8px 22px rgba(255, 210, 90, .20);
+      background:
+        radial-gradient(120% 120% at 50% 30%, rgba(255,235,120,.18), rgba(0,0,0,.04)),
+        linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.05));
+      border-color: rgba(255,210,90,.55);
+      box-shadow: 0 10px 24px rgba(255,210,90,.22), inset 0 0 0 1px rgba(255,255,255,.05);
       cursor:pointer;
-      animation: glow 1.2s ease-in-out infinite alternate;
+      animation: pulse 1.4s ease-in-out infinite alternate;
     }
-    @keyframes glow{
-      from{ filter: drop-shadow(0 0 0 rgba(255,220,100,.0)); }
-      to{   filter: drop-shadow(0 0 8px rgba(255,220,100,.45)); }
-    }
+    @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.40)); } }
+
     .day.claimed{
-      background: rgba(255,255,255,0.08);
-      border-color: rgba(120,200,255,0.35);
-      box-shadow: inset 0 0 0 9999px rgba(10,20,30,.25);
-      opacity:.95;
-    }
-    .timer{
-      position:absolute; bottom:4px; left:0; right:0; text-align:center;
-      font-size: 10px; color:#d3ddff; opacity:.9; font-weight:700;
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border-color: rgba(120,200,255,.35);
+      box-shadow: inset 0 0 0 9999px rgba(10,20,30,.20);
+      opacity:.96;
     }
 
     /* Popup */
-    .popup-mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:10; }
-    .popup{
-      width:min(92vw, 460px);
-      background: rgba(22,24,32,.95);
+    .mask{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:10; }
+    .pop{
+      width:min(92vw, 480px);
+      background: rgba(18,22,30,.95);
       border:1px solid rgba(255,255,255,.14);
-      border-radius: 16px;
-      padding: 18px 16px 16px 16px;
-      text-align:center;
-      box-shadow: 0 10px 40px rgba(0,0,0,.55);
+      border-radius:16px; padding:18px 16px 16px 16px; text-align:center;
+      box-shadow: var(--shadow-1);
     }
-    .popup h3{ margin: 8px 0 6px 0; }
-    .popup .desc{ color:#cfe3ff; opacity:.95; font-size:.95rem; margin-bottom:12px; }
-    .popup .reward{
-      margin: 10px auto 12px auto; padding:10px 12px; border-radius: 12px;
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      display:inline-flex; gap:10px; align-items:center;
-      font-weight:900;
+    .pop h3{ margin:8px 0 6px 0; }
+    .pop .desc{ color:#cfe3ff; opacity:.95; font-size:.96rem; margin-bottom:12px; }
+    .reward{
+      margin:12px auto; padding:10px 14px; border-radius: 12px;
+      background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+      display:inline-flex; gap:10px; align-items:center; font-weight:900;
     }
-    .popup .ok{
-      margin-top:6px;
-      border:none; border-radius:10px; padding:7px 14px; font-weight:900; cursor:pointer;
-      background: linear-gradient(90deg, #ffd36a, #fff2c3); color:#222;
-      box-shadow: 0 4px 14px rgba(255, 210, 80, 0.35);
+    .ok{
+      margin-top:6px; border:none; border-radius:10px; padding:9px 16px; font-weight:900; cursor:pointer;
+      background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222;
+      box-shadow: 0 6px 16px rgba(255,210,90,.30);
     }
     .confetti{ position:fixed; inset:0; pointer-events:none; z-index:11; }
 
-    .spacer{ height:14px; }
     * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
   </style>
 </head>
 <body>
-  <div class="glow-bg"></div>
+  <div class="glow"></div>
 
   <div class="wrap">
     <div class="card">
@@ -274,9 +299,9 @@
 
       <div class="scroll">
         <section class="profile">
-          <div class="avatar-wrap">
-            <div class="avatar-ring"></div>
-            <img id="avatar" class="avatar" src="" alt="avatar">
+          <div class="avatar-halo">
+            <div class="ring"></div>
+            <img id="avatar" class="avatar" alt="avatar">
           </div>
           <div class="namebox">
             <div id="player-name" class="nickname">Player</div>
@@ -285,36 +310,38 @@
         </section>
 
         <section class="balances">
-          <div class="bal-card bal-wlc">
-            <div class="bal-row">
-              <img class="bal-icon" src="assets/wellcoin-icon.png" alt="WLC">
-              <div class="bal-name">WLC</div>
+          <div class="bal bal-wlc">
+            <div class="bal-head">
+              <div class="bal-id">
+                <img src="assets/wellcoin-icon.png" alt="WLC">
+                <span>WLC</span>
+              </div>
             </div>
-            <div class="bal-value" id="wlc-amount">0.000000</div>
-            <button class="btn" id="wlc-withdraw">Withdraw</button>
+            <div class="bal-amt" id="wlc-amount">0.000000</div>
+            <button class="bal-cta wlc" id="wlc-withdraw">Withdraw</button>
           </div>
-          <div class="bal-card bal-usdt">
-            <div class="bal-row">
-              <img class="bal-icon" src="assets/usdt.png" alt="USDT">
-              <div class="bal-name">USDT</div>
+          <div class="bal bal-usdt">
+            <div class="bal-head">
+              <div class="bal-id">
+                <img src="assets/usdt.png" alt="USDT">
+                <span>USDT</span>
+              </div>
             </div>
-            <div class="bal-value" id="usdt-amount">0.000</div>
-            <button class="btn usdt" id="usdt-withdraw">Withdraw</button>
+            <div class="bal-amt" id="usdt-amount">0.000</div>
+            <button class="bal-cta usdt" id="usdt-withdraw">Withdraw</button>
           </div>
         </section>
 
         <section>
           <div class="section-title">Daily Achievements</div>
-          <div id="ach-grid" class="ach-grid"></div>
+          <div id="ach" class="ach"></div>
         </section>
-
-        <div class="spacer"></div>
       </div>
     </div>
   </div>
 
-  <div id="popup-mask" class="popup-mask">
-    <div class="popup">
+  <div id="mask" class="mask">
+    <div class="pop">
       <h3 id="pop-title">Congratulations!</h3>
       <div id="pop-desc" class="desc">You’ve received a reward.</div>
       <div id="pop-reward" class="reward">+ 0.000000 WLC</div>
@@ -327,7 +354,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Audio boot (keep music alive) -->
+  <!-- Keep music alive -->
   <script>
     (function audioBoot(){
       let a = document.getElementById('preloadAudio');
@@ -355,52 +382,45 @@
 
   <!-- Page Logic -->
   <script>
-    // Telegram + userId resolution (robust)
+    // Telegram + robust userId with fallback to storage
     const tg = window.Telegram?.WebApp;
     try { tg && tg.ready(); } catch(e){}
-    let tgUser = null;
-    let userId = null;
+    let tgUser = tg?.initDataUnsafe?.user || null;
+    let userId = tgUser?.id || null;
 
-    function getStoredId(){
+    function storedId(){
       try{
         return sessionStorage.getItem('wlc_user_id') || localStorage.getItem('wlc_user_id') || null;
       }catch{ return null; }
     }
-    function resolveUserId(){
-      tgUser = tg?.initDataUnsafe?.user || tgUser;
-      userId = tgUser?.id || getStoredId();
-      return userId;
-    }
-    function guardOrInit(){
-      if (!resolveUserId()){
-        // retry shortly before deciding redirect
-        setTimeout(()=>{
-          if (!resolveUserId()){
-            window.location.replace('welcome.html');
-          } else {
-            initPage();
-          }
-        }, 60);
-      } else {
-        initPage();
-      }
+    function ensureUserId(cb){
+      if (!userId) userId = storedId();
+      if (userId) return cb();
+      // retry briefly before redirect
+      setTimeout(()=>{
+        tgUser = tg?.initDataUnsafe?.user || tgUser;
+        userId = tgUser?.id || storedId();
+        if (userId) cb(); else window.location.replace('welcome.html');
+      }, 60);
     }
 
-    // --- IndexedDB helpers ---
+    // IndexedDB helpers (minimal)
     const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
-    function openIDB(){ return new Promise((res,rej)=>{ const r = indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
+    function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
     function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
     function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
 
     // UI refs
+    const backBtn = document.getElementById('back-btn');
+    const cfgBtn  = document.getElementById('cfg-btn');
     const avatarEl = document.getElementById('avatar');
     const nameEl = document.getElementById('player-name');
-    const subEl = document.getElementById('player-sub');
-    const wlcAmountEl = document.getElementById('wlc-amount');
-    const usdtAmountEl = document.getElementById('usdt-amount');
-    const achGrid = document.getElementById('ach-grid');
-    const backBtn = document.getElementById('back-btn');
-    const cfgBtn = document.getElementById('cfg-btn');
+    const subEl  = document.getElementById('player-sub');
+    const wlcEl  = document.getElementById('wlc-amount');
+    const usdtEl = document.getElementById('usdt-amount');
+    const achGrid= document.getElementById('ach');
+    const mask   = document.getElementById('mask');
+    const popOk  = document.getElementById('pop-ok');
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
     cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
@@ -416,19 +436,18 @@
     }
 
     // Formatters
-    function formatWLC(v){ return Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6}); }
-    function formatUSDT(v){ return Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3}); }
-    function msToHMS(ms){ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+    const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
+    const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
+    const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
-    // Build achievements grid once
+    // Build achievements tiles
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
       for(let i=1;i<=30;i++){
         const d = document.createElement('div');
-        d.className = 'day';
-        if (SPECIAL.has(i)) d.classList.add('special');
-        d.dataset.day=i;
+        d.className = 'day' + (SPECIAL.has(i)?' special':'');
+        d.dataset.day = i;
         d.innerHTML = `<div class="label">Day ${i}</div><div class="gift">🎁</div><div class="timer" style="display:none"></div>`;
         achGrid.appendChild(d);
       }
@@ -448,14 +467,13 @@
     const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
     const db = firebase.database(app);
 
-    // Server time offset (anti device clock drift)
+    // Server time offset
     let serverOffset = 0;
     db.ref(".info/serverTimeOffset").on("value", s=>{ serverOffset = s.val()||0; });
     const now = ()=> Date.now() + serverOffset;
 
-    // Daily reward logic
-    let dailyState = null;
-    let timerId = null;
+    // State
+    let daily = null, timerId = null;
 
     function ensureStateInit(u, tNow){
       if (!u) u = {};
@@ -463,8 +481,8 @@
         u.meDailyState = {
           currentDay: 1,
           lastClaimAt: 0,
-          nextAvailableAt: tNow,
-          expiresAt: tNow + 8*3600*1000,
+          nextAvailableAt: tNow,             // Day1 available immediately
+          expiresAt: tNow + 8*3600*1000,     // 8h window
           claimedDays: {},
           version: 1
         };
@@ -486,7 +504,7 @@
       return u;
     }
 
-    function rewardForDay(day){
+    function rewardFor(day){
       if (day===7)  return { type:'WLC', amount:0.1,  label:'+0.100000 WLC' };
       if (day===15) return { type:'USDT',amount:0.2,  label:'+0.200 USDT' };
       if (day===24) return { type:'WLC', amount:1.0,  label:'+1.000000 WLC' };
@@ -500,16 +518,14 @@
       return pool[Math.floor(Math.random()*pool.length)];
     }
 
-    function renderState(){
-      if (!dailyState) return;
-      const t = now();
-      const st = dailyState;
+    function render(){
+      if (!daily) return;
+      const t = now(), st = daily;
       document.querySelectorAll('.day').forEach(tile=>{
         const day = Number(tile.dataset.day);
         tile.classList.remove('locked','claimable','claimed');
         const timerEl = tile.querySelector('.timer');
-        timerEl.style.display='none';
-        timerEl.textContent='';
+        timerEl.style.display='none'; timerEl.textContent='';
 
         const claimed = !!(st.claimedDays && st.claimedDays[day]);
         if (claimed){ tile.classList.add('claimed'); return; }
@@ -520,110 +536,93 @@
           tile.classList.add('claimable');
         } else if (t < st.nextAvailableAt){
           tile.classList.add('locked');
-          timerEl.style.display='';
-          timerEl.textContent = 'In ' + msToHMS(st.nextAvailableAt - t);
+          timerEl.style.display=''; timerEl.textContent = 'In ' + msToHMS(st.nextAvailableAt - t);
         } else {
           tile.classList.add('locked');
         }
       });
     }
 
-    function attachTileHandlers(userRef){
-      achGrid.addEventListener('click', (e)=>{
-        const tile = e.target.closest('.day');
-        if (!tile) return;
-        const day = Number(tile.dataset.day);
-        if (day !== dailyState.currentDay) return;
-        const t = now();
-        if (t < dailyState.nextAvailableAt || t > dailyState.expiresAt) return;
-        claimDay(userRef, day);
-      });
-    }
-
-    function shootConfetti(){
-      const canvas = document.getElementById('confetti');
-      const ctx = canvas.getContext('2d');
-      let W = canvas.width = window.innerWidth;
-      let H = canvas.height = window.innerHeight;
-      const P = Array.from({length: 90}, ()=>({
+    function confetti(){
+      const c = document.getElementById('confetti'), x = c.getContext('2d');
+      let W = c.width = innerWidth, H = c.height = innerHeight;
+      const P = Array.from({length: 110}, ()=>({
         x: Math.random()*W, y: -10-Math.random()*H*0.2,
         r: 3+Math.random()*4,
         c: `hsl(${Math.random()*360}, 90%, 60%)`,
         vx: -1+Math.random()*2, vy: 1+Math.random()*2.5, g:.05+Math.random()*.1, a:1
       }));
-      let run = true; let t0 = performance.now();
+      let run = true, t0 = performance.now();
       function frame(t){
         if (!run) return;
-        ctx.clearRect(0,0,W,H);
+        x.clearRect(0,0,W,H);
         for (const p of P){
           p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a -= 0.004;
-          ctx.globalAlpha = Math.max(0,p.a);
-          ctx.fillStyle = p.c;
-          ctx.fillRect(p.x, p.y, p.r, p.r);
+          x.globalAlpha = Math.max(0,p.a);
+          x.fillStyle = p.c; x.fillRect(p.x, p.y, p.r, p.r);
         }
-        if (t - t0 < 2500) requestAnimationFrame(frame); else { run=false; ctx.clearRect(0,0,W,H); }
+        if (t - t0 < 2600) requestAnimationFrame(frame); else { run=false; x.clearRect(0,0,W,H); }
       }
       requestAnimationFrame(frame);
-      window.addEventListener('resize', ()=>{ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }, { once:true });
+      addEventListener('resize', ()=>{ W=c.width=innerWidth; H=c.height=innerHeight; }, { once:true });
     }
 
-    const popMask = document.getElementById('popup-mask');
-    const popOk = document.getElementById('pop-ok');
-    function showPopup(title, desc, reward){
+    function showPop(title, desc, reward){
       document.getElementById('pop-title').textContent = title || 'Congratulations!';
-      document.getElementById('pop-desc').innerHTML = desc || 'You’ve received a reward.';
+      document.getElementById('pop-desc').innerHTML  = desc || 'You’ve received a reward.';
       document.getElementById('pop-reward').textContent = reward || '';
-      popMask.style.display='flex';
-      shootConfetti();
+      mask.style.display='flex';
+      confetti();
     }
-    popOk.addEventListener('click', ()=>{ popMask.style.display='none'; });
+    popOk.addEventListener('click', ()=>{ mask.style.display='none'; });
 
-    async function syncState(userRef){
+    function attachTileHandlers(userRef){
+      achGrid.addEventListener('click', (e)=>{
+        const tile = e.target.closest('.day'); if (!tile) return;
+        const day = Number(tile.dataset.day); if (day !== daily.currentDay) return;
+        const t = now(); if (t < daily.nextAvailableAt || t > daily.expiresAt) return;
+        claim(userRef, day);
+      });
+    }
+
+    async function sync(userRef){
       const tNow = now();
       await userRef.transaction(u=>{
         u = ensureStateInit(u, tNow);
         const st = u.meDailyState;
         if (tNow > st.expiresAt && tNow >= st.nextAvailableAt){
           u.meDailyState = {
-            currentDay: 1,
-            lastClaimAt: 0,
-            nextAvailableAt: tNow,
-            expiresAt: tNow + 8*3600*1000,
-            claimedDays: {},
-            version: st.version||1
+            currentDay: 1, lastClaimAt: 0,
+            nextAvailableAt: tNow, expiresAt: tNow + 8*3600*1000,
+            claimedDays: {}, version: st.version||1
           };
         }
         return u;
       });
       const snap = await userRef.once('value');
-      dailyState = snap.val().meDailyState;
-      renderState();
+      daily = snap.val().meDailyState;
+      render();
 
       if (!timerId){
         timerId = setInterval(()=>{
           const t = now();
-          renderState();
-          if (t > dailyState.expiresAt) { syncState(userRef).catch(()=>{}); }
+          render();
+          if (t > daily.expiresAt) { sync(userRef).catch(()=>{}); }
         }, 1000);
       }
     }
 
-    async function claimDay(userRef, day){
-      const tNow = now();
-      let result = null;
+    async function claim(userRef, day){
+      const tNow = now(); let reward = null;
       await userRef.transaction(u=>{
         u = ensureStateInit(u, tNow);
         const st = u.meDailyState;
         if (day !== st.currentDay) return u;
         if (tNow < st.nextAvailableAt || tNow > st.expiresAt) return u;
 
-        const rw = rewardForDay(day);
-        if (rw.type.startsWith('WLC')){
-          u.balance = (typeof u.balance==='number'?u.balance:0) + rw.amount;
-        }
-        if (rw.type==='USDT'){
-          u.usdtBalance = (typeof u.usdtBalance==='number'?u.usdtBalance:0) + rw.amount;
-        }
+        const rw = rewardFor(day);
+        if (rw.type.startsWith('WLC')) u.balance = (u.balance||0) + rw.amount;
+        if (rw.type==='USDT')         u.usdtBalance = (u.usdtBalance||0) + rw.amount;
 
         st.claimedDays = st.claimedDays || {};
         st.claimedDays[String(day)] = tNow;
@@ -640,90 +639,75 @@
           st.expiresAt = st.nextAvailableAt + 8*3600*1000;
         }
         u.meDailyState = st;
-        result = rw;
+        reward = rw;
         return u;
       });
 
       const s = await userRef.once('value');
-      dailyState = s.val().meDailyState;
-      renderState();
+      daily = s.val().meDailyState; render();
 
-      if (result){
-        const wlcRef  = db.ref('users/'+userId+'/balance');
-        const usdtRef = db.ref('users/'+userId+'/usdtBalance');
-
-        if (result.type.startsWith('WLC')){
+      if (reward){
+        // Update local view
+        if (reward.type.startsWith('WLC')){
           const newW = s.val().balance || 0;
-          wlcAmountEl.textContent = formatWLC(newW);
+          wlcEl.textContent = fmtWLC(newW);
           idbSet(`wlc:${userId}:balance`, newW).catch(()=>{});
         } else {
           const newU = s.val().usdtBalance || 0;
-          usdtAmountEl.textContent = formatUSDT(newU);
+          usdtEl.textContent = fmtUSD(newU);
         }
-        showPopup('Congratulations!', 'Your daily reward has been added to your balance.', result.label);
+        showPop('Congratulations!', 'Your daily reward has been added to your balance.', reward.label);
       }
     }
 
-    function initPage(){
-      // persist user id for subsequent pages
-      try {
+    function init(){
+      // persist id for other pages
+      try{
         sessionStorage.setItem('wlc_user_id', String(userId));
         localStorage.setItem('wlc_user_id', String(userId));
-      } catch {}
+      }catch{}
 
-      // Quick hydrate header (Telegram + IDB)
-      (async function hydrateHeader(){
-        try{
-          const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
-          nameEl.textContent = fullName;
-          subEl.textContent = tgUser?.username ? '@'+tgUser.username : (subEl.textContent||'Player');
+      // Quick header hydrate
+      (async ()=>{
+        const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
+        nameEl.textContent = fullName;
+        subEl.textContent  = tgUser?.username ? '@'+tgUser.username : (subEl.textContent||'Player');
 
-          const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
-          if (cachedName) nameEl.textContent = cachedName;
+        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
+        if (cachedName) nameEl.textContent = cachedName;
 
-          const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
-          if (cachedBlob instanceof Blob){
-            avatarEl.src = URL.createObjectURL(cachedBlob);
-          }else if (tgUser?.photo_url){
-            avatarEl.src = tgUser.photo_url;
-          } else {
-            avatarEl.src = 'assets/player1.png';
-          }
-        }catch(e){}
+        const blob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
+        if (blob instanceof Blob) avatarEl.src = URL.createObjectURL(blob);
+        else if (tgUser?.photo_url) avatarEl.src = tgUser.photo_url;
+        else avatarEl.src = 'assets/player1.png';
       })();
 
-      // Balances (quick cache + realtime)
-      (async function quickBalance(){
-        try {
-          const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
-          if (typeof cached === 'number') wlcAmountEl.textContent = formatWLC(cached);
-        }catch{}
+      // Balances
+      (async ()=>{
+        const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
+        if (typeof cached === 'number') wlcEl.textContent = fmtWLC(cached);
       })();
 
       const userRef = db.ref('users/'+userId);
-      const wlcRef  = db.ref('users/'+userId+'/balance');
-      const usdtRef = db.ref('users/'+userId+'/usdtBalance');
-
-      wlcRef.on('value', s=>{
+      db.ref('users/'+userId+'/balance').on('value', s=>{
         const v = typeof s.val()==='number' ? s.val() : 0;
-        wlcAmountEl.textContent = formatWLC(v);
+        wlcEl.textContent = fmtWLC(v);
         idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
       });
-      usdtRef.on('value', s=>{
+      db.ref('users/'+userId+'/usdtBalance').on('value', s=>{
         const v = typeof s.val()==='number' ? s.val() : 0;
-        usdtAmountEl.textContent = formatUSDT(v);
+        usdtEl.textContent = fmtUSD(v);
       });
 
       document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
       document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
 
-      // daily sync
-      syncState(userRef).catch(console.warn);
+      // Daily loop
+      sync(userRef).catch(console.warn);
       attachTileHandlers(userRef);
     }
 
-    // boot
-    guardOrInit();
+    ensureUserId(init);
   </script>
 </body>
 </html>
