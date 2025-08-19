@@ -258,10 +258,7 @@
     }
     .confetti{ position:fixed; inset:0; pointer-events:none; z-index:11; }
 
-    /* Top spacing at bottom */
     .spacer{ height:14px; }
-
-    /* Hide tap highlight */
     * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
   </style>
 </head>
@@ -326,32 +323,11 @@
   </div>
   <canvas id="confetti" class="confetti"></canvas>
 
-  <!-- Firebase and Telegram WebApp (same major as project) -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script>
-    // Telegram bootstrap
-    const tg = window.Telegram?.WebApp || {};
-    try { tg.ready && tg.ready(); } catch(e){}
-    const tgUser = tg.initDataUnsafe?.user;
-    const userId = tgUser?.id;
-    if (!userId) { window.location.href = "welcome.html"; }
 
-    // Firebase config (same as main)
-    const firebaseConfig = {
-      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-      authDomain: "wellcoinbotgame.firebaseapp.com",
-      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "wellcoinbotgame",
-      storageBucket: "wellcoinbotgame.appspot.com",
-      messagingSenderId: "108640533638",
-      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-    };
-    const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
-  </script>
-
-  <!-- Minimal audio boot so music continues across pages -->
+  <!-- Audio boot (keep music alive) -->
   <script>
     (function audioBoot(){
       let a = document.getElementById('preloadAudio');
@@ -379,13 +355,44 @@
 
   <!-- Page Logic -->
   <script>
-    // --- IndexedDB mini helpers for quick hydrate ---
+    // Telegram + userId resolution (robust)
+    const tg = window.Telegram?.WebApp;
+    try { tg && tg.ready(); } catch(e){}
+    let tgUser = null;
+    let userId = null;
+
+    function getStoredId(){
+      try{
+        return sessionStorage.getItem('wlc_user_id') || localStorage.getItem('wlc_user_id') || null;
+      }catch{ return null; }
+    }
+    function resolveUserId(){
+      tgUser = tg?.initDataUnsafe?.user || tgUser;
+      userId = tgUser?.id || getStoredId();
+      return userId;
+    }
+    function guardOrInit(){
+      if (!resolveUserId()){
+        // retry shortly before deciding redirect
+        setTimeout(()=>{
+          if (!resolveUserId()){
+            window.location.replace('welcome.html');
+          } else {
+            initPage();
+          }
+        }, 60);
+      } else {
+        initPage();
+      }
+    }
+
+    // --- IndexedDB helpers ---
     const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
-    function openIDB(){ return new Promise((res,rej)=>{ const r = indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });}
+    function openIDB(){ return new Promise((res,rej)=>{ const r = indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
     function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
     function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
 
-    // --- UI refs ---
+    // UI refs
     const avatarEl = document.getElementById('avatar');
     const nameEl = document.getElementById('player-name');
     const subEl = document.getElementById('player-sub');
@@ -397,7 +404,6 @@
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
     cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
-
     function go(url){
       try{
         const a = document.getElementById('preloadAudio');
@@ -414,57 +420,7 @@
     function formatUSDT(v){ return Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3}); }
     function msToHMS(ms){ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 
-    // Quick hydrate from Telegram + IDB
-    (async function hydrateHeader(){
-      try{
-        const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
-        nameEl.textContent = fullName;
-        subEl.textContent = tgUser?.username ? '@'+tgUser.username : 'Player';
-        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
-        if (cachedName) nameEl.textContent = cachedName;
-
-        const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
-        if (cachedBlob instanceof Blob){
-          avatarEl.src = URL.createObjectURL(cachedBlob);
-        }else if (tgUser?.photo_url){
-          avatarEl.src = tgUser.photo_url;
-        } else {
-          avatarEl.src = 'assets/player1.png';
-        }
-      }catch(e){}
-    })();
-
-    // Balances realtime + quick cache
-    const userRef = db.ref('users/'+userId);
-    const wlcRef  = db.ref('users/'+userId+'/balance');
-    const usdtRef = db.ref('users/'+userId+'/usdtBalance');
-
-    (async function quickBalance(){
-      try {
-        const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
-        if (typeof cached === 'number') wlcAmountEl.textContent = formatWLC(cached);
-      }catch{}
-    })();
-    wlcRef.on('value', s=>{
-      const v = typeof s.val()==='number' ? s.val() : 0;
-      wlcAmountEl.textContent = formatWLC(v);
-      idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
-    });
-    usdtRef.on('value', s=>{
-      const v = typeof s.val()==='number' ? s.val() : 0;
-      usdtAmountEl.textContent = formatUSDT(v);
-    });
-
-    // Withdraw buttons (UI only for now)
-    document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
-    document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
-
-    // Server time offset (anti device clock drift)
-    let serverOffset = 0;
-    db.ref(".info/serverTimeOffset").on("value", s=>{ serverOffset = s.val()||0; });
-    const now = ()=> Date.now() + serverOffset;
-
-    // Achievements grid build
+    // Build achievements grid once
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -479,7 +435,25 @@
     }
     buildGrid();
 
-    // State and timers
+    // Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+    };
+    const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
+
+    // Server time offset (anti device clock drift)
+    let serverOffset = 0;
+    db.ref(".info/serverTimeOffset").on("value", s=>{ serverOffset = s.val()||0; });
+    const now = ()=> Date.now() + serverOffset;
+
+    // Daily reward logic
     let dailyState = null;
     let timerId = null;
 
@@ -489,13 +463,12 @@
         u.meDailyState = {
           currentDay: 1,
           lastClaimAt: 0,
-          nextAvailableAt: tNow,       // day1 available immediately
+          nextAvailableAt: tNow,
           expiresAt: tNow + 8*3600*1000,
           claimedDays: {},
           version: 1
         };
       } else {
-        // auto reset if expired window passed for current day
         const st = u.meDailyState;
         if (tNow > (st.expiresAt||0) && tNow >= (st.nextAvailableAt||0)){
           u.meDailyState = {
@@ -518,7 +491,6 @@
       if (day===15) return { type:'USDT',amount:0.2,  label:'+0.200 USDT' };
       if (day===24) return { type:'WLC', amount:1.0,  label:'+1.000000 WLC' };
       if (day===30) return { type:'WLC_MEDAL', amount:2.0, label:'+2.000000 WLC + Medal' };
-      // random small rewards
       const pool = [
         {type:'WLC', amount:0.000005, label:'+0.000005 WLC'},
         {type:'WLC', amount:0.00004,  label:'+0.000040 WLC'},
@@ -529,6 +501,7 @@
     }
 
     function renderState(){
+      if (!dailyState) return;
       const t = now();
       const st = dailyState;
       document.querySelectorAll('.day').forEach(tile=>{
@@ -539,35 +512,23 @@
         timerEl.textContent='';
 
         const claimed = !!(st.claimedDays && st.claimedDays[day]);
-        if (claimed){
-          tile.classList.add('claimed');
-          return;
-        }
-        if (day < st.currentDay){
-          tile.classList.add('claimed');
-          return;
-        }
-        if (day > st.currentDay){
-          tile.classList.add('locked');
-          return;
-        }
-        // day === currentDay
+        if (claimed){ tile.classList.add('claimed'); return; }
+        if (day < st.currentDay){ tile.classList.add('claimed'); return; }
+        if (day > st.currentDay){ tile.classList.add('locked'); return; }
+
         if (t >= st.nextAvailableAt && t <= st.expiresAt){
           tile.classList.add('claimable');
         } else if (t < st.nextAvailableAt){
           tile.classList.add('locked');
-          if (day === st.currentDay){
-            timerEl.style.display='';
-            timerEl.textContent = 'In ' + msToHMS(st.nextAvailableAt - t);
-          }
+          timerEl.style.display='';
+          timerEl.textContent = 'In ' + msToHMS(st.nextAvailableAt - t);
         } else {
-          // expired -> locked visual; logic reset happens in sync loop
           tile.classList.add('locked');
         }
       });
     }
 
-    function attachTileHandlers(){
+    function attachTileHandlers(userRef){
       achGrid.addEventListener('click', (e)=>{
         const tile = e.target.closest('.day');
         if (!tile) return;
@@ -575,12 +536,10 @@
         if (day !== dailyState.currentDay) return;
         const t = now();
         if (t < dailyState.nextAvailableAt || t > dailyState.expiresAt) return;
-        claimDay(day);
+        claimDay(userRef, day);
       });
     }
-    attachTileHandlers();
 
-    // Confetti
     function shootConfetti(){
       const canvas = document.getElementById('confetti');
       const ctx = canvas.getContext('2d');
@@ -608,7 +567,6 @@
       window.addEventListener('resize', ()=>{ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }, { once:true });
     }
 
-    // Popup
     const popMask = document.getElementById('popup-mask');
     const popOk = document.getElementById('pop-ok');
     function showPopup(title, desc, reward){
@@ -620,14 +578,11 @@
     }
     popOk.addEventListener('click', ()=>{ popMask.style.display='none'; });
 
-    // Sync loop (init + periodic)
-    async function syncState(enforce=false){
+    async function syncState(userRef){
       const tNow = now();
       await userRef.transaction(u=>{
         u = ensureStateInit(u, tNow);
         const st = u.meDailyState;
-
-        // Auto reset if expired window passed
         if (tNow > st.expiresAt && tNow >= st.nextAvailableAt){
           u.meDailyState = {
             currentDay: 1,
@@ -641,37 +596,28 @@
         return u;
       });
       const snap = await userRef.once('value');
-      dailyState = snap.val().meDailyState || {currentDay:1,nextAvailableAt:tNow,expiresAt:tNow+8*3600*1000,claimedDays:{}};
+      dailyState = snap.val().meDailyState;
       renderState();
 
       if (!timerId){
         timerId = setInterval(()=>{
-          // lightweight refresh
           const t = now();
-          // when we cross a boundary, resync to apply reset or availability
-          const st = dailyState;
-          const needResync = (t >= st.nextAvailableAt && t <= st.expiresAt) || (t > st.expiresAt);
           renderState();
-          if (t > st.expiresAt) { syncState().catch(()=>{}); }
+          if (t > dailyState.expiresAt) { syncState(userRef).catch(()=>{}); }
         }, 1000);
       }
     }
-    syncState().catch(console.warn);
 
-    // Claim logic with atomic transaction on the whole user subtree
-    async function claimDay(day){
+    async function claimDay(userRef, day){
       const tNow = now();
       let result = null;
       await userRef.transaction(u=>{
         u = ensureStateInit(u, tNow);
         const st = u.meDailyState;
-
-        // validate correct day and window
-        if (day !== st.currentDay) return u; // ignore
-        if (tNow < st.nextAvailableAt || tNow > st.expiresAt) return u; // not allowed
+        if (day !== st.currentDay) return u;
+        if (tNow < st.nextAvailableAt || tNow > st.expiresAt) return u;
 
         const rw = rewardForDay(day);
-        // apply reward
         if (rw.type.startsWith('WLC')){
           u.balance = (typeof u.balance==='number'?u.balance:0) + rw.amount;
         }
@@ -679,17 +625,15 @@
           u.usdtBalance = (typeof u.usdtBalance==='number'?u.usdtBalance:0) + rw.amount;
         }
 
-        // mark claimed
         st.claimedDays = st.claimedDays || {};
         st.claimedDays[String(day)] = tNow;
         st.lastClaimAt = tNow;
 
-        // next state
         if (day >= 30){
           st.currentDay = 1;
           st.nextAvailableAt = tNow + 24*3600*1000;
           st.expiresAt = st.nextAvailableAt + 8*3600*1000;
-          st.claimedDays = {}; // reset streak map for new cycle
+          st.claimedDays = {};
         } else {
           st.currentDay = day + 1;
           st.nextAvailableAt = tNow + 24*3600*1000;
@@ -698,17 +642,16 @@
         u.meDailyState = st;
         result = rw;
         return u;
-      }, (error, committed, snap)=>{
-        if (error) console.warn('transaction error', error);
       });
 
-      // refresh UI from DB
       const s = await userRef.once('value');
       dailyState = s.val().meDailyState;
       renderState();
 
       if (result){
-        // Update quick cache for WLC if changed
+        const wlcRef  = db.ref('users/'+userId+'/balance');
+        const usdtRef = db.ref('users/'+userId+'/usdtBalance');
+
         if (result.type.startsWith('WLC')){
           const newW = s.val().balance || 0;
           wlcAmountEl.textContent = formatWLC(newW);
@@ -717,16 +660,70 @@
           const newU = s.val().usdtBalance || 0;
           usdtAmountEl.textContent = formatUSDT(newU);
         }
-
-        // Show popup
         showPopup('Congratulations!', 'Your daily reward has been added to your balance.', result.label);
       }
     }
 
-    // Improve tap responsiveness
-    document.addEventListener('gesturestart', e=>e.preventDefault(), {passive:false});
-    document.addEventListener('gesturechange', e=>e.preventDefault(), {passive:false});
-    document.addEventListener('gestureend', e=>e.preventDefault(), {passive:false});
+    function initPage(){
+      // persist user id for subsequent pages
+      try {
+        sessionStorage.setItem('wlc_user_id', String(userId));
+        localStorage.setItem('wlc_user_id', String(userId));
+      } catch {}
+
+      // Quick hydrate header (Telegram + IDB)
+      (async function hydrateHeader(){
+        try{
+          const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
+          nameEl.textContent = fullName;
+          subEl.textContent = tgUser?.username ? '@'+tgUser.username : (subEl.textContent||'Player');
+
+          const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
+          if (cachedName) nameEl.textContent = cachedName;
+
+          const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
+          if (cachedBlob instanceof Blob){
+            avatarEl.src = URL.createObjectURL(cachedBlob);
+          }else if (tgUser?.photo_url){
+            avatarEl.src = tgUser.photo_url;
+          } else {
+            avatarEl.src = 'assets/player1.png';
+          }
+        }catch(e){}
+      })();
+
+      // Balances (quick cache + realtime)
+      (async function quickBalance(){
+        try {
+          const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
+          if (typeof cached === 'number') wlcAmountEl.textContent = formatWLC(cached);
+        }catch{}
+      })();
+
+      const userRef = db.ref('users/'+userId);
+      const wlcRef  = db.ref('users/'+userId+'/balance');
+      const usdtRef = db.ref('users/'+userId+'/usdtBalance');
+
+      wlcRef.on('value', s=>{
+        const v = typeof s.val()==='number' ? s.val() : 0;
+        wlcAmountEl.textContent = formatWLC(v);
+        idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
+      });
+      usdtRef.on('value', s=>{
+        const v = typeof s.val()==='number' ? s.val() : 0;
+        usdtAmountEl.textContent = formatUSDT(v);
+      });
+
+      document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
+      document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
+
+      // daily sync
+      syncState(userRef).catch(console.warn);
+      attachTileHandlers(userRef);
+    }
+
+    // boot
+    guardOrInit();
   </script>
 </body>
 </html>
