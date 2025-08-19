@@ -290,6 +290,15 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser?.id;
+
+// احفظ الـ userId لاستخدامه في الصفحات الأخرى (me.html وغيرها)
+if (userId) {
+  try {
+    sessionStorage.setItem('wlc_user_id', String(userId));
+    localStorage.setItem('wlc_user_id', String(userId));
+  } catch {}
+}
+
 if (!userId) {
   window.location.href = "welcome.html";
 }
