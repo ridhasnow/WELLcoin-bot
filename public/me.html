@@ -74,7 +74,7 @@
       box-shadow: var(--shadow-1);
       backdrop-filter: blur(10px) saturate(120%);
       position:relative; overflow:hidden; display:flex; flex-direction:column;
-      margin-inline:auto; /* تأكيد التمركز */
+      margin-inline:auto; /* center horizontally */
     }
     .card::before{
       content:""; position:absolute; inset:0; border-radius: var(--r-lg);
@@ -102,6 +102,7 @@
     }
     .icon-btn:hover{ background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
     .icon-btn:active{ transform: scale(.97); }
+    .icon-btn svg{ width:18px; height:18px; fill:#eaf2ff; opacity:.95 }
 
     /* Scroll area */
     .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px 18px 16px; }
@@ -130,11 +131,9 @@
     }
     .namebox{
       display:inline-flex; flex-direction:column; gap:4px; align-items:center;
-      padding:10px 16px;
-      border-radius: 14px;
+      padding:10px 16px; border-radius: 14px;
       background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
       min-width: 62%;
     }
     .nickname{
@@ -184,27 +183,30 @@
       box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    /* Achievements grid (7 per row) */
+    /* Achievements grid - 7 per row */
     .ach{
       display:grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap:10px;
     }
 
-    /* Day card (visual only; logic unchanged) */
+    /* Day card */
     .day{
       position:relative; border-radius:14px; overflow:hidden; user-select:none;
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
       border:1px solid rgba(255,255,255,.14);
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
-      display:flex; flex-direction:column; min-height: 104px;
+      display:flex; flex-direction:column;
+      aspect-ratio: 1 / 1.15; /* متناسِب وثابت عبر الشاشات */
     }
     .day.special{ transform: scale(1.04); }
 
-    /* Top cap */
+    /* Cap */
     .cap{
-      position:relative; height: 28px; display:flex; align-items:center; justify-content:center;
+      position:relative; height: clamp(22px, 6.5vw, 30px);
+      display:flex; align-items:center; justify-content:center;
       background: linear-gradient(180deg, #5aa4ff, #3385ff);
       color:#eaf3ff; font-weight:900; letter-spacing:.3px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
       border-bottom: 1px solid rgba(0,0,0,.25);
+      font-size: clamp(10px, 2.8vw, 13px);
     }
     .day.special .cap{
       background: linear-gradient(180deg, #ffcb5a, #ffad33);
@@ -216,14 +218,15 @@
     }
     .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
 
-    /* Body with gift and timer */
+    /* Body */
     .body{
-      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 6px 6px;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:8px 6px 6px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
     }
     .gift-img{
-      width: 58%; max-width: 86px; height:auto; object-fit:contain;
+      width: clamp(40px, 58%, 86px); height:auto; object-fit:contain;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
+      pointer-events:none;
     }
     .timer{
       margin-top:4px; font-size:11px; font-weight:800; color:#d3ddff; opacity:.95; text-align:center;
@@ -238,12 +241,13 @@
     }
     @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.36)); } }
 
+    /* Claimed overlay (modern check) */
     .check{
       position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
-      font-size:46px; font-weight:900; color:#5df076; text-shadow: 0 0 16px rgba(60,240,140,.45);
-      opacity:0; transform: scale(.9); transition: opacity .18s ease, transform .18s ease;
+      opacity:0; transform: scale(.9); transition: opacity .2s ease, transform .2s ease;
     }
     .day.claimed .check{ opacity:1; transform: scale(1); }
+    .check svg{ width:48px; height:48px; }
     .day.claimed{ filter: brightness(.90) saturate(.9); }
 
     .spacer{ height:14px; }
@@ -256,8 +260,14 @@
   <div class="wrap">
     <div class="card">
       <div class="topbar">
-        <div class="icon-btn" id="back-btn" title="Back">⬅</div>
-        <div class="icon-btn" id="cfg-btn" title="Settings">⚙</div>
+        <div class="icon-btn" id="back-btn" title="Back" aria-label="Back">
+          <!-- Modern back icon -->
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        </div>
+        <div class="icon-btn" id="cfg-btn" title="Settings" aria-label="Settings">
+          <!-- Modern settings icon -->
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+        </div>
       </div>
 
       <div class="scroll">
@@ -268,7 +278,7 @@
           </div>
           <div class="namebox">
             <div id="player-name" class="nickname">Player</div>
-            <!-- subnick أزيل بناءً على طلبك -->
+            <!-- subnick removed as requested -->
           </div>
         </section>
 
@@ -403,7 +413,7 @@
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
-    // Build achievements tiles (visual markup only; logic unchanged)
+    // Build achievements tiles (visual only; logic unchanged)
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -421,7 +431,20 @@
             <img class="gift-img" src="assets/gift.png" alt="gift">
             <div class="timer" style="display:none"></div>
           </div>
-          <div class="check">✓</div>
+          <div class="check">
+            <!-- Glow circle with tick -->
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <radialGradient id="g" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#9cffc8" stop-opacity="1"/>
+                  <stop offset="70%" stop-color="#45e27f" stop-opacity="0.9"/>
+                  <stop offset="100%" stop-color="#00c060" stop-opacity="0.0"/>
+                </radialGradient>
+              </defs>
+              <circle cx="32" cy="32" r="22" fill="url(#g)"></circle>
+              <path d="M22 33.5l6 6 14-14" fill="none" stroke="#dfffef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         `;
         achGrid.appendChild(d);
       }
@@ -631,6 +654,32 @@
       }
     }
 
+    // Load avatar exactly like index: prefer cached blob, else Telegram photo, else fallback
+    let avatarObjectUrl = null;
+    async function hydrateAvatarAndName(){
+      const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
+      nameEl.textContent = fullName;
+      try{
+        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
+        if (cachedName) nameEl.textContent = cachedName;
+      }catch{}
+
+      try{
+        const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
+        if (cachedBlob instanceof Blob){
+          avatarObjectUrl = URL.createObjectURL(cachedBlob);
+          avatarEl.src = avatarObjectUrl;
+          return;
+        }
+      }catch{}
+      if (tgUser?.photo_url){
+        avatarEl.src = tgUser.photo_url;
+      }else{
+        avatarEl.src = 'assets/player1.png';
+      }
+    }
+    window.addEventListener('beforeunload', ()=>{ if (avatarObjectUrl){ try{ URL.revokeObjectURL(avatarObjectUrl); }catch{} } });
+
     function init(){
       // persist id for other pages
       try{
@@ -638,19 +687,7 @@
         localStorage.setItem('wlc_user_id', String(userId));
       }catch{}
 
-      // Header hydrate from Telegram + cache (no @telegram line)
-      (async ()=>{
-        const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
-        nameEl.textContent = fullName;
-
-        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
-        if (cachedName) nameEl.textContent = cachedName;
-
-        const blob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
-        if (blob instanceof Blob) avatarEl.src = URL.createObjectURL(blob);
-        else if (tgUser?.photo_url) avatarEl.src = tgUser.photo_url;
-        else avatarEl.src = 'assets/player1.png';
-      })();
+      hydrateAvatarAndName();
 
       // Balances quick cache + realtime
       (async ()=>{
