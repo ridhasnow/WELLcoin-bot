@@ -642,44 +642,54 @@
       }
     }
 
-    // Avatar + Name hydrate (robust chain)
+    // Avatar + Name hydrate (robust chain) - FINAL FIX
     let avatarObjectUrl = null;
     async function hydrateAvatarAndName(){
+      // Set Name
       const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
       nameEl.textContent = fullName;
-      try{ const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
+      try {
+        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
         if (cachedName) nameEl.textContent = cachedName;
-      }catch{}
+      } catch {}
 
+      // --- Set Avatar ---
       const setAvatar = (src) => {
         if (avatarObjectUrl) { try { URL.revokeObjectURL(avatarObjectUrl); } catch {} }
-        if (src) {
-            avatarEl.src = src;
-        } else {
-            avatarEl.src = 'assets/player1.png'; // Fallback if src is null/undefined
-        }
+        avatarEl.src = src || 'assets/player1.png'; // Set src, with fallback
       };
+      
+      // Step 1: Try Telegram object first (fastest)
+      if (tgUser?.photo_url) {
+        setAvatar(tgUser.photo_url);
+        return; // Exit if found
+      }
 
-      // 1. IndexedDB blob (from game.js)
-      try{
-        const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
-        if (cachedBlob instanceof Blob){
-          avatarObjectUrl = URL.createObjectURL(cachedBlob);
-          setAvatar(avatarObjectUrl); return;
-        }
-      }catch{}
-
-      // 2. Telegram photo_url from current tgUser object
-      if (tgUser?.photo_url){ setAvatar(tgUser.photo_url); return; }
-
-      // 3. Firebase (Corrected to 'photoUrl')
-      try{
+      // Step 2: Try Firebase (reliable data source)
+      try {
         const snap = await db.ref(`users/${userId}/photoUrl`).once('value');
         const url = snap.val();
-        if (url && typeof url === 'string'){ setAvatar(url); return; }
-      }catch{}
+        if (url && typeof url === 'string') {
+          setAvatar(url);
+          return; // Exit if found
+        }
+      } catch (e) {
+        console.warn("Firebase photoUrl fetch failed", e);
+      }
 
-      // 4. Final fallback
+      // Step 3: Try IndexedDB Blob (if game.js ran before)
+      try {
+        const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
+        if (cachedBlob instanceof Blob) {
+          avatarObjectUrl = URL.createObjectURL(cachedBlob);
+          setAvatar(avatarObjectUrl);
+          return; // Exit if found
+        }
+      } catch (e) {
+        console.warn("IDB blob fetch failed", e);
+      }
+
+      // Step 4: Final fallback if all else fails
       setAvatar('assets/player1.png');
     }
     window.addEventListener('beforeunload', ()=>{ if (avatarObjectUrl){ try{ URL.revokeObjectURL(avatarObjectUrl); }catch{} } });
