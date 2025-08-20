@@ -110,7 +110,7 @@
     .avatar{
       position:relative; z-index:1; width:110px; height:110px; border-radius:50%;
       object-fit:cover; border:2px solid rgba(255,255,255,.18); background:#121418;
-      box-shadow: 0 10px 26px rgba(0,0,0,.55); pointer-events: auto; /* Allow viewing avatar */
+      box-shadow: 0 10px 26px rgba(0,0,0,.55);
     }
     .namebox{
       display:inline-flex; flex-direction:column; gap:4px; align-items:center;
@@ -261,7 +261,7 @@
         <section class="profile">
           <div class="avatar-halo">
             <div class="ring"></div>
-            <img id="avatar" class="avatar" alt="avatar" src="assets/player1.png"> <!-- Fallback -->
+            <img id="avatar" class="avatar" alt="avatar" src="assets/player1.png"> <!-- Static Fallback -->
           </div>
           <div class="namebox">
             <div id="player-name" class="nickname">Player</div>
@@ -376,7 +376,6 @@
     // UI refs
     const backBtn = document.getElementById('back-btn');
     const cfgBtn  = document.getElementById('cfg-btn');
-    const avatarEl = document.getElementById('avatar');
     const nameEl = document.getElementById('player-name');
     const wlcEl  = document.getElementById('wlc-amount');
     const usdtEl = document.getElementById('usdt-amount');
@@ -642,57 +641,18 @@
       }
     }
 
-    // Avatar + Name hydrate (robust chain) - FINAL FIX
-    let avatarObjectUrl = null;
-    async function hydrateAvatarAndName(){
-      // Set Name
+    // Name hydrate (simplified)
+    async function hydrateName(){
+      // Set Name from Telegram object first
       const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
       nameEl.textContent = fullName;
+      
+      // Then try to get a cached name from IndexedDB
       try {
         const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
         if (cachedName) nameEl.textContent = cachedName;
       } catch {}
-
-      // --- Set Avatar ---
-      const setAvatar = (src) => {
-        if (avatarObjectUrl) { try { URL.revokeObjectURL(avatarObjectUrl); } catch {} }
-        avatarEl.src = src || 'assets/player1.png'; // Set src, with fallback
-      };
-      
-      // Step 1: Try Telegram object first (fastest)
-      if (tgUser?.photo_url) {
-        setAvatar(tgUser.photo_url);
-        return; // Exit if found
-      }
-
-      // Step 2: Try Firebase (reliable data source)
-      try {
-        const snap = await db.ref(`users/${userId}/photoUrl`).once('value');
-        const url = snap.val();
-        if (url && typeof url === 'string') {
-          setAvatar(url);
-          return; // Exit if found
-        }
-      } catch (e) {
-        console.warn("Firebase photoUrl fetch failed", e);
-      }
-
-      // Step 3: Try IndexedDB Blob (if game.js ran before)
-      try {
-        const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
-        if (cachedBlob instanceof Blob) {
-          avatarObjectUrl = URL.createObjectURL(cachedBlob);
-          setAvatar(avatarObjectUrl);
-          return; // Exit if found
-        }
-      } catch (e) {
-        console.warn("IDB blob fetch failed", e);
-      }
-
-      // Step 4: Final fallback if all else fails
-      setAvatar('assets/player1.png');
     }
-    window.addEventListener('beforeunload', ()=>{ if (avatarObjectUrl){ try{ URL.revokeObjectURL(avatarObjectUrl); }catch{} } });
 
     function init(){
       try{
@@ -700,7 +660,7 @@
         localStorage.setItem('wlc_user_id', String(userId));
       }catch{}
 
-      hydrateAvatarAndName();
+      hydrateName(); // Call the simplified name function
 
       (async ()=>{
         const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
