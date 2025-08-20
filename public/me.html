@@ -9,7 +9,6 @@
     :root{
       --bg:#05070b;
       --glass:rgba(20,24,32,0.62);
-      --glass-2:rgba(26,30,42,0.55);
       --glass-border:rgba(150,175,250,0.20);
       --text:#eef3ff;
       --muted:#b9c3d9;
@@ -23,13 +22,12 @@
     }
 
     html,body{height:100%}
-    body{
-      margin:0; background:#000; color:var(--text);
+    body{ margin:0; background:#000; color:var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
       overflow:hidden;
     }
 
-    /* Ambient glow */
+    /* Ambient */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
@@ -38,48 +36,28 @@
         radial-gradient(70vw 70vw at 50% 86%, rgba(90,180,255,0.07), transparent 70%);
       filter: blur(8px) saturate(110%);
     }
-    .glow::before, .glow::after{
-      content:""; position:absolute; inset:-20%;
-      background:
-        radial-gradient(36vw 36vw at var(--x1,22%) var(--y1,28%), rgba(140,255,180,0.12), transparent 60%),
-        radial-gradient(30vw 30vw at var(--x2,70%) var(--y2,48%), rgba(255,255,140,0.09), transparent 60%),
-        radial-gradient(44vw 44vw at var(--x3,52%) var(--y3,72%), rgba(120,255,160,0.09), transparent 60%);
-      mix-blend-mode: screen; animation: drift 18s ease-in-out infinite alternate;
-    }
-    .glow::after{ animation-duration: 26s; opacity:.85; }
-    @keyframes drift{
-      0%{ --x1:18%; --y1:24%; --x2:74%; --y2:44%; --x3:50%; --y3:72%; filter:hue-rotate(0deg); }
-      50%{ --x1:24%; --y1:36%; --x2:68%; --y2:54%; --x3:48%; --y3:64%; filter:hue-rotate(24deg); }
-      100%{ --x1:28%; --y1:30%; --x2:60%; --y2:58%; --x3:54%; --y3:70%; filter:hue-rotate(-20deg); }
-    }
-
-    /* Shell */
     .wrap{
       position:relative; z-index:1; width:100%; height:100%;
       display:flex; align-items:center; justify-content:center;
       padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
-      background:
-        radial-gradient(40vw 40vw at 80% 8%, rgba(20,30,60,.25), rgba(0,0,0,0)),
-        radial-gradient(32vw 32vw at 10% 92%, rgba(20,50,40,.22), rgba(0,0,0,0));
     }
     .card{
       width:min(96vw, 620px);
-      height: min(96vh, 900px);
+      height:min(96vh, 900px);
       background: linear-gradient(180deg, rgba(30,36,50,0.50), rgba(18,22,30,0.58));
       border-radius: var(--r-lg);
       border: 1px solid var(--glass-border);
       box-shadow: var(--shadow-1);
       backdrop-filter: blur(10px) saturate(120%);
       position:relative; overflow:hidden; display:flex; flex-direction:column;
-      margin-inline:auto; /* center horizontally */
+      margin-inline:auto;
     }
     .card::before{
       content:""; position:absolute; inset:0; border-radius: var(--r-lg);
       padding:1px; background:
         linear-gradient(135deg, rgba(255,220,120,.28), rgba(120,190,255,.22), rgba(80,255,170,.25));
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor; mask-composite: exclude;
-      pointer-events:none; opacity:.85;
+      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.85;
     }
 
     /* Topbar */
@@ -101,26 +79,19 @@
     .icon-btn:active{ transform: scale(.97); }
     .icon-btn svg{ width:18px; height:18px; fill:#eaf2ff; opacity:.95 }
 
-    /* Scroll area */
     .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px 18px 16px; }
 
-    /* Header profile */
+    /* Profile */
     .profile{ display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; }
-    .avatar-halo{
-      width:122px; height:122px; border-radius:50%; position:relative; display:grid; place-items:center;
-      filter: saturate(115%);
-    }
-    .ring{
-      position:absolute; inset:-5px; border-radius:50%;
+    .avatar-halo{ width:122px; height:122px; border-radius:50%; position:relative; display:grid; place-items:center; filter:saturate(115%); }
+    .ring{ position:absolute; inset:-5px; border-radius:50%;
       background: conic-gradient(from 0deg, #8b5, #d99, #e9c, #d99, #8b5);
-      animation: spin 8.8s linear infinite;
-      box-shadow: 0 0 14px rgba(255,220,140,.25);
-    }
-    .ring::after{
-      content:""; position:absolute; inset:4px; border-radius:50%;
-      background: radial-gradient(140% 140% at 50% 25%, rgba(255,255,255,.16), rgba(0,0,0,.16));
+      animation: spin 8.8s linear infinite; box-shadow: 0 0 14px rgba(255,220,140,.25);
     }
     @keyframes spin{ to{ transform: rotate(360deg);} }
+    .ring::after{ content:""; position:absolute; inset:4px; border-radius:50%;
+      background: radial-gradient(140% 140% at 50% 25%, rgba(255,255,255,.16), rgba(0,0,0,.16));
+    }
     .avatar{
       position:relative; z-index:1; width:110px; height:110px; border-radius:50%;
       object-fit:cover; border:2px solid rgba(255,255,255,.18); background:#121418;
@@ -141,9 +112,7 @@
     }
 
     /* Balances */
-    .balances{
-      margin-top:14px; display:grid; grid-template-columns: 1fr 1fr; gap:12px;
-    }
+    .balances{ margin-top:14px; display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
     @media (max-width: 420px){ .balances{ grid-template-columns: 1fr; } }
     .bal{
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
@@ -161,15 +130,13 @@
     }
     .bal-wlc .bal-amt{ color: var(--gold); }
     .bal-usdt .bal-amt{ color: var(--green); }
-    .bal-cta{
-      align-self:flex-start; border:none; border-radius: 10px; padding:8px 13px; font-weight:900; cursor:pointer;
+    .bal-cta{ align-self:flex-start; border:none; border-radius: 10px; padding:8px 13px; font-weight:900; cursor:pointer;
       transition: transform var(--t-fast), box-shadow var(--t-med), filter var(--t-fast);
     }
     .bal-cta:active{ transform: translateY(1px) scale(0.99); }
     .bal-cta.wlc{ background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222; box-shadow: 0 6px 16px rgba(255, 210, 90, .30); }
     .bal-cta.usdt{ background: linear-gradient(90deg, var(--green), var(--green-2)); color:#0d2418; box-shadow: 0 6px 16px rgba(60, 220, 130, .28); }
 
-    /* Section title */
     .section-title{
       margin: 18px 2px 10px 4px; font-weight:900; letter-spacing:.3px; font-size:1.02rem; color:#e9f1ff;
       display:flex; align-items:center; gap:8px;
@@ -181,9 +148,7 @@
     }
 
     /* Achievements grid - 5 per row */
-    .ach{
-      display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px;
-    }
+    .ach{ display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; }
 
     /* Day card */
     .day{
@@ -192,12 +157,12 @@
       border:1px solid rgba(255,255,255,.14);
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
       display:flex; flex-direction:column;
-      aspect-ratio: 1 / 1.05; /* مربع أكبر */
-      margin-bottom: 18px; /* مساحة للعداد تحت الكرت */
+      aspect-ratio: 1 / 1.05; /* أكبر وأكثر وضوحاً */
+      margin-bottom: 30px; /* مساحة للعداد أسفل الكرت */
     }
     .day.special{ transform: scale(1.02); }
 
-    /* Cap */
+    /* Cap (header) */
     .cap{
       position:relative; height: clamp(26px, 6.8vw, 34px);
       display:flex; align-items:center; justify-content:center;
@@ -205,33 +170,34 @@
       color:#eaf3ff; font-weight:900; letter-spacing:.3px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
       border-bottom: 1px solid rgba(0,0,0,.25);
       font-size: clamp(12px, 3.2vw, 15px);
+      border-top-left-radius: 14px; border-top-right-radius: 14px; /* لا تخرج خارج البطاقة */
     }
     .day.special .cap{
       background: linear-gradient(180deg, #ffcb5a, #ffad33);
       color:#2a1a00; text-shadow: 0 1px 1px rgba(255,255,255,.35);
     }
-    .cap .pin{
-      position:absolute; top: -6px; width:10px; height:10px; border-radius:50%;
+    .cap .pin{ position:absolute; top:-6px; width:10px; height:10px; border-radius:50%;
       background: radial-gradient(circle at 30% 30%, #fff, #bcd, #566); box-shadow: 0 1px 2px rgba(0,0,0,.5);
     }
     .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
 
-    /* Body */
+    /* Body with gift */
     .body{
-      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-      padding:10px 8px 8px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      position:relative; flex:1; display:flex; align-items:center; justify-content:center;
+      padding:12px 10px 10px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
     }
     .gift-img{
-      width: clamp(52px, 68%, 110px); height:auto; object-fit:contain;
+      width: clamp(72px, 72%, 160px);
+      max-height: 75%; height: auto; object-fit: contain;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
       pointer-events:none;
     }
 
-    /* Timer: خارج الكرت بصريًا لكن داخل العنصر لمنطق الكود */
+    /* Timer directly below the card (visually) */
     .timer{
-      position:absolute; left:0; right:0; bottom:-16px;
+      position:absolute; left:0; right:0; bottom:-22px;
       font-size:12px; font-weight:900; color:#d3ddff; opacity:.98; text-align:center;
-      text-shadow: 0 1px 2px rgba(0,0,0,.5);
+      text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events:none;
     }
 
     /* States */
@@ -249,7 +215,7 @@
       opacity:0; transform: scale(.9); transition: opacity .2s ease, transform .2s ease;
     }
     .day.claimed .check{ opacity:1; transform: scale(1); }
-    .check svg{ width:52px; height:52px; }
+    .check svg{ width:56px; height:56px; }
 
     .spacer{ height:14px; }
     * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -262,11 +228,9 @@
     <div class="card">
       <div class="topbar">
         <div class="icon-btn" id="back-btn" title="Back" aria-label="Back">
-          <!-- Modern back icon -->
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
         </div>
         <div class="icon-btn" id="cfg-btn" title="Settings" aria-label="Settings">
-          <!-- Modern settings icon -->
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
         </div>
       </div>
@@ -378,13 +342,13 @@
       }, 60);
     }
 
-    // IndexedDB helpers (minimal)
+    // IndexedDB helpers
     const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
     function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
     function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
     function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
 
-    // Helpers to fetch stored avatar URL if available
+    // Stored avatar URL keys (in case index persisted one)
     function getStoredAvatarUrl(){
       const keys = ['wlc_tg_photo_url','tg_photo_url','wlc_avatar_url','avatar_url'];
       for (const k of keys){
@@ -425,7 +389,7 @@
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
-    // Build achievements tiles (visual only; logic unchanged)
+    // Build achievements tiles (visual only)
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -444,7 +408,6 @@
             <div class="timer" style="display:none"></div>
           </div>
           <div class="check">
-            <!-- Glow circle with tick -->
             <svg viewBox="0 0 64 64" aria-hidden="true">
               <defs>
                 <radialGradient id="g" cx="50%" cy="50%" r="50%">
@@ -555,8 +518,7 @@
       let W = c.width = innerWidth, H = c.height = innerHeight;
       const P = Array.from({length: 110}, ()=>({
         x: Math.random()*W, y: -10-Math.random()*H*0.2,
-        r: 3+Math.random()*4,
-        c: `hsl(${Math.random()*360}, 90%, 60%)`,
+        r: 3+Math.random()*4, c: `hsl(${Math.random()*360}, 90%, 60%)`,
         vx: -1+Math.random()*2, vy: 1+Math.random()*2.5, g:.05+Math.random()*.1, a:1
       }));
       let run = true, t0 = performance.now();
@@ -565,8 +527,7 @@
         x.clearRect(0,0,W,H);
         for (const p of P){
           p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a -= 0.004;
-          x.globalAlpha = Math.max(0,p.a);
-          x.fillStyle = p.c; x.fillRect(p.x, p.y, p.r, p.r);
+          x.globalAlpha = Math.max(0,p.a); x.fillStyle = p.c; x.fillRect(p.x, p.y, p.r, p.r);
         }
         if (t - t0 < 2600) requestAnimationFrame(frame); else { run=false; x.clearRect(0,0,W,H); }
       }
@@ -578,8 +539,7 @@
       document.getElementById('pop-title').textContent = title || 'Congratulations!';
       document.getElementById('pop-desc').innerHTML  = desc || 'You’ve received a reward.';
       document.getElementById('pop-reward').textContent = reward || '';
-      mask.style.display='flex';
-      confetti();
+      mask.style.display='flex'; confetti();
     }
     popOk.addEventListener('click', ()=>{ mask.style.display='none'; });
 
@@ -645,9 +605,7 @@
           st.nextAvailableAt = tNow + 24*3600*1000;
           st.expiresAt = st.nextAvailableAt + 8*3600*1000;
         }
-        u.meDailyState = st;
-        reward = rw;
-        return u;
+        u.meDailyState = st; reward = rw; return u;
       });
 
       const s = await userRef.once('value');
@@ -666,36 +624,48 @@
       }
     }
 
-    // Load avatar like index: prefer cached blob, then stored URL, then Telegram, then fallback
+    // Avatar + Name hydrate (robust chain)
     let avatarObjectUrl = null;
     async function hydrateAvatarAndName(){
       const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
       nameEl.textContent = fullName;
 
-      try{
-        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
+      try{ const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
         if (cachedName) nameEl.textContent = cachedName;
       }catch{}
 
+      // 1) IndexedDB blob
       try{
         const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
         if (cachedBlob instanceof Blob){
           avatarObjectUrl = URL.createObjectURL(cachedBlob);
-          avatarEl.src = avatarObjectUrl;
-          return;
+          avatarEl.src = avatarObjectUrl; return;
         }
       }catch{}
 
+      // 2) Firebase user avatarUrl/photoUrl/profile/avatarUrl
+      try{
+        const paths = ['avatarUrl','photoUrl','profile/avatarUrl'];
+        for (const p of paths){
+          const snap = await db.ref(`users/${userId}/${p}`).once('value');
+          const url = snap.val();
+          if (url && typeof url === 'string'){ avatarEl.src = url; return; }
+        }
+      }catch{}
+
+      // 3) Stored URL in storage
       const storedUrl = getStoredAvatarUrl();
       if (storedUrl){ avatarEl.src = storedUrl; return; }
 
-      if (tgUser?.photo_url){ avatarEl.src = tgUser.photo_url; }
-      else { avatarEl.src = 'assets/player1.png'; }
+      // 4) Telegram photo_url
+      if (tgUser?.photo_url){ avatarEl.src = tgUser.photo_url; return; }
+
+      // 5) Fallback
+      avatarEl.src = 'assets/player1.png';
     }
     window.addEventListener('beforeunload', ()=>{ if (avatarObjectUrl){ try{ URL.revokeObjectURL(avatarObjectUrl); }catch{} } });
 
     function init(){
-      // persist id for other pages
       try{
         sessionStorage.setItem('wlc_user_id', String(userId));
         localStorage.setItem('wlc_user_id', String(userId));
@@ -703,7 +673,6 @@
 
       hydrateAvatarAndName();
 
-      // Balances quick cache + realtime
       (async ()=>{
         const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
         if (typeof cached === 'number') wlcEl.textContent = fmtWLC(cached);
@@ -723,7 +692,6 @@
       document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
       document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
 
-      // Daily loop
       sync(userRef).catch(console.warn);
       attachTileHandlers(userRef);
     }
