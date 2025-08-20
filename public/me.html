@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-t">
+  <meta charset="utf-8">
   <title>Me</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
@@ -653,9 +653,14 @@
 
       const setAvatar = (src) => {
         if (avatarObjectUrl) { try { URL.revokeObjectURL(avatarObjectUrl); } catch {} }
-        avatarEl.src = src;
+        if (src) {
+            avatarEl.src = src;
+        } else {
+            avatarEl.src = 'assets/player1.png'; // Fallback if src is null/undefined
+        }
       };
 
+      // 1. IndexedDB blob (from game.js)
       try{
         const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
         if (cachedBlob instanceof Blob){
@@ -664,15 +669,18 @@
         }
       }catch{}
 
+      // 2. Telegram photo_url from current tgUser object
       if (tgUser?.photo_url){ setAvatar(tgUser.photo_url); return; }
 
+      // 3. Firebase (Corrected to 'photoUrl')
       try{
-        const snap = await db.ref(`users/${userId}/avatarUrl`).once('value');
+        const snap = await db.ref(`users/${userId}/photoUrl`).once('value');
         const url = snap.val();
         if (url && typeof url === 'string'){ setAvatar(url); return; }
       }catch{}
 
-      setAvatar('assets/player1.png'); // Final fallback
+      // 4. Final fallback
+      setAvatar('assets/player1.png');
     }
     window.addEventListener('beforeunload', ()=>{ if (avatarObjectUrl){ try{ URL.revokeObjectURL(avatarObjectUrl); }catch{} } });
 
