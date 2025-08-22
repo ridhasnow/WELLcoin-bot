@@ -19,29 +19,20 @@
       --shadow-2:0 6px 18px rgba(0,0,0,.40);
       --r-lg:22px; --r-md:14px; --r-sm:10px;
       --t-fast:.12s ease-out; --t-med:.18s ease-out;
-      --rank-bar-bg:#212835;
-      --rank-bar-fill:#ffd800;
-      --rank-bar-glow:0 0 8px #ffd800bb,0 0 14px #ffd80077;
-      --rank-arrow-glow:0 0 9px #10ff66,0 0 14px #1fff7080;
+      --rank-bar-bg: #232a39;
+      --rank-bar-fill: linear-gradient(90deg, #ffd36a 0%, #ffe9a8 100%);
+      --rank-bar-shadow: 0 2px 10px #ffd36a33;
     }
 
     html,body{height:100%}
     body{ margin:0; background:#000; color:var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
       overflow:hidden;
-      -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
     }
 
-    img, .icon-btn, .bal-cta {
-        -webkit-touch-callout: none;
-        pointer-events: none;
-    }
-    .icon-btn, .bal-cta, #back-btn, #cfg-btn, #wlc-withdraw, #usdt-withdraw, .day.claimable {
-        pointer-events: auto;
-    }
-
+    /* Ambient */
     .glow{
-      position:fixed; inset:0; z-index:0;
+      position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
         radial-gradient(60vw 60vw at 18% 18%, rgba(120,255,160,0.08), transparent 70%),
         radial-gradient(50vw 50vw at 82% 22%, rgba(255,240,140,0.06), transparent 70%),
@@ -52,10 +43,9 @@
       position:relative; z-index:1; width:100%; height:100%;
       display:flex; align-items:center; justify-content:center;
       padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
-      box-sizing: border-box;
     }
     .card{
-      width:100%; max-width:min(96vw, 620px);
+      width:min(96vw, 620px);
       height:min(96vh, 900px);
       background: linear-gradient(180deg, rgba(30,36,50,0.50), rgba(18,22,30,0.58));
       border-radius: var(--r-lg);
@@ -73,6 +63,7 @@
       -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.85;
     }
 
+    /* Topbar */
     .topbar{
       position:absolute; inset:0 0 auto 0; height:56px;
       display:flex; align-items:center; justify-content:space-between;
@@ -83,7 +74,7 @@
       display:flex; align-items:center; justify-content:center;
       background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
       border: 1px solid rgba(255,255,255,0.12);
-      color:#fff; cursor:pointer;
+      color:#fff; cursor:pointer; user-select:none;
       transition: transform var(--t-fast), background var(--t-med), border-color var(--t-med);
       box-shadow: var(--shadow-2); backdrop-filter: blur(6px);
     }
@@ -93,101 +84,124 @@
 
     .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px 18px 16px; }
 
-    /* ==== PROFILE RANKED ==== */
-    .profile2{
-      display:flex; flex-direction:column; align-items:center; gap:7px; text-align:center;
-      margin-bottom: 12px;
-      margin-top: 12px;
-    }
-    .rank-badge{
-      width: 86px;
-      height: 86px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 7px;
-      filter: drop-shadow(0 2px 14px #1f1f1f80);
-      background: transparent;
-      border-radius: 50%;
-      border: 2px solid #2228;
-      box-sizing: border-box;
-    }
-    .rank-badge img{
-      width: 78px; height: 78px; object-fit: contain; display: block; border-radius: 50%;
-      background: #fff0;
-      pointer-events: none;
-      user-select: none;
-    }
-    .rank-name{
-      font-weight: 900; letter-spacing: .7px; font-size: 1.1rem;
-      color: var(--gold); text-shadow: 0 1px 2px #222b, 0 0 4px #ffd8002a;
-      margin-bottom: 2px;
-      margin-top: 0;
-      font-family: ui-sans-serif,Arial;
+    /* ===== PROFILE & RANKED ===== */
+    .profile{ display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; margin-bottom:18px; }
+    .namebox{
+      display:inline-flex; flex-direction:column; gap:4px; align-items:center;
+      padding:10px 16px 8px 16px; border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+      min-width: 62%;
+      margin-bottom: 0;
     }
     .nickname{
       font-weight:900; letter-spacing:.2px; font-size:1.15rem;
       background: linear-gradient(90deg, #fff, #dfe9ff);
       -webkit-background-clip: text; background-clip:text; color: transparent;
       text-shadow: 0 1px 2px rgba(0,0,0,.35);
+      margin-bottom: 0;
     }
-
-    /* ==== PROGRESS BAR ==== */
-    .rank-progress-wrap{
-      width: 88%;
-      max-width: 350px;
-      margin: 0 auto 0 auto;
-      margin-bottom: 7px;
-      display: flex; align-items: center; justify-content:center; gap: 10px;
-      user-select: none;
-    }
-    .rank-progress-bar-back{
-      width: 100%; height: 14px;
-      background: var(--rank-bar-bg);
-      border-radius: 7px;
-      overflow: hidden;
-      box-shadow: 0 1px 4px #0004;
-      border: 1.5px solid #252a30;
+    /* Ranked Card */
+    .ranked-box{
+      width: 118px; height: 118px; border-radius: 24px; background: rgba(30,40,55,0.82);
+      box-shadow: 0 2px 22px #000b, 0 0 0 2px #fff2 inset;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto;
       position: relative;
-      flex:1;
+      border: 2px solid #434355;
     }
-    .rank-progress-bar-fill{
-      height: 100%;
-      border-radius: 7px 0 0 7px;
-      background: linear-gradient(90deg,var(--rank-bar-fill),#fffbe1 80%);
-      box-shadow: var(--rank-bar-glow);
-      transition: width .3s cubic-bezier(.4,1.5,.7,1);
-      will-change: width;
+    .ranked-img{
+      width: 86px; height: 86px; object-fit: contain; display: block; margin: 0 auto; z-index:1;
+      filter: drop-shadow(0 4px 14px #2228) saturate(120%);
+      user-select:none; pointer-events:none;
+      transition: filter .13s;
     }
-    .rank-progress-label{
-      font-size: 0.99rem;
-      font-weight: bold;
-      color: #fffbe8;
-      margin-left: 9px;
-      display: flex; align-items: center; gap: 6px;
-      text-shadow: 0 1px 2px #1e293b;
-      user-select: none;
+    .ranked-title{
+      font-size: 1.04rem; font-weight: bold; color: #ffd36a; margin-top: 3px; margin-bottom: 3px; letter-spacing: 0.4px;
+      text-shadow: 0 1px 6px #000c, 0 0 5px #ffd36a44;
+      line-height: 1.2;
     }
-    .rank-arrow{
-      font-size: 1.23em;
-      color: #35f88a;
-      filter: drop-shadow(var(--rank-arrow-glow));
-      margin-left: 3px;
-      animation: arrowGlow 1.3s infinite alternate;
-      font-family: Arial,sans-serif;
-      user-select: none;
+    .ranked-progress{
+      width: 100%; margin: 0 auto; margin-top: 5px; max-width: 340px; display: flex; align-items: center; gap: 8px;
+      justify-content: center;
     }
-    @keyframes arrowGlow {
-      from { color:#36ff9a; filter: drop-shadow(0 0 7px #43ffb5); }
-      to   { color:#0dfd51; filter: drop-shadow(0 0 13px #51ffb5); }
+    .ranked-bar-wrap{
+      flex: 1 1 0%; height: 14px; background: var(--rank-bar-bg);
+      border-radius: 9px; overflow: hidden; box-shadow: var(--rank-bar-shadow);
+      position: relative;
+      border: 1.5px solid #ffd36a55;
+      min-width: 85px;
+    }
+    .ranked-bar{
+      height: 100%; border-radius: 9px;
+      background: var(--rank-bar-fill);
+      width: 0%; min-width: 0%;
+      box-shadow: 0 0 8px #ffd70055 inset;
+      transition: width .5s cubic-bezier(.4,1.6,.7,1.01);
+      position: absolute; left: 0; top: 0;
+    }
+    .ranked-bar-text{
+      font-size: 0.92rem; font-weight: 900; color: #fffbe0; margin-left: 12px; margin-right: 3px; text-shadow: 0 1px 2px #000c;
+      min-width: 65px; text-align: right;
+      letter-spacing: .05em;
+    }
+    .ranked-arrow{
+      display: inline-flex; align-items: center; margin-left: 3px;
+      font-size: 1.15rem; font-weight:bold; color: #1fef83;
+      filter: drop-shadow(0 2px 6px #19ff9e70);
+      animation: arrow-bounce .88s infinite alternate;
+      margin-top: 0.5px;
+    }
+    @keyframes arrow-bounce{
+      from{ transform:translateY(0) scale(1);}
+      to{   transform:translateY(-3px) scale(1.08);}
+    }
+    .ranked-arrow svg{ width: 18px; height: 18px; vertical-align: middle; fill: #1fef83; filter: drop-shadow(0 0 3px #19ff9e90); }
+
+    /* Balances */
+    .balances{ margin-top:14px; display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 420px){ .balances{ grid-template-columns: 1fr; } }
+    .bal{
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: var(--r-md); padding: 12px; box-shadow: var(--shadow-2);
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .bal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .bal-id{ display:flex; align-items:center; gap:8px; font-weight:800; letter-spacing:.3px; color:#eef3ff; }
+    .bal-id img{ width:18px; height:18px; object-fit:contain; }
+    .bal-amt{
+      display:flex; align-items:baseline; gap:6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-weight:900; letter-spacing:.3px; text-shadow: 0 0 10px rgba(255,255,255,.06);
+    }
+    .bal-wlc .bal-amt{ color: var(--gold); }
+    .bal-usdt .bal-amt{ color: var(--green); }
+    .bal-cta{ align-self:flex-start; border:none; border-radius: 10px; padding:8px 13px; font-weight:900; cursor:pointer;
+      transition: transform var(--t-fast), box-shadow var(--t-med), filter var(--t-fast);
+    }
+    .bal-cta:active{ transform: translateY(1px) scale(0.99); }
+    .bal-cta.wlc{ background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222; box-shadow: 0 6px 16px rgba(255, 210, 90, .30); }
+    .bal-cta.usdt{ background: linear-gradient(90deg, var(--green), var(--green-2)); color:#0d2418; box-shadow: 0 6px 16px rgba(60, 220, 130, .28); }
+
+    .section-title{
+      margin: 18px 2px 10px 4px; font-weight:900; letter-spacing:.3px; font-size:1.02rem; color:#e9f1ff;
+      display:flex; align-items:center; gap:8px;
+    }
+    .section-title::before{
+      content:""; width:8px; height:8px; border-radius:999px;
+      background: radial-gradient(circle, #ffd36a, #8affc2);
+      box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    .spacer{ height:14px; }
-    * { -webkit-tap-highlight-color: rgba(0,0,0,0);}
+    /* Achievements grid - 5 per row */
+    .ach{ display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; }
+
+    /* Day card ... (باقي الستايل كما كان) */
   </style>
 </head>
 <body>
   <div class="glow"></div>
+
   <div class="wrap">
     <div class="card">
       <div class="topbar">
@@ -195,25 +209,27 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
         </div>
         <div class="icon-btn" id="cfg-btn" title="Settings" aria-label="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54 1.63.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
         </div>
       </div>
 
       <div class="scroll">
-        <section class="profile2">
-          <div class="rank-badge" id="rank-badge">
-            <img id="rank-badge-img" src="assets/iron.png" alt="Rank">
+        <section class="profile">
+          <div class="namebox">
+            <div id="player-name" class="nickname">Player</div>
           </div>
-          <div class="rank-name" id="rank-name">Iron</div>
-          <div class="nickname" id="player-name">Player</div>
-          <div class="rank-progress-wrap">
-            <div class="rank-progress-bar-back">
-              <div class="rank-progress-bar-fill" id="rank-progress-bar-fill" style="width:0%"></div>
+          <div id="ranked-card" class="ranked-box">
+            <img id="ranked-img" class="ranked-img" src="assets/iron.png" alt="Ranked">
+          </div>
+          <div class="ranked-title" id="ranked-title">Iron</div>
+          <div class="ranked-progress">
+            <div class="ranked-bar-wrap">
+              <div class="ranked-bar" id="ranked-bar"></div>
             </div>
-            <div class="rank-progress-label" id="rank-progress-label">
-              0/1500
-              <span class="rank-arrow">➔</span>
-            </div>
+            <span class="ranked-bar-text" id="ranked-bar-text">0/1500</span>
+            <span class="ranked-arrow" id="ranked-arrow" title="Upgrade">
+              <svg viewBox="0 0 24 24"><path d="M12 4l-7 8h4v8h6v-8h4z"/></svg>
+            </span>
           </div>
         </section>
 
@@ -292,8 +308,40 @@
 
   <!-- Page Logic -->
   <script>
-    window.addEventListener('contextmenu', function (e) { e.preventDefault(); }, false);
+    // ==== Ranked Logic ====
+    const RANKS = [
+      {name: 'Iron',      min:    0,  img: 'iron.png',       next: 1500},
+      {name: 'Bronze',    min: 1500,  img: 'bronze.png',     next: 3000},
+      {name: 'Silver',    min: 3000,  img: 'silver.png',     next: 5000},
+      {name: 'Gold',      min: 5000,  img: 'gold.png',       next: 8000},
+      {name: 'Platinum',  min: 8000,  img: 'plat.png',       next: 10500},
+      {name: 'Emrald',    min:10500,  img: 'emrald.png',     next: 15000},
+      {name: 'Diamon',    min:15000,  img: 'diamon.png',     next: 20000},
+      {name: 'Master',    min:20000,  img: 'master.png',     next: 30000},
+      {name: 'Grand Master',min:30000,img: 'grandmaster.png',next: 50000},
+      {name: 'Challenger',min:50000,  img: 'challenger.png', next: null}
+    ];
 
+    function getRankInfo(balance){
+      let cur = RANKS[0];
+      for(let i=RANKS.length-1;i>=0;i--){
+        if(balance >= RANKS[i].min){
+          cur = RANKS[i];
+          break;
+        }
+      }
+      return cur;
+    }
+    function getNextRank(curRank){
+      for(let i=0;i<RANKS.length;i++){
+        if(RANKS[i].name === curRank.name && RANKS[i].next){
+          return RANKS[i+1];
+        }
+      }
+      return null;
+    }
+
+    // Telegram + robust userId with fallback to storage
     const tg = window.Telegram?.WebApp;
     try { tg && tg.ready(); } catch(e){}
     let tgUser = tg?.initDataUnsafe?.user || null;
@@ -314,11 +362,13 @@
       }, 60);
     }
 
+    // IndexedDB helpers
     const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
     function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
     function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
     function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
 
+    // UI refs
     const backBtn = document.getElementById('back-btn');
     const cfgBtn  = document.getElementById('cfg-btn');
     const nameEl = document.getElementById('player-name');
@@ -327,12 +377,11 @@
     const achGrid= document.getElementById('ach');
     const mask   = document.getElementById('mask');
     const popOk  = document.getElementById('pop-ok');
-
-    // Ranked UI
-    const rankBadgeImg = document.getElementById('rank-badge-img');
-    const rankNameEl   = document.getElementById('rank-name');
-    const rankBarFill  = document.getElementById('rank-progress-bar-fill');
-    const rankBarLabel = document.getElementById('rank-progress-label');
+    const rankedImg = document.getElementById('ranked-img');
+    const rankedTitle = document.getElementById('ranked-title');
+    const rankedBar = document.getElementById('ranked-bar');
+    const rankedBarText = document.getElementById('ranked-bar-text');
+    const rankedArrow = document.getElementById('ranked-arrow');
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
     cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
@@ -347,63 +396,13 @@
       window.location.href = url;
     }
 
-    // Ranked thresholds and data
-    const RANKS = [
-      { name: "Iron",       icon: "iron.png",        min:    0,      max: 1499 },
-      { name: "Bronze",     icon: "bronze.png",      min: 1500,      max: 2999 },
-      { name: "Silver",     icon: "silver.png",      min: 3000,      max: 4999 },
-      { name: "Gold",       icon: "gold.png",        min: 5000,      max: 7999 },
-      { name: "Platinum",   icon: "plat.png",        min: 8000,      max: 10499 },
-      { name: "Emrald",     icon: "emrald.png",      min: 10500,     max: 14999 },
-      { name: "Diamon",     icon: "diamon.png",      min: 15000,     max: 19999 },
-      { name: "Master",     icon: "master.png",      min: 20000,     max: 29999 },
-      { name: "Grand Master",icon: "grandmaster.png",min: 30000,     max: 49999 },
-      { name: "Challenger", icon: "challenger.png",  min: 50000,     max: Infinity }
-    ];
-
-    function getRank(balance){
-      for(let i=RANKS.length-1;i>=0;i--){
-        if(balance >= RANKS[i].min) return { ...RANKS[i], idx:i };
-      }
-      return { name:"Iron", icon:"iron.png", min:0, max:1499, idx:0 };
-    }
-
-    function getNextRank(rank){
-      return RANKS[rank.idx+1] || null;
-    }
-
-    function updateRankUI(balance){
-      const rank = getRank(balance);
-      rankBadgeImg.src = "assets/" + rank.icon;
-      rankNameEl.textContent = rank.name;
-      // Progress bar
-      const nextRank = getNextRank(rank);
-      let bar = 0, target = rank.max;
-      if(nextRank){
-        bar = Math.min(1, (balance-rank.min)/(nextRank.min-rank.min));
-        target = nextRank.min;
-      } else {
-        bar = 1;
-      }
-      rankBarFill.style.width = (bar*100).toFixed(1) + "%";
-      rankBarLabel.innerHTML = `${balance.toLocaleString("en-US",{maximumFractionDigits:0})}/${target.toLocaleString("en-US",{maximumFractionDigits:0})} <span class="rank-arrow">➔</span>`;
-    }
-
-    // اسم اللاعب فقط
-    async function hydrateName(){
-      const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
-      nameEl.textContent = fullName;
-      try {
-        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
-        if (cachedName) nameEl.textContent = cachedName;
-      } catch {}
-    }
-
-    // باقي المنطق مثل ما هو
+    // Formatters
     const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
+    const fmtShort = v => Number(v||0).toLocaleString("en-US",{maximumFractionDigits:0});
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
+    // Build achievements tiles (visual only)
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -419,6 +418,7 @@
           </div>
           <div class="body">
             <img class="gift-img" src="assets/gift.png" alt="gift">
+            <div class="timer" style="display:none"></div>
           </div>
           <div class="check">
             <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -433,13 +433,13 @@
               <path d="M22 33.5l6 6 14-14" fill="none" stroke="#dfffef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <div class="timer"></div>
         `;
         achGrid.appendChild(d);
       }
     }
     buildGrid();
 
+    // Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -452,10 +452,12 @@
     const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
     const db = firebase.database(app);
 
+    // Server time offset
     let serverOffset = 0;
     db.ref(".info/serverTimeOffset").on("value", s=>{ serverOffset = s.val()||0; });
     const now = ()=> Date.now() + serverOffset;
 
+    // State
     let daily = null, timerId = null;
 
     function ensureStateInit(u, tNow){
@@ -505,8 +507,7 @@
         const day = Number(tile.dataset.day);
         tile.classList.remove('locked','claimable','claimed');
         const timerEl = tile.querySelector('.timer');
-        timerEl.style.display='none';
-        timerEl.textContent='';
+        timerEl.style.display='none'; timerEl.textContent='';
 
         const claimed = !!(st.claimedDays && st.claimedDays[day]);
         if (claimed){ tile.classList.add('claimed'); return; }
@@ -517,14 +518,14 @@
           tile.classList.add('claimable');
         } else if (t < st.nextAvailableAt){
           tile.classList.add('locked');
-          timerEl.style.display='block';
-          timerEl.textContent = msToHMS(st.nextAvailableAt - t);
+          timerEl.style.display=''; timerEl.textContent = 'In ' + msToHMS(st.nextAvailableAt - t);
         } else {
           tile.classList.add('locked');
         }
       });
     }
 
+    // Confetti
     function confetti(){
       const c = document.getElementById('confetti'), x = c.getContext('2d');
       let W = c.width = innerWidth, H = c.height = innerHeight;
@@ -557,7 +558,7 @@
 
     function attachTileHandlers(userRef){
       achGrid.addEventListener('click', (e)=>{
-        const tile = e.target.closest('.day'); if (!tile || !tile.classList.contains('claimable')) return;
+        const tile = e.target.closest('.day'); if (!tile) return;
         const day = Number(tile.dataset.day); if (day !== daily.currentDay) return;
         const t = now(); if (t < daily.nextAvailableAt || t > daily.expiresAt) return;
         claim(userRef, day);
@@ -584,11 +585,9 @@
 
       if (!timerId){
         timerId = setInterval(()=>{
-          if(daily) {
-            const t = now();
-            render();
-            if (t > daily.expiresAt) { sync(userRef).catch(()=>{}); }
-          }
+          const t = now();
+          render();
+          if (t > daily.expiresAt) { sync(userRef).catch(()=>{}); }
         }, 1000);
       }
     }
@@ -638,29 +637,68 @@
       }
     }
 
+    // Name hydrate
+    async function hydrateName(){
+      // Set Name from Telegram object first
+      const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
+      nameEl.textContent = fullName;
+      // Then try to get a cached name from IndexedDB
+      try {
+        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
+        if (cachedName) nameEl.textContent = cachedName;
+      } catch {}
+    }
+
+    function updateRankedView(balance) {
+      const cur = getRankInfo(balance);
+      const next = getNextRank(cur);
+      rankedImg.src = "assets/" + cur.img;
+      rankedTitle.textContent = cur.name;
+      // Progress
+      let nMin = cur.min;
+      let nMax = next ? next.min : cur.min;
+      let nTarget = next ? next.min : cur.min;
+      let barText = "";
+      let percent = 1;
+      if (next) {
+        percent = Math.min((balance - nMin) / (nTarget - nMin), 1);
+        percent = Math.max(percent, 0);
+        barText = `${fmtShort(balance)}/${fmtShort(nTarget)}`;
+        rankedArrow.style.visibility = percent >= 1 ? "hidden" : "visible";
+      } else {
+        percent = 1;
+        barText = `${fmtShort(balance)}/${fmtShort(nTarget)}`;
+        rankedArrow.style.visibility = "hidden";
+      }
+      rankedBar.style.width = (percent * 100) + "%";
+      rankedBarText.textContent = barText;
+    }
+
     function init(){
       try{
         sessionStorage.setItem('wlc_user_id', String(userId));
         localStorage.setItem('wlc_user_id', String(userId));
       }catch{}
 
-      hydrateName(); // Call the simplified name function
+      hydrateName();
+
+      // ملاحظة: عند بدء الصفحة نضع أقل رانك (iron) مؤقتاً
+      updateRankedView(0);
 
       (async ()=>{
         const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
         if (typeof cached === 'number') {
           wlcEl.textContent = fmtWLC(cached);
-          updateRankUI(Math.floor(cached));
+          updateRankedView(cached);
         }
       })();
 
       const userRef = db.ref('users/'+userId);
-
       db.ref('users/'+userId+'/balance').on('value', s=>{
         const v = typeof s.val()==='number' ? s.val() : 0;
         wlcEl.textContent = fmtWLC(v);
         idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
-        updateRankUI(Math.floor(v));
+        updateRankedView(v);
       });
       db.ref('users/'+userId+'/usdtBalance').on('value', s=>{
         const v = typeof s.val()==='number' ? s.val() : 0;
