@@ -27,25 +27,18 @@
       overflow:hidden;
     }
     
-    /* Prevent image selection/context menu */
     img, svg {
-      -webkit-user-select: none; /* Safari */
-      -moz-user-select: none; /* Firefox */
-      -ms-user-select: none; /* IE10+ */
-      user-select: none;
-      -webkit-user-drag: none;
-      -webkit-touch-callout: none;
+      -webkit-user-select: none; user-select: none;
+      -webkit-user-drag: none; -webkit-touch-callout: none;
     }
 
-    /* Ambient */
     .glow{
-      position:fixed; inset:0; z-index:0; pointer-events:none;
-      /* Golden glow, shifted left as requested */
+      position:fixed; inset: -10px -10px -10px -50px; z-index:0; pointer-events:none;
       background:
-        radial-gradient(60vw 60vw at 14% 18%, rgba(255,215,90,0.07), transparent 70%),
-        radial-gradient(50vw 50vw at 78% 22%, rgba(255,240,140,0.05), transparent 70%),
-        radial-gradient(70vw 70vw at 46% 86%, rgba(200,160,80,0.06), transparent 70%);
-      filter: blur(8px) saturate(110%);
+        radial-gradient(60vw 60vw at 14% 18%, rgba(255,215,90,0.08), transparent 75%),
+        radial-gradient(50vw 50vw at 78% 22%, rgba(255,240,140,0.06), transparent 75%),
+        radial-gradient(70vw 70vw at 46% 86%, rgba(200,160,80,0.07), transparent 75%);
+      filter: blur(12px) saturate(120%);
     }
     .wrap{
       position:relative; z-index:1; width:100%; height:100%;
@@ -71,7 +64,6 @@
       -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.85;
     }
 
-    /* Topbar */
     .topbar{
       position:absolute; inset:0 0 auto 0; height:56px;
       display:flex; align-items:center; justify-content:space-between;
@@ -92,61 +84,35 @@
 
     .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px 18px 16px; }
 
-    /* Profile & Rank System */
     .profile{ display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center; }
     
     .rank-display {
-      width: 140px;
-      height: 140px;
-      display: grid;
-      place-items: center;
+      width: 140px; height: 140px; display: grid; place-items: center;
     }
     #rank-cadre {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
+      max-width: 100%; max-height: 100%; object-fit: contain;
       filter: drop-shadow(0 0 8px rgba(120, 180, 255, 0.35)) drop-shadow(0 0 20px rgba(120, 180, 255, 0.2));
     }
     .rank-progress {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 80%;
-      max-width: 300px;
-      margin-top: 4px;
+      display: flex; align-items: center; gap: 10px; width: 80%; max-width: 300px; margin-top: 4px;
     }
     .progress-bar {
-      flex-grow: 1;
-      height: 10px;
-      background-color: rgba(0,0,0,0.3);
-      border-radius: 5px;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.1);
+      flex-grow: 1; height: 10px; background-color: rgba(0,0,0,0.3);
+      border-radius: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
     }
     #progress-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--green), var(--blue));
-      border-radius: 5px;
-      transition: width 0.5s ease-out;
+      width: 0%; height: 100%; background: linear-gradient(90deg, var(--green), var(--blue));
+      border-radius: 5px; transition: width 0.5s ease-out;
     }
     #progress-text {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--muted);
-      white-space: nowrap;
+      font-size: 0.8rem; font-weight: 700; color: var(--muted); white-space: nowrap;
     }
     .progress-arrow {
-      font-size: 1.5rem;
-      color: var(--green);
-      text-shadow: 0 0 8px var(--green), 0 0 12px rgba(57, 229, 138, 0.5);
+      font-size: 1.5rem; color: var(--green); text-shadow: 0 0 8px var(--green), 0 0 12px rgba(57, 229, 138, 0.5);
       animation: pulse-arrow 1.5s infinite alternate;
     }
-    @keyframes pulse-arrow {
-      from { transform: translateY(2px); opacity: 0.8; }
-      to { transform: translateY(-2px); opacity: 1; }
-    }
+    @keyframes pulse-arrow { from { transform: translateY(2px); opacity: 0.8; } to { transform: translateY(-2px); opacity: 1; } }
 
     .namebox{
       display:inline-flex; flex-direction:column; gap:4px; align-items:center;
@@ -162,7 +128,6 @@
       text-shadow: 0 1px 2px rgba(0,0,0,.35);
     }
 
-    /* Balances */
     .balances{ margin-top:14px; display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
     @media (max-width: 420px){ .balances{ grid-template-columns: 1fr; } }
     .bal{
@@ -198,31 +163,23 @@
       box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    /* Achievements grid - 5 per row */
     .ach{ display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; }
 
-    /* Day card */
     .day{
       position:relative; border-radius:14px; overflow:hidden; user-select:none;
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow: 0 6px 18px rgba(0,0,0,.40);
-      display:flex; flex-direction:column;
-      aspect-ratio: 1 / 1.05;
-      margin-bottom: 30px;
+      border:1px solid rgba(255,255,255,.14); box-shadow: 0 6px 18px rgba(0,0,0,.40);
+      display:flex; flex-direction:column; aspect-ratio: 1 / 1.05; margin-bottom: 30px;
     }
     .day.special{ transform: scale(1.02); }
 
-    /* Cap (header) */
     .cap{
       position:relative; height: clamp(20px, 5vw, 26px);
       display:flex; align-items:center; justify-content:center;
       background: linear-gradient(180deg, #5aa4ff, #3385ff);
       color:#eaf3ff; font-weight:900; letter-spacing:.2px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
-      border-bottom: 1px solid rgba(0,0,0,.25);
-      font-size: clamp(9px, 2.3vw, 12px);
-      border-top-left-radius: 14px; border-top-right-radius: 14px;
-      padding: 0 2px;
+      border-bottom: 1px solid rgba(0,0,0,.25); font-size: clamp(9px, 2.3vw, 12px);
+      border-top-left-radius: 14px; border-top-right-radius: 14px; padding: 0 2px;
     }
     .day.special .cap{
       background: linear-gradient(180deg, #ffcb5a, #ffad33);
@@ -233,38 +190,30 @@
     }
     .cap .pin.l{ left:8px; } .cap .pin.r{ right:8px; }
 
-    /* Body with gift */
     .body{
       position:relative; flex:1; display:flex; align-items:center; justify-content:center;
-      padding: 4px;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      padding: 4px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       overflow: hidden;
     }
     .gift-img{
-      width: 100%; height: 100%;
-      object-fit: cover;
-      object-position: center;
+      width: 100%; height: 100%; object-fit: cover; object-position: center;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
     }
 
-    /* Timer directly below the card (visually) */
     .timer{
       position:absolute; left:0; right:0; bottom:-22px;
       font-size:12px; font-weight:900; color:#d3ddff; opacity:.98; text-align:center;
       text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events:none;
     }
 
-    /* States */
     .day.locked{ filter: brightness(.92) saturate(.9); }
     .day.claimable{
       border-color: rgba(255,210,90,.55);
       box-shadow: 0 10px 24px rgba(255,210,90,.22), inset 0 0 0 1px rgba(255,255,255,.05);
-      animation: pulse 1.4s ease-in-out infinite alternate;
-      cursor: pointer;
+      animation: pulse 1.4s ease-in-out infinite alternate; cursor: pointer;
     }
     @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.36)); } }
 
-    /* Claimed overlay (modern check) */
     .check{
       position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
       opacity:0; transform: scale(.9); transition: opacity .2s ease, transform .2s ease;
@@ -272,20 +221,15 @@
     .day.claimed .check{ opacity:1; transform: scale(1); }
     .check svg{ width:56px; height:56px; }
 
-    /* Pop-up styles */
     .mask{
-      position:fixed; inset:0; z-index:10;
-      background:rgba(0,0,0,0.6); backdrop-filter:blur(8px);
-      display:flex; align-items:center; justify-content:center;
-      opacity:0; pointer-events:none; transition: opacity .2s ease;
+      position:fixed; inset:0; z-index:10; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px);
+      display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition: opacity .2s ease;
     }
     .mask.show{ opacity:1; pointer-events:auto; }
     .pop{
       background: linear-gradient(160deg, var(--glass), rgba(12,15,20,0.75));
-      border: 1px solid var(--glass-border);
-      border-radius:var(--r-lg); padding:24px;
-      width: min(90vw, 360px); text-align:center;
-      box-shadow: var(--shadow-1);
+      border: 1px solid var(--glass-border); border-radius:var(--r-lg); padding:24px;
+      width: min(90vw, 360px); text-align:center; box-shadow: var(--shadow-1);
       transform: scale(.95); transition: transform .2s ease;
     }
     .mask.show .pop{ transform: scale(1); }
@@ -294,8 +238,7 @@
     #pop-reward{
       margin:0 auto 20px; font-weight:900; font-size:1.2rem;
       padding:10px 18px; border-radius:var(--r-md);
-      background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1);
-      display:inline-block;
+      background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); display:inline-block;
     }
     #pop-reward.wlc { color:var(--gold); }
     #pop-reward.usdt { color:var(--green); }
@@ -303,8 +246,7 @@
       width:100%; padding:12px; border:none; border-radius:var(--r-md);
       font-size:1rem; font-weight:900; cursor:pointer;
       background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222;
-      box-shadow: 0 6px 16px rgba(255, 210, 90, .30);
-      transition: transform .1s ease;
+      box-shadow: 0 6px 16px rgba(255, 210, 90, .30); transition: transform .1s ease;
     }
     #pop-ok:active{ transform:scale(.98); }
     .confetti{ position:fixed; inset:0; z-index:11; pointer-events:none; }
@@ -314,479 +256,88 @@
 </head>
 <body>
   <div class="glow"></div>
-
   <div class="wrap">
     <div class="card">
       <div class="topbar">
-        <div class="icon-btn" id="back-btn" title="Back" aria-label="Back">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-        </div>
-        <div class="icon-btn" id="cfg-btn" title="Settings" aria-label="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54-1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-        </div>
+        <div class="icon-btn" id="back-btn"><svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></div>
+        <div class="icon-btn" id="cfg-btn"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54-1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></div>
       </div>
-
       <div class="scroll">
         <section class="profile">
-          <div class="rank-display">
-            <img id="rank-cadre" src="assets/iron.png" alt="">
-          </div>
+          <div class="rank-display"><img id="rank-cadre" src="assets/iron.png" alt=""></div>
           <div class="rank-progress">
-            <div class="progress-bar">
-              <div id="progress-fill"></div>
-            </div>
-            <span id="progress-text">0 / 1500</span>
-            <span class="progress-arrow">↑</span>
+            <div class="progress-bar"><div id="progress-fill"></div></div>
+            <span id="progress-text">0 / 1500</span><span class="progress-arrow">↑</span>
           </div>
-          <div class="namebox">
-            <div id="player-name" class="nickname">Player</div>
-          </div>
+          <div class="namebox"><div id="player-name" class="nickname">Player</div></div>
         </section>
-
         <section class="balances">
           <div class="bal bal-wlc">
-            <div class="bal-head">
-              <div class="bal-id">
-                <img src="assets/wellcoin-icon.png" alt="WLC">
-                <span>WLC</span>
-              </div>
-            </div>
-            <div class="bal-amt" id="wlc-amount">0.000000</div>
-            <button class="bal-cta wlc" id="wlc-withdraw">Withdraw</button>
+            <div class="bal-head"><div class="bal-id"><img src="assets/wellcoin-icon.png" alt="WLC"><span>WLC</span></div></div>
+            <div class="bal-amt" id="wlc-amount">0.000000</div><button class="bal-cta wlc" id="wlc-withdraw">Withdraw</button>
           </div>
           <div class="bal bal-usdt">
-            <div class="bal-head">
-              <div class="bal-id">
-                <img src="assets/usdt.png" alt="USDT">
-                <span>USDT</span>
-              </div>
-            </div>
-            <div class="bal-amt" id="usdt-amount">0.000</div>
-            <button class="bal-cta usdt" id="usdt-withdraw">Withdraw</button>
+            <div class="bal-head"><div class="bal-id"><img src="assets/usdt.png" alt="USDT"><span>USDT</span></div></div>
+            <div class="bal-amt" id="usdt-amount">0.000</div><button class="bal-cta usdt" id="usdt-withdraw">Withdraw</button>
           </div>
         </section>
-
         <section>
-          <div class="section-title">Daily Achievements</div>
-          <div id="ach" class="ach"></div>
+          <div class="section-title">Daily Achievements</div><div id="ach" class="ach"></div>
         </section>
-
         <div class="spacer"></div>
       </div>
     </div>
   </div>
-
   <div id="mask" class="mask">
     <div class="pop">
-      <h3 id="pop-title">Congratulations!</h3>
-      <div id="pop-desc" class="desc">You’ve received a reward.</div>
-      <div id="pop-reward" class="reward"></div>
-      <button id="pop-ok" class="ok">Claim</button>
+      <h3 id="pop-title">Congratulations!</h3><div id="pop-desc" class="desc">You’ve received a reward.</div>
+      <div id="pop-reward" class="reward"></div><button id="pop-ok" class="ok">Claim</button>
     </div>
   </div>
   <canvas id="confetti" class="confetti"></canvas>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-  <!-- Keep music alive -->
   <script>
     (function audioBoot(){
-      let a = document.getElementById('preloadAudio');
-      if (!a) {
-        a = document.createElement('audio');
-        a.id = 'preloadAudio';
-        a.loop = true; a.preload='auto'; a.style.display='none';
-        a.src = 'assets/preload.mp3';
-        document.body.appendChild(a);
-      }
-      function persist(){ try{
-        sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
-        sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
-      }catch{}}
-      function prime(){ try{ a.muted = true; a.volume=.76; a.play().catch(()=>{});}catch{}}
-      function unmute(){ a.muted=false; a.volume=.76; a.play().catch(()=>{}); }
-      prime();
-      const ensure = ()=>{ unmute(); off(); };
-      function off(){ ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.removeEventListener(ev,ensure,{passive:true})); }
-      ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,ensure,{passive:true, once:true}));
-      window.addEventListener('pagehide', persist); window.addEventListener('beforeunload', persist);
-      document.addEventListener('visibilitychange', ()=>{ if (document.hidden) persist(); else a.play().catch(()=>{}); });
+      let a=document.getElementById('preloadAudio');if(!a){a=document.createElement('audio');a.id='preloadAudio';a.loop=true;a.preload='auto';a.style.display='none';a.src='assets/preload.mp3';document.body.appendChild(a);}
+      function persist(){try{sessionStorage.setItem('wlc_music_ct',String(a.currentTime||0));sessionStorage.setItem('wlc_music_track','assets/preload.mp3');}catch{}}
+      function prime(){try{a.muted=true;a.volume=.76;a.play().catch(()=>{});}catch{}}
+      function unmute(){a.muted=false;a.volume=.76;a.play().catch(()=>{});}
+      prime();const ensure=()=>{unmute();off();};function off(){['pointerdown','touchstart','click','keydown'].forEach(ev=>document.removeEventListener(ev,ensure,{passive:true}));}
+      ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,ensure,{passive:true,once:true}));
+      window.addEventListener('pagehide',persist);window.addEventListener('beforeunload',persist);document.addEventListener('visibilitychange',()=>{if(document.hidden)persist();else a.play().catch(()=>{});});
     })();
-  </script>
 
-  <!-- Page Logic -->
-  <script>
-    // Telegram + robust userId with fallback to storage
-    const tg = window.Telegram?.WebApp;
-    try { tg && tg.ready(); } catch(e){}
-    let tgUser = tg?.initDataUnsafe?.user || null;
-    let userId = tgUser?.id || null;
-
-    function storedId(){
-      try{
-        return sessionStorage.getItem('wlc_user_id') || localStorage.getItem('wlc_user_id') || null;
-      }catch{ return null; }
-    }
-    function ensureUserId(cb){
-      if (!userId) userId = storedId();
-      if (userId) return cb();
-      setTimeout(()=>{
-        tgUser = tg?.initDataUnsafe?.user || tgUser;
-        userId = tgUser?.id || storedId();
-        if (userId) cb(); else window.location.replace('welcome.html');
-      }, 60);
-    }
-
-    // IndexedDB helpers
-    const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
-    function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
-    function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
-    function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
-
-    // UI refs
-    const backBtn = document.getElementById('back-btn');
-    const cfgBtn  = document.getElementById('cfg-btn');
-    const nameEl = document.getElementById('player-name');
-    const wlcEl  = document.getElementById('wlc-amount');
-    const usdtEl = document.getElementById('usdt-amount');
-    const achGrid= document.getElementById('ach');
-    const mask   = document.getElementById('mask');
-    const popOk  = document.getElementById('pop-ok');
-
-    // Rank System UI refs
-    const rankCadre = document.getElementById('rank-cadre');
-    const progressFill = document.getElementById('progress-fill');
-    const progressText = document.getElementById('progress-text');
-    const rankProgress = document.querySelector('.rank-progress');
-
-    backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
-    cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
-    function go(url){
-      try{
-        const a = document.getElementById('preloadAudio');
-        if (a) {
-          sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
-          sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
-        }
-      }catch{}
-      window.location.href = url;
-    }
-
-    // Formatters
-    const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
-    const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
-    const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
-
-    // Build achievements tiles (visual only)
-    const SPECIAL = new Set([7,15,24,30]);
-    function buildGrid(){
-      achGrid.innerHTML = '';
-      for(let i=1;i<=30;i++){
-        const d = document.createElement('div');
-        d.className = 'day' + (SPECIAL.has(i)?' special':'');
-        d.dataset.day = i;
-        d.innerHTML = `
-          <div class="cap">
-            <span class="pin l"></span>
-            <span class="pin r"></span>
-            Day ${i}
-          </div>
-          <div class="body">
-            <img class="gift-img" src="assets/gift.png" alt="gift">
-            <div class="timer"></div>
-          </div>
-          <div class="check">
-            <svg viewBox="0 0 64 64" aria-hidden="true">
-              <defs>
-                <radialGradient id="g" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="#9cffc8" stop-opacity="1"/>
-                  <stop offset="70%" stop-color="#45e27f" stop-opacity="0.9"/>
-                  <stop offset="100%" stop-color="#00c060" stop-opacity="0.0"/>
-                </radialGradient>
-              </defs>
-              <circle cx="32" cy="32" r="22" fill="url(#g)"></circle>
-              <path d="M22 33.5l6 6 14-14" fill="none" stroke="#dfffef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-        `;
-        achGrid.appendChild(d);
-      }
-    }
-    buildGrid();
-
-    // Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
-      authDomain: "wellcoinbotgame.firebaseapp.com",
-      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "wellcoinbotgame",
-      storageBucket: "wellcoinbotgame.appspot.com",
-      messagingSenderId: "108640533638",
-      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
-    };
-    const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
-
-    // Server time offset
-    let serverOffset = 0;
-    db.ref(".info/serverTimeOffset").on("value", s=>{ serverOffset = s.val()||0; });
-    const now = ()=> Date.now() + serverOffset;
-
-    // State
-    let daily = null, timerId = null;
-
-    function ensureStateInit(u, tNow){
-      if (!u) u = {};
-      if (!u.meDailyState){
-        u.meDailyState = {
-          currentDay: 1, lastClaimAt: 0, nextAvailableAt: tNow,
-          expiresAt: tNow + 8*3600*1000, claimedDays: {}, version: 1
-        };
-      } else {
-        const st = u.meDailyState;
-        if (tNow > (st.expiresAt||0) && tNow >= (st.nextAvailableAt||0)){
-           // If the claim window for the current day is missed, don't reset everything.
-           // Just move the availability window to now.
-          st.nextAvailableAt = tNow;
-          st.expiresAt = tNow + 8*3600*1000;
-        }
-      }
-      if (typeof u.usdtBalance !== 'number') u.usdtBalance = 0;
-      if (typeof u.balance !== 'number') u.balance = 0;
-      return u;
-    }
-
-    function rewardFor(day){
-      if (day===7)  return { type:'WLC', amount:0.1,  label:'+0.100000 WLC' };
-      if (day===15) return { type:'USDT',amount:0.2,  label:'+0.200 USDT' };
-      if (day===24) return { type:'WLC', amount:1.0,  label:'+1.000000 WLC' };
-      if (day===30) return { type:'WLC', amount:2.0, label:'+2.000000 WLC' };
-      const pool = [
-        {type:'WLC', amount:0.000005, label:'+0.000005 WLC'},
-        {type:'WLC', amount:0.00004,  label:'+0.000040 WLC'},
-        {type:'USDT',amount:0.002,    label:'+0.002 USDT'},
-        {type:'USDT',amount:0.01,     label:'+0.010 USDT'},
-      ];
-      return pool[Math.floor(Math.random()*pool.length)];
-    }
-
-    function renderDaily(){
-      if (!daily) return;
-      const t = now();
-      const st = daily;
-      document.querySelectorAll('.day').forEach(tile=>{
-        const day = Number(tile.dataset.day);
-        tile.classList.remove('locked','claimable','claimed');
-        const timerEl = tile.querySelector('.timer');
-        timerEl.style.display='none';
-
-        const isClaimed = !!(st.claimedDays && st.claimedDays[day]);
-
-        if (isClaimed) {
-          tile.classList.add('claimed');
-        } else if (day < st.currentDay) {
-          tile.classList.add('claimed'); // Treat past, unclaimed days as missed.
-        } else if (day === st.currentDay) {
-          if (t >= st.nextAvailableAt && t <= st.expiresAt) {
-            tile.classList.add('claimable');
-          } else {
-            tile.classList.add('locked');
-            if (t < st.nextAvailableAt) {
-              // This is the correct place for the timer for the *current* day if it's not available yet.
-              timerEl.style.display = 'block';
-              timerEl.textContent = msToHMS(st.nextAvailableAt - t);
-            }
-          }
-        } else { // day > st.currentDay
-          tile.classList.add('locked');
-        }
-      });
-    }
-
-    // Confetti
-    function fireConfetti(){
-      const c = document.getElementById('confetti'), x = c.getContext('2d');
-      let W = c.width = innerWidth, H = c.height = innerHeight;
-      const P = Array.from({length: 110}, ()=>({
-        x: Math.random()*W, y: -10-Math.random()*H*0.2,
-        r: 3+Math.random()*4, c: `hsl(${Math.random()*360}, 90%, 60%)`,
-        vx: -1+Math.random()*2, vy: 1+Math.random()*2.5, g:.05+Math.random()*.1, a:1
-      }));
-      let run = true, t0 = performance.now();
-      function frame(t){
-        if (!run) return;
-        x.clearRect(0,0,W,H);
-        for (const p of P){
-          p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a -= 0.004;
-          x.globalAlpha = Math.max(0,p.a); x.fillStyle = p.c; x.fillRect(p.x, p.y, p.r, p.r);
-        }
-        if (t - t0 < 2600) requestAnimationFrame(frame); else { run=false; x.clearRect(0,0,W,H); }
-      }
-      requestAnimationFrame(frame);
-      addEventListener('resize', ()=>{ W=c.width=innerWidth; H=c.height=innerHeight; }, { once:true });
-    }
-
-    function showPop(reward){
-      const popReward = document.getElementById('pop-reward');
-      document.getElementById('pop-title').textContent = 'Congratulations!';
-      document.getElementById('pop-desc').textContent = 'Your daily reward has been added to your balance.';
-      popReward.textContent = reward.label;
-      popReward.className = 'reward';
-      if (reward.type.startsWith('WLC')) {
-          popReward.classList.add('wlc');
-      } else if (reward.type === 'USDT') {
-          popReward.classList.add('usdt');
-      }
-      mask.classList.add('show');
-      fireConfetti();
-    }
-    popOk.addEventListener('click', ()=>{ mask.classList.remove('show'); });
-
-    function attachTileHandlers(userRef){
-      achGrid.addEventListener('click', (e)=>{
-        const tile = e.target.closest('.day.claimable');
-        if (!tile) return;
-        const day = Number(tile.dataset.day);
-        claim(userRef, day);
-      });
-    }
-
-    async function syncDaily(userRef){
-      const tNow = now();
-      await userRef.transaction(u => ensureStateInit(u, tNow));
-      const snap = await userRef.once('value');
-      daily = snap.val().meDailyState;
-      renderDaily();
-
-      if (!timerId){
-        timerId = setInterval(renderDaily, 1000);
-      }
-    }
-
-    async function claim(userRef, day){
-      const tNow = now(); let reward = null;
-      try {
-        const { committed, snapshot } = await userRef.transaction(u=>{
-          if (!u) return u;
-          u = ensureStateInit(u, tNow);
-          const st = u.meDailyState;
-
-          if (day !== st.currentDay || tNow < st.nextAvailableAt || tNow > st.expiresAt) {
-            return;
-          }
-
-          const rw = rewardFor(day);
-          reward = rw;
-
-          if (rw.type.startsWith('WLC')) u.balance = (u.balance||0) + rw.amount;
-          if (rw.type==='USDT')         u.usdtBalance = (u.usdtBalance||0) + rw.amount;
-
-          st.claimedDays = st.claimedDays || {};
-          st.claimedDays[String(day)] = tNow;
-          st.lastClaimAt = tNow;
-
-          if (day >= 30){
-            st.currentDay = 1;
-            st.claimedDays = {};
-          } else {
-            st.currentDay = day + 1;
-          }
-          st.nextAvailableAt = tNow + 24*3600*1000;
-          st.expiresAt = st.nextAvailableAt + 8*3600*1000;
-
-          u.meDailyState = st;
-          return u;
-        });
-
-        if (committed && reward) {
-            daily = snapshot.val().meDailyState;
-            renderDaily();
-            showPop(reward);
-        }
-      } catch (error) {
-        console.error("Claim transaction failed:", error);
-      }
-    }
-
-    const ranks = [
-      { name: 'Iron',        min: 0,       next: 1500,    img: 'iron.png' },
-      { name: 'Bronze',      min: 1500,    next: 3000,    img: 'bronze.png' },
-      { name: 'Silver',      min: 3000,    next: 5000,    img: 'silver.png' },
-      { name: 'Gold',        min: 5000,    next: 8000,    img: 'gold.png' },
-      { name: 'Platinum',    min: 8000,    next: 10500,   img: 'plat.png' },
-      { name: 'Emerald',     min: 10500,   next: 15000,   img: 'emrald.png' },
-      { name: 'Diamond',     min: 15000,   next: 20000,   img: 'diamon.png' },
-      { name: 'Master',      min: 20000,   next: 30000,   img: 'master.png' },
-      { name: 'Grandmaster', min: 30000,   next: 50000,   img: 'grandmaster.png' },
-      { name: 'Challenger',  min: 50000,   next: Infinity,img: 'challenger.png' }
-    ];
-
-    function updateRank(balance) {
-      const currentRank = [...ranks].reverse().find(rank => balance >= rank.min);
-      if (!currentRank) return;
-
-      rankCadre.src = `assets/${currentRank.img}`;
-
-      if (currentRank.next !== Infinity) {
-        rankProgress.style.display = 'flex';
-        const prevMin = currentRank.min;
-        const nextMax = currentRank.next;
-        const progress = Math.max(0, balance - prevMin);
-        const totalForLevel = nextMax - prevMin;
-        const percentage = Math.min(100, (progress / totalForLevel) * 100);
-
-        progressFill.style.width = `${percentage}%`;
-        progressText.textContent = `${Math.floor(balance)} / ${nextMax}`;
-      } else {
-        rankProgress.style.display = 'none';
-      }
-    }
-
-    async function hydrateName(){
-      const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
-      nameEl.textContent = fullName;
-      try{ const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
-        if (cachedName) nameEl.textContent = cachedName;
-      }catch{}
-    }
-
-    function init(){
-      try{
-        sessionStorage.setItem('wlc_user_id', String(userId));
-        localStorage.setItem('wlc_user_id', String(userId));
-      }catch{}
-
-      hydrateName();
-
-      (async ()=>{
-        const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
-        if (typeof cached === 'number') {
-            wlcEl.textContent = fmtWLC(cached);
-            updateRank(cached);
-        }
-      })();
-
-      const userRef = db.ref('users/'+userId);
-      db.ref('users/'+userId+'/balance').on('value', s=>{
-        const v = typeof s.val()==='number' ? s.val() : 0;
-        wlcEl.textContent = fmtWLC(v);
-        idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
-        updateRank(v);
-      });
-      db.ref('users/'+userId+'/usdtBalance').on('value', s=>{
-        const v = typeof s.val()==='number' ? s.val() : 0;
-        usdtEl.textContent = fmtUSD(v);
-      });
-
-      document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
-      document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
-
-      syncDaily(userRef).catch(console.warn);
-      attachTileHandlers(userRef);
-    }
-
+    const tg=window.Telegram?.WebApp;try{tg&&tg.ready();}catch(e){}
+    let tgUser=tg?.initDataUnsafe?.user||null;let userId=tgUser?.id||null;
+    function storedId(){try{return sessionStorage.getItem('wlc_user_id')||localStorage.getItem('wlc_user_id')||null;}catch{return null;}}
+    function ensureUserId(cb){if(!userId)userId=storedId();if(userId)return cb();setTimeout(()=>{tgUser=tg?.initDataUnsafe?.user||tgUser;userId=tgUser?.id||storedId();if(userId)cb();else window.location.replace('welcome.html');},60);}
+    const IDB_NAME='wellcoin_game_cache',IDB_STORE='cache';
+    function openIDB(){return new Promise((res,rej)=>{const r=indexedDB.open(IDB_NAME,1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(IDB_STORE))db.createObjectStore(IDB_STORE);};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+    function idbGet(key){return openIDB().then(db=>new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readonly');const rq=tx.objectStore(IDB_STORE).get(key);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);}));}
+    function idbSet(key,val){return openIDB().then(db=>new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(val,key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);}));}
+    const backBtn=document.getElementById('back-btn'),cfgBtn=document.getElementById('cfg-btn'),nameEl=document.getElementById('player-name'),wlcEl=document.getElementById('wlc-amount'),usdtEl=document.getElementById('usdt-amount'),achGrid=document.getElementById('ach'),mask=document.getElementById('mask'),popOk=document.getElementById('pop-ok');
+    const rankCadre=document.getElementById('rank-cadre'),progressFill=document.getElementById('progress-fill'),progressText=document.getElementById('progress-text'),rankProgress=document.querySelector('.rank-progress');
+    backBtn.addEventListener('click',e=>{e.preventDefault();go('index.html');});cfgBtn.addEventListener('click',e=>{e.preventDefault();go('config.html');});
+    function go(url){try{const a=document.getElementById('preloadAudio');if(a){sessionStorage.setItem('wlc_music_ct',String(a.currentTime||0));sessionStorage.setItem('wlc_music_track','assets/preload.mp3');}}catch{}window.location.href=url;}
+    const fmtWLC=v=>Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6,maximumFractionDigits:6});const fmtUSD=v=>Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3,maximumFractionDigits:3});const msToHMS=ms=>{if(ms<0)ms=0;const s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000)%60,h=Math.floor(ms/3600000);return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;};
+    const SPECIAL=new Set([7,15,24,30]);function buildGrid(){achGrid.innerHTML='';for(let i=1;i<=30;i++){const d=document.createElement('div');d.className='day'+(SPECIAL.has(i)?' special':'');d.dataset.day=i;d.innerHTML=`<div class="cap"><span class="pin l"></span><span class="pin r"></span>Day ${i}</div><div class="body"><img class="gift-img" src="assets/gift.png" alt="gift"><div class="timer"></div></div><div class="check"><svg viewBox="0 0 64 64"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#9cffc8"/><stop offset="70%" stop-color="#45e27f" stop-opacity="0.9"/><stop offset="100%" stop-color="#00c060" stop-opacity="0.0"/></radialGradient></defs><circle cx="32" cy="32" r="22" fill="url(#g)"></circle><path d="M22 33.5l6 6 14-14" fill="none" stroke="#dfffef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;achGrid.appendChild(d);}}buildGrid();
+    const firebaseConfig={apiKey:"AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",authDomain:"wellcoinbotgame.firebaseapp.com",databaseURL:"https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",projectId:"wellcoinbotgame",storageBucket:"wellcoinbotgame.appspot.com",messagingSenderId:"108640533638",appId:"1:108640533638:web:ed07516d96ac38f47f6507"};
+    const app=firebase.apps&&firebase.apps.length?firebase.app():firebase.initializeApp(firebaseConfig);const db=firebase.database(app);let serverOffset=0;db.ref(".info/serverTimeOffset").on("value",s=>{serverOffset=s.val()||0;});const now=()=>Date.now()+serverOffset;let daily=null,timerId=null;
+    function ensureStateInit(u,t){if(!u)u={};if(!u.meDailyState){u.meDailyState={currentDay:1,lastClaimAt:0,nextAvailableAt:t,expiresAt:t+8*3600*1000,claimedDays:{},version:1};}else{const s=u.meDailyState;if(t>(s.expiresAt||0)&&t>=(s.nextAvailableAt||0)){s.nextAvailableAt=t;s.expiresAt=t+8*3600*1000;}}if(typeof u.usdtBalance!=='number')u.usdtBalance=0;if(typeof u.balance!=='number')u.balance=0;return u;}
+    function rewardFor(d){if(d===7)return{type:'WLC',amount:0.1,label:'+0.100000 WLC'};if(d===15)return{type:'USDT',amount:0.2,label:'+0.200 USDT'};if(d===24)return{type:'WLC',amount:1.0,label:'+1.000000 WLC'};if(d===30)return{type:'WLC',amount:2.0,label:'+2.000000 WLC'};const p=[{type:'WLC',amount:0.000005,label:'+0.000005 WLC'},{type:'WLC',amount:0.00004,label:'+0.000040 WLC'},{type:'USDT',amount:0.002,label:'+0.002 USDT'},{type:'USDT',amount:0.01,label:'+0.010 USDT'},];return p[Math.floor(Math.random()*p.length)];}
+    function renderDaily(){if(!daily)return;const t=now(),s=daily;document.querySelectorAll('.day').forEach(e=>{const d=Number(e.dataset.day);e.classList.remove('locked','claimable','claimed');const l=e.querySelector('.timer');l.style.display='none';const i=!!(s.claimedDays&&s.claimedDays[d]);if(i){e.classList.add('claimed');}else if(d<s.currentDay){e.classList.add('claimed');}else if(d===s.currentDay){if(t>=s.nextAvailableAt&&t<=s.expiresAt){e.classList.add('claimable');}else{e.classList.add('locked');if(t<s.nextAvailableAt){l.style.display='block';l.textContent=msToHMS(s.nextAvailableAt-t);}}}else{e.classList.add('locked');}});const n=document.querySelector(`.day[data-day="${s.currentDay}"] .timer`),a=document.querySelector(`.day[data-day="${s.currentDay-1}"]`);if(a&&a.classList.contains('claimed')&&n&&t<s.nextAvailableAt){n.style.display='block';n.textContent=msToHMS(s.nextAvailableAt-t);}}
+    function fireConfetti(){const c=document.getElementById('confetti'),x=c.getContext('2d');let W=c.width=innerWidth,H=c.height=innerHeight;const P=Array.from({length:110},()=>({x:Math.random()*W,y:-10-Math.random()*H*0.2,r:3+Math.random()*4,c:`hsl(${Math.random()*360}, 90%, 60%)`,vx:-1+Math.random()*2,vy:1+Math.random()*2.5,g:.05+Math.random()*.1,a:1}));let run=true,t0=performance.now();function frame(t){if(!run)return;x.clearRect(0,0,W,H);for(const p of P){p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.a-=0.004;x.globalAlpha=Math.max(0,p.a);x.fillStyle=p.c;x.fillRect(p.x,p.y,p.r,p.r);}if(t-t0<2600)requestAnimationFrame(frame);else{run=false;x.clearRect(0,0,W,H);}}requestAnimationFrame(frame);addEventListener('resize',()=>{W=c.width=innerWidth;H=c.height=innerHeight;},{once:true});}
+    function showPop(r){const p=document.getElementById('pop-reward');document.getElementById('pop-title').textContent='Congratulations!';document.getElementById('pop-desc').textContent='Your daily reward has been added to your balance.';p.textContent=r.label;p.className='reward';if(r.type.startsWith('WLC')){p.classList.add('wlc');}else if(r.type==='USDT'){p.classList.add('usdt');}mask.classList.add('show');fireConfetti();}
+    popOk.addEventListener('click',()=>{mask.classList.remove('show');});
+    function attachTileHandlers(u){achGrid.addEventListener('click',e=>{const t=e.target.closest('.day.claimable');if(!t)return;const d=Number(t.dataset.day);claim(u,d);});}
+    async function syncDaily(u){const t=now();await u.transaction(d=>ensureStateInit(d,t));const s=await u.once('value');daily=s.val().meDailyState;renderDaily();if(!timerId){timerId=setInterval(renderDaily,1000);}}
+    async function claim(u,d){const t=now();let r=null;try{const{committed:c,snapshot:s}=await u.transaction(e=>{if(!e)return e;e=ensureStateInit(e,t);const n=e.meDailyState;if(d!==n.currentDay||t<n.nextAvailableAt||t>n.expiresAt){return;}const a=rewardFor(d);r=a;if(a.type.startsWith('WLC'))e.balance=(e.balance||0)+a.amount;if(a.type==='USDT')e.usdtBalance=(e.usdtBalance||0)+a.amount;n.claimedDays=n.claimedDays||{};n.claimedDays[String(d)]=t;n.lastClaimAt=t;if(d>=30){n.currentDay=1;n.claimedDays={};}else{n.currentDay=d+1;}n.nextAvailableAt=t+24*3600*1000;n.expiresAt=n.nextAvailableAt+8*3600*1000;e.meDailyState=n;return e;});if(c&&r){daily=s.val().meDailyState;renderDaily();showPop(r);}}catch(e){console.error("Claim transaction failed:",e);}}
+    const ranks=[{name:'Iron',min:0,next:1500,img:'iron.png'},{name:'Bronze',min:1500,next:3000,img:'bronze.png'},{name:'Silver',min:3000,next:5000,img:'silver.png'},{name:'Gold',min:5000,next:8000,img:'gold.png'},{name:'Platinum',min:8000,next:10500,img:'plat.png'},{name:'Emerald',min:10500,next:15000,img:'emrald.png'},{name:'Diamond',min:15000,next:20000,img:'diamon.png'},{name:'Master',min:20000,next:30000,img:'master.png'},{name:'Grandmaster',min:30000,next:50000,img:'grandmaster.png'},{name:'Challenger',min:50000,next:Infinity,img:'challenger.png'}];
+    function updateRank(b){const c=[...ranks].reverse().find(r=>b>=r.min);if(!c)return;rankCadre.src=`assets/${c.img}`;if(c.next!==Infinity){rankProgress.style.display='flex';const p=c.min,n=c.next,r=Math.max(0,b-p),t=n-p,a=Math.min(100,r/t*100);progressFill.style.width=`${a}%`;progressText.textContent=`${Math.floor(b)} / ${n}`;}else{rankProgress.style.display='none';}}
+    async function hydrateName(){const f=[tgUser?.first_name||'',tgUser?.last_name||''].filter(Boolean).join(' ').trim()||(tgUser?.first_name||'Player');nameEl.textContent=f;try{const c=await idbGet(`wlc:${userId}:tgName`).catch(()=>null);if(c)nameEl.textContent=c;}catch{}}
+    function init(){try{sessionStorage.setItem('wlc_user_id',String(userId));localStorage.setItem('wlc_user_id',String(userId));}catch{}hydrateName();(async()=>{const c=await idbGet(`wlc:${userId}:balance`).catch(()=>null);if(typeof c==='number'){wlcEl.textContent=fmtWLC(c);updateRank(c);}})();const u=db.ref('users/'+userId);u.child('balance').on('value',s=>{const v=typeof s.val()==='number'?s.val():0;wlcEl.textContent=fmtWLC(v);idbSet(`wlc:${userId}:balance`,v).catch(()=>{});updateRank(v);});u.child('usdtBalance').on('value',s=>{const v=typeof s.val()==='number'?s.val():0;usdtEl.textContent=fmtUSD(v);});document.getElementById('wlc-withdraw').addEventListener('click',()=>alert('Withdraw WLC: Coming soon'));document.getElementById('usdt-withdraw').addEventListener('click',()=>alert('Withdraw USDT: Coming soon'));syncDaily(u).catch(console.warn);attachTileHandlers(u);}
     ensureUserId(init);
   </script>
 </body>
