@@ -94,7 +94,8 @@
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+      /* --- Professional Glow Effect --- */
+      filter: drop-shadow(0 0 8px rgba(120, 180, 255, 0.35)) drop-shadow(0 0 20px rgba(120, 180, 255, 0.2));
     }
     .rank-progress {
       display: flex;
@@ -204,13 +205,14 @@
 
     /* Cap (header) */
     .cap{
-      position:relative; height: clamp(24px, 6vw, 30px); /* Smaller height */
+      position:relative; height: clamp(22px, 5.5vw, 28px); /* Smaller height */
       display:flex; align-items:center; justify-content:center;
       background: linear-gradient(180deg, #5aa4ff, #3385ff);
       color:#eaf3ff; font-weight:900; letter-spacing:.3px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
       border-bottom: 1px solid rgba(0,0,0,.25);
-      font-size: clamp(11px, 2.8vw, 14px); /* Smaller font size */
+      font-size: clamp(10px, 2.5vw, 13px); /* Smaller font size */
       border-top-left-radius: 14px; border-top-right-radius: 14px;
+      padding: 0 2px;
     }
     .day.special .cap{
       background: linear-gradient(180deg, #ffcb5a, #ffad33);
@@ -224,12 +226,12 @@
     /* Body with gift */
     .body{
       position:relative; flex:1; display:flex; align-items:center; justify-content:center;
-      padding:10px;
+      padding:8px;
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
     }
     .gift-img{
-      width: clamp(60px, 68%, 140px); /* Adjusted size */
-      max-height: 70%; height: auto; object-fit: contain;
+      width: clamp(65px, 80%, 150px); /* Adjusted size */
+      max-height: 80%; height: auto; object-fit: contain;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
       pointer-events:none;
     }
@@ -539,9 +541,12 @@
         const st = u.meDailyState;
         if (tNow > (st.expiresAt||0) && tNow >= (st.nextAvailableAt||0)){
           u.meDailyState = {
-            currentDay: 1, lastClaimAt: 0,
-            nextAvailableAt: tNow, expiresAt: tNow + 8*3600*1000,
-            claimedDays: {}, version: (st.version||1)
+            currentDay: st.currentDay, // Keep current day if expired
+            lastClaimAt: st.lastClaimAt,
+            nextAvailableAt: tNow,
+            expiresAt: tNow + 8*3600*1000,
+            claimedDays: st.claimedDays,
+            version: (st.version||1)
           };
         }
       }
@@ -573,20 +578,32 @@
         const timerEl = tile.querySelector('.timer');
         timerEl.style.display='none'; timerEl.textContent='';
 
-        const claimed = !!(st.claimedDays && st.claimedDays[day]);
-        if (claimed){ tile.classList.add('claimed'); return; }
-        if (day < st.currentDay){ tile.classList.add('claimed'); return; } // Treat past unclaimed as claimed
-        if (day > st.currentDay){ tile.classList.add('locked'); return; }
+        const isClaimed = !!(st.claimedDays && st.claimedDays[day]);
+        
+        if (isClaimed) {
+            tile.classList.add('claimed');
+            return;
+        }
+        
+        if (day < st.currentDay) {
+            tile.classList.add('locked'); // Past and not claimed
+            return;
+        }
 
-        // It's the current, claimable day
-        if (t >= st.nextAvailableAt && t <= st.expiresAt){
-          tile.classList.add('claimable');
-        } else if (t < st.nextAvailableAt){ // Not available yet, show timer
-          tile.classList.add('locked');
-          timerEl.style.display='block';
-          timerEl.textContent = msToHMS(st.nextAvailableAt - t);
+        if (day > st.currentDay) {
+            tile.classList.add('locked');
+            return;
+        }
+
+        // This is the current, active day (day === st.currentDay)
+        if (t < st.nextAvailableAt) { // Not available yet, show timer
+            tile.classList.add('locked');
+            timerEl.style.display='block';
+            timerEl.textContent = msToHMS(st.nextAvailableAt - t);
+        } else if (t <= st.expiresAt) { // Available to be claimed
+            tile.classList.add('claimable');
         } else { // Expired
-          tile.classList.add('locked');
+            tile.classList.add('locked');
         }
       });
     }
@@ -660,11 +677,14 @@
     async function claim(userRef, day){
       const tNow = now(); let reward = null;
       try {
-        await userRef.transaction(u=>{
+        const { committed, snapshot } = await userRef.transaction(u=>{
+          if (!u) return u; // Should not happen if init is correct
           u = ensureStateInit(u, tNow);
           const st = u.meDailyState;
-          if (day !== st.currentDay) return; // Abort transaction
-          if (tNow < st.nextAvailableAt || tNow > st.expiresAt) return; // Abort
+
+          if (day !== st.currentDay || tNow < st.nextAvailableAt || tNow > st.expiresAt) {
+            return; // Abort transaction by returning undefined
+          }
 
           const rw = rewardFor(day);
           reward = rw; // Store reward to show in popup
@@ -689,9 +709,8 @@
           return u;
         });
 
-        if (reward) {
-            const snap = await userRef.once('value');
-            daily = snap.val().meDailyState;
+        if (committed && reward) {
+            daily = snapshot.val().meDailyState;
             renderDaily();
             showPop(reward);
         }
