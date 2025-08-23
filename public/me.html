@@ -197,20 +197,20 @@
       border:1px solid rgba(255,255,255,.14);
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
       display:flex; flex-direction:column;
-      aspect-ratio: 1 / 1.05; /* أكبر وأكثر وضوحاً */
-      margin-bottom: 30px; /* مساحة للعداد أسفل الكرت */
+      aspect-ratio: 1 / 1.05;
+      margin-bottom: 30px; /* Space for timer */
     }
     .day.special{ transform: scale(1.02); }
 
     /* Cap (header) */
     .cap{
-      position:relative; height: clamp(26px, 6.8vw, 34px);
+      position:relative; height: clamp(24px, 6vw, 30px); /* Smaller height */
       display:flex; align-items:center; justify-content:center;
       background: linear-gradient(180deg, #5aa4ff, #3385ff);
       color:#eaf3ff; font-weight:900; letter-spacing:.3px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
       border-bottom: 1px solid rgba(0,0,0,.25);
-      font-size: clamp(12px, 3.2vw, 15px);
-      border-top-left-radius: 14px; border-top-right-radius: 14px; /* لا تخرج خارج البطاقة */
+      font-size: clamp(11px, 2.8vw, 14px); /* Smaller font size */
+      border-top-left-radius: 14px; border-top-right-radius: 14px;
     }
     .day.special .cap{
       background: linear-gradient(180deg, #ffcb5a, #ffad33);
@@ -224,11 +224,12 @@
     /* Body with gift */
     .body{
       position:relative; flex:1; display:flex; align-items:center; justify-content:center;
-      padding:12px 10px 10px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      padding:10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
     }
     .gift-img{
-      width: clamp(72px, 72%, 160px);
-      max-height: 75%; height: auto; object-fit: contain;
+      width: clamp(60px, 68%, 140px); /* Adjusted size */
+      max-height: 70%; height: auto; object-fit: contain;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
       pointer-events:none;
     }
@@ -246,6 +247,7 @@
       border-color: rgba(255,210,90,.55);
       box-shadow: 0 10px 24px rgba(255,210,90,.22), inset 0 0 0 1px rgba(255,255,255,.05);
       animation: pulse 1.4s ease-in-out infinite alternate;
+      cursor: pointer;
     }
     @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.36)); } }
 
@@ -257,6 +259,42 @@
     .day.claimed .check{ opacity:1; transform: scale(1); }
     .check svg{ width:56px; height:56px; }
 
+    /* Pop-up styles */
+    .mask{
+      position:fixed; inset:0; z-index:10;
+      background:rgba(0,0,0,0.6); backdrop-filter:blur(8px);
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition: opacity .2s ease;
+    }
+    .mask.show{ opacity:1; pointer-events:auto; }
+    .pop{
+      background: linear-gradient(160deg, var(--glass), rgba(12,15,20,0.75));
+      border: 1px solid var(--glass-border);
+      border-radius:var(--r-lg); padding:24px;
+      width: min(90vw, 360px); text-align:center;
+      box-shadow: var(--shadow-1);
+      transform: scale(.95); transition: transform .2s ease;
+    }
+    .mask.show .pop{ transform: scale(1); }
+    #pop-title{ margin:0 0 8px; font-size:1.4rem; font-weight:900; color:#fff; }
+    #pop-desc{ margin:0 0 16px; color:var(--muted); font-size:.95rem; }
+    #pop-reward{
+      margin:0 auto 20px; font-weight:900; font-size:1.2rem;
+      padding:10px 18px; border-radius:var(--r-md);
+      background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1);
+      display:inline-block;
+    }
+    #pop-reward.wlc { color:var(--gold); }
+    #pop-reward.usdt { color:var(--green); }
+    #pop-ok{
+      width:100%; padding:12px; border:none; border-radius:var(--r-md);
+      font-size:1rem; font-weight:900; cursor:pointer;
+      background: linear-gradient(90deg, var(--gold), var(--gold-2)); color:#222;
+      box-shadow: 0 6px 16px rgba(255, 210, 90, .30);
+      transition: transform .1s ease;
+    }
+    #pop-ok:active{ transform:scale(.98); }
+    .confetti{ position:fixed; inset:0; z-index:11; pointer-events:none; }
     .spacer{ height:14px; }
     * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
   </style>
@@ -278,7 +316,7 @@
       <div class="scroll">
         <section class="profile">
           <div class="rank-display">
-            <img id="rank-cadre" src="assets/ranks/iron.png" alt="Rank">
+            <img id="rank-cadre" src="assets/iron.png" alt="">
           </div>
           <div class="rank-progress">
             <div class="progress-bar">
@@ -325,11 +363,11 @@
     </div>
   </div>
 
-  <div id="mask" class="mask" style="display:none">
+  <div id="mask" class="mask">
     <div class="pop">
       <h3 id="pop-title">Congratulations!</h3>
       <div id="pop-desc" class="desc">You’ve received a reward.</div>
-      <div id="pop-reward" class="reward">+ 0.000000 WLC</div>
+      <div id="pop-reward" class="reward"></div>
       <button id="pop-ok" class="ok">Claim</button>
     </div>
   </div>
@@ -444,7 +482,7 @@
           </div>
           <div class="body">
             <img class="gift-img" src="assets/gift.png" alt="gift">
-            <div class="timer" style="display:none"></div>
+            <div class="timer"></div>
           </div>
           <div class="check">
             <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -516,7 +554,7 @@
       if (day===7)  return { type:'WLC', amount:0.1,  label:'+0.100000 WLC' };
       if (day===15) return { type:'USDT',amount:0.2,  label:'+0.200 USDT' };
       if (day===24) return { type:'WLC', amount:1.0,  label:'+1.000000 WLC' };
-      if (day===30) return { type:'WLC_MEDAL', amount:2.0, label:'+2.000000 WLC + Medal' };
+      if (day===30) return { type:'WLC', amount:2.0, label:'+2.000000 WLC' }; // Medal logic can be added here
       const pool = [
         {type:'WLC', amount:0.000005, label:'+0.000005 WLC'},
         {type:'WLC', amount:0.00004,  label:'+0.000040 WLC'},
@@ -526,7 +564,7 @@
       return pool[Math.floor(Math.random()*pool.length)];
     }
 
-    function render(){
+    function renderDaily(){
       if (!daily) return;
       const t = now(), st = daily;
       document.querySelectorAll('.day').forEach(tile=>{
@@ -537,22 +575,24 @@
 
         const claimed = !!(st.claimedDays && st.claimedDays[day]);
         if (claimed){ tile.classList.add('claimed'); return; }
-        if (day < st.currentDay){ tile.classList.add('claimed'); return; }
+        if (day < st.currentDay){ tile.classList.add('claimed'); return; } // Treat past unclaimed as claimed
         if (day > st.currentDay){ tile.classList.add('locked'); return; }
 
+        // It's the current, claimable day
         if (t >= st.nextAvailableAt && t <= st.expiresAt){
           tile.classList.add('claimable');
-        } else if (t < st.nextAvailableAt){
+        } else if (t < st.nextAvailableAt){ // Not available yet, show timer
           tile.classList.add('locked');
-          timerEl.style.display=''; timerEl.textContent = 'In ' + msToHMS(st.nextAvailableAt - t);
-        } else {
+          timerEl.style.display='block';
+          timerEl.textContent = msToHMS(st.nextAvailableAt - t);
+        } else { // Expired
           tile.classList.add('locked');
         }
       });
     }
 
     // Confetti
-    function confetti(){
+    function fireConfetti(){
       const c = document.getElementById('confetti'), x = c.getContext('2d');
       let W = c.width = innerWidth, H = c.height = innerHeight;
       const P = Array.from({length: 110}, ()=>({
@@ -574,96 +614,93 @@
       addEventListener('resize', ()=>{ W=c.width=innerWidth; H=c.height=innerHeight; }, { once:true });
     }
 
-    function showPop(title, desc, reward){
-      document.getElementById('pop-title').textContent = title || 'Congratulations!';
-      document.getElementById('pop-desc').innerHTML  = desc || 'You’ve received a reward.';
-      document.getElementById('pop-reward').textContent = reward || '';
-      mask.style.display='flex'; confetti();
+    function showPop(reward){
+      const popTitle = document.getElementById('pop-title');
+      const popDesc = document.getElementById('pop-desc');
+      const popReward = document.getElementById('pop-reward');
+      popTitle.textContent = 'Congratulations!';
+      popDesc.textContent = 'Your daily reward has been added to your balance.';
+      popReward.textContent = reward.label;
+      popReward.className = 'reward'; // Reset class
+      if (reward.type.startsWith('WLC')) {
+          popReward.classList.add('wlc');
+      } else if (reward.type === 'USDT') {
+          popReward.classList.add('usdt');
+      }
+      mask.classList.add('show');
+      fireConfetti();
     }
-    popOk.addEventListener('click', ()=>{ mask.style.display='none'; });
+    popOk.addEventListener('click', ()=>{ mask.classList.remove('show'); });
 
     function attachTileHandlers(userRef){
       achGrid.addEventListener('click', (e)=>{
-        const tile = e.target.closest('.day'); if (!tile) return;
-        const day = Number(tile.dataset.day); if (day !== daily.currentDay) return;
-        const t = now(); if (t < daily.nextAvailableAt || t > daily.expiresAt) return;
+        const tile = e.target.closest('.day.claimable');
+        if (!tile) return;
+        const day = Number(tile.dataset.day);
         claim(userRef, day);
       });
     }
 
-    async function sync(userRef){
+    async function syncDaily(userRef){
       const tNow = now();
       await userRef.transaction(u=>{
-        u = ensureStateInit(u, tNow);
-        const st = u.meDailyState;
-        if (tNow > st.expiresAt && tNow >= st.nextAvailableAt){
-          u.meDailyState = {
-            currentDay: 1, lastClaimAt: 0,
-            nextAvailableAt: tNow, expiresAt: tNow + 8*3600*1000,
-            claimedDays: {}, version: st.version||1
-          };
-        }
-        return u;
+        return ensureStateInit(u, tNow);
       });
       const snap = await userRef.once('value');
       daily = snap.val().meDailyState;
-      render();
+      renderDaily();
 
       if (!timerId){
         timerId = setInterval(()=>{
-          const t = now();
-          render();
-          if (t > daily.expiresAt) { sync(userRef).catch(()=>{}); }
+          renderDaily();
         }, 1000);
       }
     }
 
     async function claim(userRef, day){
       const tNow = now(); let reward = null;
-      await userRef.transaction(u=>{
-        u = ensureStateInit(u, tNow);
-        const st = u.meDailyState;
-        if (day !== st.currentDay) return u;
-        if (tNow < st.nextAvailableAt || tNow > st.expiresAt) return u;
+      try {
+        await userRef.transaction(u=>{
+          u = ensureStateInit(u, tNow);
+          const st = u.meDailyState;
+          if (day !== st.currentDay) return; // Abort transaction
+          if (tNow < st.nextAvailableAt || tNow > st.expiresAt) return; // Abort
 
-        const rw = rewardFor(day);
-        if (rw.type.startsWith('WLC')) u.balance = (u.balance||0) + rw.amount;
-        if (rw.type==='USDT')         u.usdtBalance = (u.usdtBalance||0) + rw.amount;
+          const rw = rewardFor(day);
+          reward = rw; // Store reward to show in popup
 
-        st.claimedDays = st.claimedDays || {};
-        st.claimedDays[String(day)] = tNow;
-        st.lastClaimAt = tNow;
+          if (rw.type.startsWith('WLC')) u.balance = (u.balance||0) + rw.amount;
+          if (rw.type==='USDT')         u.usdtBalance = (u.usdtBalance||0) + rw.amount;
 
-        if (day >= 30){
-          st.currentDay = 1;
+          st.claimedDays = st.claimedDays || {};
+          st.claimedDays[String(day)] = tNow;
+          st.lastClaimAt = tNow;
+
+          if (day >= 30){ // Reset cycle
+            st.currentDay = 1;
+            st.claimedDays = {};
+          } else {
+            st.currentDay = day + 1;
+          }
           st.nextAvailableAt = tNow + 24*3600*1000;
           st.expiresAt = st.nextAvailableAt + 8*3600*1000;
-          st.claimedDays = {};
-        } else {
-          st.currentDay = day + 1;
-          st.nextAvailableAt = tNow + 24*3600*1000;
-          st.expiresAt = st.nextAvailableAt + 8*3600*1000;
-        }
-        u.meDailyState = st; reward = rw; return u;
-      });
 
-      const s = await userRef.once('value');
-      daily = s.val().meDailyState; render();
+          u.meDailyState = st;
+          return u;
+        });
 
-      if (reward){
-        if (reward.type.startsWith('WLC')){
-          const newW = s.val().balance || 0;
-          wlcEl.textContent = fmtWLC(newW);
-          idbSet(`wlc:${userId}:balance`, newW).catch(()=>{});
-        } else {
-          const newU = s.val().usdtBalance || 0;
-          usdtEl.textContent = fmtUSD(newU);
+        if (reward) {
+            const snap = await userRef.once('value');
+            daily = snap.val().meDailyState;
+            renderDaily();
+            showPop(reward);
         }
-        showPop('Congratulations!', 'Your daily reward has been added to your balance.', reward.label);
+      } catch (error) {
+        console.error("Claim transaction failed:", error);
       }
     }
 
-    // --- NEW RANK SYSTEM LOGIC ---
+    // --- RANK SYSTEM LOGIC ---
     const ranks = [
       { name: 'Iron',        min: 0,       next: 1500,    img: 'iron.png' },
       { name: 'Bronze',      min: 1500,    next: 3000,    img: 'bronze.png' },
@@ -674,17 +711,17 @@
       { name: 'Diamond',     min: 15000,   next: 20000,   img: 'diamon.png' },
       { name: 'Master',      min: 20000,   next: 30000,   img: 'master.png' },
       { name: 'Grandmaster', min: 30000,   next: 50000,   img: 'grandmaster.png' },
-      { name: 'Challenger',  min: 50000,   next: null,    img: 'challenger.png' }
+      { name: 'Challenger',  min: 50000,   next: Infinity,img: 'challenger.png' }
     ];
 
     function updateRank(balance) {
       const currentRank = [...ranks].reverse().find(rank => balance >= rank.min);
       if (!currentRank) return;
 
-      rankCadre.src = `assets/ranks/${currentRank.img}`;
-      rankCadre.alt = currentRank.name;
+      // Make sure you have the rank images in the "assets" folder.
+      rankCadre.src = `assets/${currentRank.img}`;
 
-      if (currentRank.next !== null) {
+      if (currentRank.next !== Infinity) {
         rankProgress.style.display = 'flex';
         const prevMin = currentRank.min;
         const nextMax = currentRank.next;
@@ -695,6 +732,7 @@
         progressFill.style.width = `${percentage}%`;
         progressText.textContent = `${Math.floor(balance)} / ${nextMax}`;
       } else {
+        // For Challenger rank, hide the progress bar
         rankProgress.style.display = 'none';
       }
     }
@@ -739,7 +777,7 @@
       document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
       document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
 
-      sync(userRef).catch(console.warn);
+      syncDaily(userRef).catch(console.warn);
       attachTileHandlers(userRef);
     }
 
