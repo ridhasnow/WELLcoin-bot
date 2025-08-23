@@ -33,12 +33,13 @@
     }
 
     .glow{
-      position:fixed; inset: -10px -10px -10px -50px; z-index:0; pointer-events:none;
+      position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
-        radial-gradient(60vw 60vw at 14% 18%, rgba(255,215,90,0.08), transparent 75%),
-        radial-gradient(50vw 50vw at 78% 22%, rgba(255,240,140,0.06), transparent 75%),
-        radial-gradient(70vw 70vw at 46% 86%, rgba(200,160,80,0.07), transparent 75%);
-      filter: blur(12px) saturate(120%);
+        radial-gradient(60vw 60vw at 15% 20%, rgba(255, 215, 90, 0.09), transparent 70%),
+        radial-gradient(50vw 50vw at 80% 25%, rgba(255, 240, 140, 0.07), transparent 70%),
+        radial-gradient(70vw 70vw at 50% 85%, rgba(220, 180, 100, 0.08), transparent 70%);
+      transform: translateX(-40px);
+      filter: blur(15px) saturate(130%);
     }
     .wrap{
       position:relative; z-index:1; width:100%; height:100%;
@@ -298,46 +299,242 @@
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script>
-    (function audioBoot(){
-      let a=document.getElementById('preloadAudio');if(!a){a=document.createElement('audio');a.id='preloadAudio';a.loop=true;a.preload='auto';a.style.display='none';a.src='assets/preload.mp3';document.body.appendChild(a);}
-      function persist(){try{sessionStorage.setItem('wlc_music_ct',String(a.currentTime||0));sessionStorage.setItem('wlc_music_track','assets/preload.mp3');}catch{}}
-      function prime(){try{a.muted=true;a.volume=.76;a.play().catch(()=>{});}catch{}}
-      function unmute(){a.muted=false;a.volume=.76;a.play().catch(()=>{});}
-      prime();const ensure=()=>{unmute();off();};function off(){['pointerdown','touchstart','click','keydown'].forEach(ev=>document.removeEventListener(ev,ensure,{passive:true}));}
-      ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,ensure,{passive:true,once:true}));
-      window.addEventListener('pagehide',persist);window.addEventListener('beforeunload',persist);document.addEventListener('visibilitychange',()=>{if(document.hidden)persist();else a.play().catch(()=>{});});
-    })();
 
-    const tg=window.Telegram?.WebApp;try{tg&&tg.ready();}catch(e){}
-    let tgUser=tg?.initDataUnsafe?.user||null;let userId=tgUser?.id||null;
-    function storedId(){try{return sessionStorage.getItem('wlc_user_id')||localStorage.getItem('wlc_user_id')||null;}catch{return null;}}
-    function ensureUserId(cb){if(!userId)userId=storedId();if(userId)return cb();setTimeout(()=>{tgUser=tg?.initDataUnsafe?.user||tgUser;userId=tgUser?.id||storedId();if(userId)cb();else window.location.replace('welcome.html');},60);}
-    const IDB_NAME='wellcoin_game_cache',IDB_STORE='cache';
-    function openIDB(){return new Promise((res,rej)=>{const r=indexedDB.open(IDB_NAME,1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(IDB_STORE))db.createObjectStore(IDB_STORE);};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
-    function idbGet(key){return openIDB().then(db=>new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readonly');const rq=tx.objectStore(IDB_STORE).get(key);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);}));}
-    function idbSet(key,val){return openIDB().then(db=>new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(val,key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);}));}
-    const backBtn=document.getElementById('back-btn'),cfgBtn=document.getElementById('cfg-btn'),nameEl=document.getElementById('player-name'),wlcEl=document.getElementById('wlc-amount'),usdtEl=document.getElementById('usdt-amount'),achGrid=document.getElementById('ach'),mask=document.getElementById('mask'),popOk=document.getElementById('pop-ok');
-    const rankCadre=document.getElementById('rank-cadre'),progressFill=document.getElementById('progress-fill'),progressText=document.getElementById('progress-text'),rankProgress=document.querySelector('.rank-progress');
-    backBtn.addEventListener('click',e=>{e.preventDefault();go('index.html');});cfgBtn.addEventListener('click',e=>{e.preventDefault();go('config.html');});
-    function go(url){try{const a=document.getElementById('preloadAudio');if(a){sessionStorage.setItem('wlc_music_ct',String(a.currentTime||0));sessionStorage.setItem('wlc_music_track','assets/preload.mp3');}}catch{}window.location.href=url;}
-    const fmtWLC=v=>Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6,maximumFractionDigits:6});const fmtUSD=v=>Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3,maximumFractionDigits:3});const msToHMS=ms=>{if(ms<0)ms=0;const s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000)%60,h=Math.floor(ms/3600000);return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;};
-    const SPECIAL=new Set([7,15,24,30]);function buildGrid(){achGrid.innerHTML='';for(let i=1;i<=30;i++){const d=document.createElement('div');d.className='day'+(SPECIAL.has(i)?' special':'');d.dataset.day=i;d.innerHTML=`<div class="cap"><span class="pin l"></span><span class="pin r"></span>Day ${i}</div><div class="body"><img class="gift-img" src="assets/gift.png" alt="gift"><div class="timer"></div></div><div class="check"><svg viewBox="0 0 64 64"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#9cffc8"/><stop offset="70%" stop-color="#45e27f" stop-opacity="0.9"/><stop offset="100%" stop-color="#00c060" stop-opacity="0.0"/></radialGradient></defs><circle cx="32" cy="32" r="22" fill="url(#g)"></circle><path d="M22 33.5l6 6 14-14" fill="none" stroke="#dfffef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;achGrid.appendChild(d);}}buildGrid();
-    const firebaseConfig={apiKey:"AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",authDomain:"wellcoinbotgame.firebaseapp.com",databaseURL:"https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",projectId:"wellcoinbotgame",storageBucket:"wellcoinbotgame.appspot.com",messagingSenderId:"108640533638",appId:"1:108640533638:web:ed07516d96ac38f47f6507"};
-    const app=firebase.apps&&firebase.apps.length?firebase.app():firebase.initializeApp(firebaseConfig);const db=firebase.database(app);let serverOffset=0;db.ref(".info/serverTimeOffset").on("value",s=>{serverOffset=s.val()||0;});const now=()=>Date.now()+serverOffset;let daily=null,timerId=null;
-    function ensureStateInit(u,t){if(!u)u={};if(!u.meDailyState){u.meDailyState={currentDay:1,lastClaimAt:0,nextAvailableAt:t,expiresAt:t+8*3600*1000,claimedDays:{},version:1};}else{const s=u.meDailyState;if(t>(s.expiresAt||0)&&t>=(s.nextAvailableAt||0)){s.nextAvailableAt=t;s.expiresAt=t+8*3600*1000;}}if(typeof u.usdtBalance!=='number')u.usdtBalance=0;if(typeof u.balance!=='number')u.balance=0;return u;}
-    function rewardFor(d){if(d===7)return{type:'WLC',amount:0.1,label:'+0.100000 WLC'};if(d===15)return{type:'USDT',amount:0.2,label:'+0.200 USDT'};if(d===24)return{type:'WLC',amount:1.0,label:'+1.000000 WLC'};if(d===30)return{type:'WLC',amount:2.0,label:'+2.000000 WLC'};const p=[{type:'WLC',amount:0.000005,label:'+0.000005 WLC'},{type:'WLC',amount:0.00004,label:'+0.000040 WLC'},{type:'USDT',amount:0.002,label:'+0.002 USDT'},{type:'USDT',amount:0.01,label:'+0.010 USDT'},];return p[Math.floor(Math.random()*p.length)];}
-    function renderDaily(){if(!daily)return;const t=now(),s=daily;document.querySelectorAll('.day').forEach(e=>{const d=Number(e.dataset.day);e.classList.remove('locked','claimable','claimed');const l=e.querySelector('.timer');l.style.display='none';const i=!!(s.claimedDays&&s.claimedDays[d]);if(i){e.classList.add('claimed');}else if(d<s.currentDay){e.classList.add('claimed');}else if(d===s.currentDay){if(t>=s.nextAvailableAt&&t<=s.expiresAt){e.classList.add('claimable');}else{e.classList.add('locked');if(t<s.nextAvailableAt){l.style.display='block';l.textContent=msToHMS(s.nextAvailableAt-t);}}}else{e.classList.add('locked');}});const n=document.querySelector(`.day[data-day="${s.currentDay}"] .timer`),a=document.querySelector(`.day[data-day="${s.currentDay-1}"]`);if(a&&a.classList.contains('claimed')&&n&&t<s.nextAvailableAt){n.style.display='block';n.textContent=msToHMS(s.nextAvailableAt-t);}}
-    function fireConfetti(){const c=document.getElementById('confetti'),x=c.getContext('2d');let W=c.width=innerWidth,H=c.height=innerHeight;const P=Array.from({length:110},()=>({x:Math.random()*W,y:-10-Math.random()*H*0.2,r:3+Math.random()*4,c:`hsl(${Math.random()*360}, 90%, 60%)`,vx:-1+Math.random()*2,vy:1+Math.random()*2.5,g:.05+Math.random()*.1,a:1}));let run=true,t0=performance.now();function frame(t){if(!run)return;x.clearRect(0,0,W,H);for(const p of P){p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.a-=0.004;x.globalAlpha=Math.max(0,p.a);x.fillStyle=p.c;x.fillRect(p.x,p.y,p.r,p.r);}if(t-t0<2600)requestAnimationFrame(frame);else{run=false;x.clearRect(0,0,W,H);}}requestAnimationFrame(frame);addEventListener('resize',()=>{W=c.width=innerWidth;H=c.height=innerHeight;},{once:true});}
-    function showPop(r){const p=document.getElementById('pop-reward');document.getElementById('pop-title').textContent='Congratulations!';document.getElementById('pop-desc').textContent='Your daily reward has been added to your balance.';p.textContent=r.label;p.className='reward';if(r.type.startsWith('WLC')){p.classList.add('wlc');}else if(r.type==='USDT'){p.classList.add('usdt');}mask.classList.add('show');fireConfetti();}
-    popOk.addEventListener('click',()=>{mask.classList.remove('show');});
-    function attachTileHandlers(u){achGrid.addEventListener('click',e=>{const t=e.target.closest('.day.claimable');if(!t)return;const d=Number(t.dataset.day);claim(u,d);});}
-    async function syncDaily(u){const t=now();await u.transaction(d=>ensureStateInit(d,t));const s=await u.once('value');daily=s.val().meDailyState;renderDaily();if(!timerId){timerId=setInterval(renderDaily,1000);}}
-    async function claim(u,d){const t=now();let r=null;try{const{committed:c,snapshot:s}=await u.transaction(e=>{if(!e)return e;e=ensureStateInit(e,t);const n=e.meDailyState;if(d!==n.currentDay||t<n.nextAvailableAt||t>n.expiresAt){return;}const a=rewardFor(d);r=a;if(a.type.startsWith('WLC'))e.balance=(e.balance||0)+a.amount;if(a.type==='USDT')e.usdtBalance=(e.usdtBalance||0)+a.amount;n.claimedDays=n.claimedDays||{};n.claimedDays[String(d)]=t;n.lastClaimAt=t;if(d>=30){n.currentDay=1;n.claimedDays={};}else{n.currentDay=d+1;}n.nextAvailableAt=t+24*3600*1000;n.expiresAt=n.nextAvailableAt+8*3600*1000;e.meDailyState=n;return e;});if(c&&r){daily=s.val().meDailyState;renderDaily();showPop(r);}}catch(e){console.error("Claim transaction failed:",e);}}
-    const ranks=[{name:'Iron',min:0,next:1500,img:'iron.png'},{name:'Bronze',min:1500,next:3000,img:'bronze.png'},{name:'Silver',min:3000,next:5000,img:'silver.png'},{name:'Gold',min:5000,next:8000,img:'gold.png'},{name:'Platinum',min:8000,next:10500,img:'plat.png'},{name:'Emerald',min:10500,next:15000,img:'emrald.png'},{name:'Diamond',min:15000,next:20000,img:'diamon.png'},{name:'Master',min:20000,next:30000,img:'master.png'},{name:'Grandmaster',min:30000,next:50000,img:'grandmaster.png'},{name:'Challenger',min:50000,next:Infinity,img:'challenger.png'}];
-    function updateRank(b){const c=[...ranks].reverse().find(r=>b>=r.min);if(!c)return;rankCadre.src=`assets/${c.img}`;if(c.next!==Infinity){rankProgress.style.display='flex';const p=c.min,n=c.next,r=Math.max(0,b-p),t=n-p,a=Math.min(100,r/t*100);progressFill.style.width=`${a}%`;progressText.textContent=`${Math.floor(b)} / ${n}`;}else{rankProgress.style.display='none';}}
-    async function hydrateName(){const f=[tgUser?.first_name||'',tgUser?.last_name||''].filter(Boolean).join(' ').trim()||(tgUser?.first_name||'Player');nameEl.textContent=f;try{const c=await idbGet(`wlc:${userId}:tgName`).catch(()=>null);if(c)nameEl.textContent=c;}catch{}}
-    function init(){try{sessionStorage.setItem('wlc_user_id',String(userId));localStorage.setItem('wlc_user_id',String(userId));}catch{}hydrateName();(async()=>{const c=await idbGet(`wlc:${userId}:balance`).catch(()=>null);if(typeof c==='number'){wlcEl.textContent=fmtWLC(c);updateRank(c);}})();const u=db.ref('users/'+userId);u.child('balance').on('value',s=>{const v=typeof s.val()==='number'?s.val():0;wlcEl.textContent=fmtWLC(v);idbSet(`wlc:${userId}:balance`,v).catch(()=>{});updateRank(v);});u.child('usdtBalance').on('value',s=>{const v=typeof s.val()==='number'?s.val():0;usdtEl.textContent=fmtUSD(v);});document.getElementById('wlc-withdraw').addEventListener('click',()=>alert('Withdraw WLC: Coming soon'));document.getElementById('usdt-withdraw').addEventListener('click',()=>alert('Withdraw USDT: Coming soon'));syncDaily(u).catch(console.warn);attachTileHandlers(u);}
+  <script>
+    // --- CORE SETUP ---
+    const tg = window.Telegram?.WebApp;
+    try { tg?.ready(); } catch (e) { console.error(e); }
+    let tgUser = tg?.initDataUnsafe?.user || null;
+    let userId = tgUser?.id || null;
+
+    function storedId() {
+      try { return sessionStorage.getItem('wlc_user_id') || localStorage.getItem('wlc_user_id'); } 
+      catch { return null; }
+    }
+
+    function ensureUserId(callback) {
+      if (!userId) userId = storedId();
+      if (userId) return callback();
+      setTimeout(() => {
+        tgUser = tg?.initDataUnsafe?.user || tgUser;
+        userId = tgUser?.id || storedId();
+        if (userId) callback();
+        else window.location.replace('welcome.html');
+      }, 60);
+    }
+    
+    // --- UI & FORMATTERS ---
+    const nameEl = document.getElementById('player-name');
+    const wlcEl = document.getElementById('wlc-amount');
+    const usdtEl = document.getElementById('usdt-amount');
+    const achGrid = document.getElementById('ach');
+    const mask = document.getElementById('mask');
+    const popOk = document.getElementById('pop-ok');
+    const rankCadre = document.getElementById('rank-cadre');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const rankProgress = document.querySelector('.rank-progress');
+
+    const fmtWLC = v => Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+    const fmtUSD = v => Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    const msToHMS = ms => {
+      if (ms < 0) ms = 0;
+      const s = Math.floor(ms / 1000) % 60, m = Math.floor(ms / 60000) % 60, h = Math.floor(ms / 3600000);
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    };
+
+    // --- FIREBASE & STATE ---
+    const firebaseConfig = { apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw", authDomain: "wellcoinbotgame.firebaseapp.com", databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app", projectId: "wellcoinbotgame", storageBucket: "wellcoinbotgame.appspot.com", messagingSenderId: "108640533638", appId: "1:108640533638:web:ed07516d96ac38f47f6507" };
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
+    let serverOffset = 0;
+    db.ref(".info/serverTimeOffset").on("value", s => { serverOffset = s.val() || 0; });
+    const now = () => Date.now() + serverOffset;
+    let dailyState = null;
+    let dailyTimerInterval = null;
+
+    // --- DAILY REWARD LOGIC ---
+    function buildGrid() {
+      achGrid.innerHTML = '';
+      const SPECIAL = new Set([7, 15, 24, 30]);
+      for (let i = 1; i <= 30; i++) {
+        const d = document.createElement('div');
+        d.className = 'day' + (SPECIAL.has(i) ? ' special' : '');
+        d.dataset.day = i;
+        d.innerHTML = `<div class="cap"><span class="pin l"></span><span class="pin r"></span>Day ${i}</div><div class="body"><img class="gift-img" src="assets/gift.png" alt="gift"><div class="timer"></div></div><div class="check"><svg viewBox="0 0 64 64"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#9cffc8"/><stop offset="70%" stop-color="#45e27f" stop-opacity="0.9"/><stop offset="100%" stop-color="#00c060" stop-opacity="0.0"/></radialGradient></defs><circle cx="32" cy="32" r="22" fill="url(#g)"></circle><path d="M22 33.5l6 6 14-14" fill="none" stroke="#dfffef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+        achGrid.appendChild(d);
+      }
+    }
+
+    function renderDaily() {
+        if (!dailyState) return;
+        const currentTime = now();
+        const state = dailyState;
+
+        document.querySelectorAll('.day').forEach(tile => {
+            const day = Number(tile.dataset.day);
+            tile.classList.remove('locked', 'claimable', 'claimed');
+            const timerEl = tile.querySelector('.timer');
+            timerEl.style.display = 'none';
+
+            const isClaimed = !!(state.claimedDays && state.claimedDays[day]);
+
+            if (isClaimed) {
+                tile.classList.add('claimed');
+            } else if (day < state.currentDay) {
+                tile.classList.add('locked'); // Missed day
+            } else if (day > state.currentDay) {
+                tile.classList.add('locked'); // Future day
+            } else { // This is the current, active day
+                if (currentTime < state.nextAvailableAt) {
+                    // Cooldown is active, show timer
+                    tile.classList.add('locked');
+                    timerEl.style.display = 'block';
+                    timerEl.textContent = msToHMS(state.nextAvailableAt - currentTime);
+                } else {
+                    // Cooldown is over, it's claimable
+                    tile.classList.add('claimable');
+                }
+            }
+        });
+    }
+
+    async function claim(userRef, day) {
+      const currentTime = now();
+      let reward = null;
+      try {
+        const { committed, snapshot } = await userRef.transaction(user => {
+          if (!user) return user;
+          
+          const t = now();
+          if (!user.meDailyState) {
+            user.meDailyState = { currentDay: 1, lastClaimAt: 0, nextAvailableAt: t, expiresAt: t + 8*3600*1000, claimedDays: {} };
+          }
+          const state = user.meDailyState;
+
+          if (day !== state.currentDay || t < state.nextAvailableAt) {
+            return; // Abort if not current day or on cooldown
+          }
+          
+          const rewardData = rewardFor(day);
+          reward = rewardData;
+
+          if (rewardData.type.startsWith('WLC')) user.balance = (user.balance || 0) + rewardData.amount;
+          if (rewardData.type === 'USDT') user.usdtBalance = (user.usdtBalance || 0) + rewardData.amount;
+          
+          state.claimedDays = state.claimedDays || {};
+          state.claimedDays[String(day)] = t;
+          state.lastClaimAt = t;
+          
+          if (day >= 30) {
+            state.currentDay = 1;
+            state.claimedDays = {};
+          } else {
+            state.currentDay = day + 1;
+          }
+          state.nextAvailableAt = t + 24 * 3600 * 1000;
+          
+          user.meDailyState = state;
+          return user;
+        });
+
+        if (committed && reward) {
+          dailyState = snapshot.val().meDailyState;
+          renderDaily();
+          showPop(reward);
+        }
+      } catch (error) {
+        console.error("Claim transaction failed:", error);
+      }
+    }
+
+    // --- UI INTERACTION ---
+    function showPop(reward) {
+      const popReward = document.getElementById('pop-reward');
+      document.getElementById('pop-title').textContent = 'Congratulations!';
+      document.getElementById('pop-desc').textContent = 'Your daily reward has been added to your balance.';
+      popReward.textContent = reward.label;
+      popReward.className = 'reward';
+      popReward.classList.add(reward.type.startsWith('WLC') ? 'wlc' : 'usdt');
+      mask.classList.add('show');
+    }
+    popOk.addEventListener('click', () => mask.classList.remove('show'));
+
+    // --- RANK SYSTEM ---
+    const ranks = [
+      { name: 'Iron', min: 0, next: 1500, img: 'iron.png' },
+      { name: 'Bronze', min: 1500, next: 3000, img: 'bronze.png' },
+      { name: 'Silver', min: 3000, next: 5000, img: 'silver.png' },
+      { name: 'Gold', min: 5000, next: 8000, img: 'gold.png' },
+      { name: 'Platinum', min: 8000, next: 10500, img: 'plat.png' },
+      { name: 'Emerald', min: 10500, next: 15000, img: 'emrald.png' },
+      { name: 'Diamond', min: 15000, next: 20000, img: 'diamon.png' },
+      { name: 'Master', min: 20000, next: 30000, img: 'master.png' },
+      { name: 'Grandmaster', min: 30000, next: 50000, img: 'grandmaster.png' },
+      { name: 'Challenger', min: 50000, next: Infinity, img: 'challenger.png' }
+    ];
+    function updateRank(balance) {
+      const currentRank = [...ranks].reverse().find(rank => balance >= rank.min);
+      if (!currentRank) return;
+      rankCadre.src = `assets/${currentRank.img}`;
+      if (currentRank.next !== Infinity) {
+        rankProgress.style.display = 'flex';
+        const progress = Math.min(100, ((balance - currentRank.min) / (currentRank.next - currentRank.min)) * 100);
+        progressFill.style.width = `${progress}%`;
+        progressText.textContent = `${Math.floor(balance)} / ${currentRank.next}`;
+      } else {
+        rankProgress.style.display = 'none';
+      }
+    }
+
+    // --- INITIALIZATION ---
+    function init() {
+      try {
+        sessionStorage.setItem('wlc_user_id', String(userId));
+        localStorage.setItem('wlc_user_id', String(userId));
+      } catch {}
+
+      const fullName = [tgUser?.first_name || '', tgUser?.last_name || ''].filter(Boolean).join(' ').trim() || 'Player';
+      nameEl.textContent = fullName;
+      
+      buildGrid();
+      
+      const userRef = db.ref('users/' + userId);
+
+      userRef.on('value', (snapshot) => {
+        const userData = snapshot.val() || {};
+        
+        // Update balances
+        const wlcBalance = userData.balance || 0;
+        const usdtBalance = userData.usdtBalance || 0;
+        wlcEl.textContent = fmtWLC(wlcBalance);
+        usdtEl.textContent = fmtUSD(usdtBalance);
+        updateRank(wlcBalance);
+        
+        // Update daily state
+        dailyState = userData.meDailyState;
+        if (!dailyState) { // First time user
+            const t = now();
+            dailyState = { currentDay: 1, lastClaimAt: 0, nextAvailableAt: t, claimedDays: {} };
+        }
+        renderDaily();
+      });
+
+      if (!dailyTimerInterval) {
+        dailyTimerInterval = setInterval(renderDaily, 1000);
+      }
+      
+      achGrid.addEventListener('click', (e) => {
+        const tile = e.target.closest('.day.claimable');
+        if (tile) claim(userRef, Number(tile.dataset.day));
+      });
+
+      document.getElementById('back-btn').addEventListener('click', () => window.history.back());
+      document.getElementById('cfg-btn').addEventListener('click', () => alert('Settings coming soon.'));
+      document.getElementById('wlc-withdraw').addEventListener('click', () => alert('Withdraw WLC: Coming soon'));
+      document.getElementById('usdt-withdraw').addEventListener('click', () => alert('Withdraw USDT: Coming soon'));
+    }
+
     ensureUserId(init);
   </script>
 </body>
