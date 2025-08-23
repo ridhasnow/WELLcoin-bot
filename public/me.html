@@ -19,9 +19,6 @@
       --shadow-2:0 6px 18px rgba(0,0,0,.40);
       --r-lg:22px; --r-md:14px; --r-sm:10px;
       --t-fast:.12s ease-out; --t-med:.18s ease-out;
-      --rank-bar-bg: #232a39;
-      --rank-bar-fill: linear-gradient(90deg, #ffd36a 0%, #ffe9a8 100%);
-      --rank-bar-shadow: 0 2px 10px #ffd36a33;
     }
 
     html,body{height:100%}
@@ -84,78 +81,75 @@
 
     .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px 18px 16px; }
 
-    /* ===== PROFILE & RANKED ===== */
-    .profile{ display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; margin-bottom:18px; }
+    /* Profile & Rank System */
+    .profile{ display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center; }
+    
+    .rank-display {
+      width: 140px;
+      height: 140px;
+      display: grid;
+      place-items: center;
+    }
+    #rank-cadre {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+    }
+    .rank-progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 80%;
+      max-width: 300px;
+      margin-top: 4px;
+    }
+    .progress-bar {
+      flex-grow: 1;
+      height: 10px;
+      background-color: rgba(0,0,0,0.3);
+      border-radius: 5px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    #progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      border-radius: 5px;
+      transition: width 0.5s ease-out;
+    }
+    #progress-text {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .progress-arrow {
+      font-size: 1.5rem;
+      color: var(--green);
+      text-shadow: 0 0 8px var(--green), 0 0 12px rgba(57, 229, 138, 0.5);
+      animation: pulse-arrow 1.5s infinite alternate;
+    }
+    @keyframes pulse-arrow {
+      from { transform: translateY(2px); opacity: 0.8; }
+      to { transform: translateY(-2px); opacity: 1; }
+    }
+
     .namebox{
       display:inline-flex; flex-direction:column; gap:4px; align-items:center;
-      padding:10px 16px 8px 16px; border-radius: 14px;
+      padding:10px 16px; border-radius: 14px;
       background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
       border:1px solid rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
       min-width: 62%;
-      margin-bottom: 0;
     }
     .nickname{
       font-weight:900; letter-spacing:.2px; font-size:1.15rem;
       background: linear-gradient(90deg, #fff, #dfe9ff);
       -webkit-background-clip: text; background-clip:text; color: transparent;
       text-shadow: 0 1px 2px rgba(0,0,0,.35);
-      margin-bottom: 0;
     }
-    /* Ranked Card */
-    .ranked-box{
-      width: 118px; height: 118px; border-radius: 24px; background: rgba(30,40,55,0.82);
-      box-shadow: 0 2px 22px #000b, 0 0 0 2px #fff2 inset;
-      display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto;
-      position: relative;
-      border: 2px solid #434355;
-    }
-    .ranked-img{
-      width: 86px; height: 86px; object-fit: contain; display: block; margin: 0 auto; z-index:1;
-      filter: drop-shadow(0 4px 14px #2228) saturate(120%);
-      user-select:none; pointer-events:none;
-      transition: filter .13s;
-    }
-    .ranked-title{
-      font-size: 1.04rem; font-weight: bold; color: #ffd36a; margin-top: 3px; margin-bottom: 3px; letter-spacing: 0.4px;
-      text-shadow: 0 1px 6px #000c, 0 0 5px #ffd36a44;
-      line-height: 1.2;
-    }
-    .ranked-progress{
-      width: 100%; margin: 0 auto; margin-top: 5px; max-width: 340px; display: flex; align-items: center; gap: 8px;
-      justify-content: center;
-    }
-    .ranked-bar-wrap{
-      flex: 1 1 0%; height: 14px; background: var(--rank-bar-bg);
-      border-radius: 9px; overflow: hidden; box-shadow: var(--rank-bar-shadow);
-      position: relative;
-      border: 1.5px solid #ffd36a55;
-      min-width: 85px;
-    }
-    .ranked-bar{
-      height: 100%; border-radius: 9px;
-      background: var(--rank-bar-fill);
-      width: 0%; min-width: 0%;
-      box-shadow: 0 0 8px #ffd70055 inset;
-      transition: width .5s cubic-bezier(.4,1.6,.7,1.01);
-      position: absolute; left: 0; top: 0;
-    }
-    .ranked-bar-text{
-      font-size: 0.92rem; font-weight: 900; color: #fffbe0; margin-left: 12px; margin-right: 3px; text-shadow: 0 1px 2px #000c;
-      min-width: 65px; text-align: right;
-      letter-spacing: .05em;
-    }
-    .ranked-arrow{
-      display: inline-flex; align-items: center; margin-left: 3px;
-      font-size: 1.15rem; font-weight:bold; color: #1fef83;
-      filter: drop-shadow(0 2px 6px #19ff9e70);
-      animation: arrow-bounce .88s infinite alternate;
-      margin-top: 0.5px;
-    }
-    @keyframes arrow-bounce{
-      from{ transform:translateY(0) scale(1);}
-      to{   transform:translateY(-3px) scale(1.08);}
-    }
-    .ranked-arrow svg{ width: 18px; height: 18px; vertical-align: middle; fill: #1fef83; filter: drop-shadow(0 0 3px #19ff9e90); }
 
     /* Balances */
     .balances{ margin-top:14px; display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
@@ -193,65 +187,78 @@
       box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    /* Achievements grid */
-    .ach {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(62px, 1fr));
-      gap: 12px;
-      justify-items: stretch;
-      align-items: stretch;
-      width: 100%;
-      max-width: 100%;
-      margin: 0 auto;
-      box-sizing: border-box;
-      overflow-x: hidden;
-    }
-    .day {
-      position: relative;
-      border-radius: 14px;
-      overflow: hidden;
-      user-select: none;
+    /* Achievements grid - 5 per row */
+    .ach{ display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; }
+
+    /* Day card */
+    .day{
+      position:relative; border-radius:14px; overflow:hidden; user-select:none;
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
-      border: 1px solid rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.14);
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
-      display: flex;
-      flex-direction: column;
-      aspect-ratio: 1 / 1;
-      min-width: 0;
-      min-height: 0;
-      max-width: 100%;
-      margin-bottom: 30px;
+      display:flex; flex-direction:column;
+      aspect-ratio: 1 / 1.05; /* أكبر وأكثر وضوحاً */
+      margin-bottom: 30px; /* مساحة للعداد أسفل الكرت */
     }
-    .body {
-      position: relative;
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px 4px 8px 4px;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border-bottom-left-radius: 14px;
-      border-bottom-right-radius: 14px;
-      min-width: 0;
-      min-height: 0;
-      max-width: 100%;
+    .day.special{ transform: scale(1.02); }
+
+    /* Cap (header) */
+    .cap{
+      position:relative; height: clamp(26px, 6.8vw, 34px);
+      display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(180deg, #5aa4ff, #3385ff);
+      color:#eaf3ff; font-weight:900; letter-spacing:.3px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
+      border-bottom: 1px solid rgba(0,0,0,.25);
+      font-size: clamp(12px, 3.2vw, 15px);
+      border-top-left-radius: 14px; border-top-right-radius: 14px; /* لا تخرج خارج البطاقة */
     }
-    .gift-img {
-      width: 70%;
-      max-width: 70px;
-      max-height: 70px;
-      aspect-ratio: 1/1;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto;
+    .day.special .cap{
+      background: linear-gradient(180deg, #ffcb5a, #ffad33);
+      color:#2a1a00; text-shadow: 0 1px 1px rgba(255,255,255,.35);
+    }
+    .cap .pin{ position:absolute; top:-6px; width:10px; height:10px; border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, #fff, #bcd, #566); box-shadow: 0 1px 2px rgba(0,0,0,.5);
+    }
+    .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
+
+    /* Body with gift */
+    .body{
+      position:relative; flex:1; display:flex; align-items:center; justify-content:center;
+      padding:12px 10px 10px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    }
+    .gift-img{
+      width: clamp(72px, 72%, 160px);
+      max-height: 75%; height: auto; object-fit: contain;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
-      pointer-events: none;
-      user-select: none;
+      pointer-events:none;
     }
-    body, html, .wrap, .card, .scroll {
-      overflow-x: hidden !important;
-      box-sizing: border-box;
+
+    /* Timer directly below the card (visually) */
+    .timer{
+      position:absolute; left:0; right:0; bottom:-22px;
+      font-size:12px; font-weight:900; color:#d3ddff; opacity:.98; text-align:center;
+      text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events:none;
     }
+
+    /* States */
+    .day.locked{ filter: brightness(.92) saturate(.9); }
+    .day.claimable{
+      border-color: rgba(255,210,90,.55);
+      box-shadow: 0 10px 24px rgba(255,210,90,.22), inset 0 0 0 1px rgba(255,255,255,.05);
+      animation: pulse 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.36)); } }
+
+    /* Claimed overlay (modern check) */
+    .check{
+      position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
+      opacity:0; transform: scale(.9); transition: opacity .2s ease, transform .2s ease;
+    }
+    .day.claimed .check{ opacity:1; transform: scale(1); }
+    .check svg{ width:56px; height:56px; }
+
+    .spacer{ height:14px; }
+    * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
   </style>
 </head>
 <body>
@@ -270,21 +277,18 @@
 
       <div class="scroll">
         <section class="profile">
+          <div class="rank-display">
+            <img id="rank-cadre" src="assets/ranks/iron.png" alt="Rank">
+          </div>
+          <div class="rank-progress">
+            <div class="progress-bar">
+              <div id="progress-fill"></div>
+            </div>
+            <span id="progress-text">0 / 1500</span>
+            <span class="progress-arrow">↑</span>
+          </div>
           <div class="namebox">
             <div id="player-name" class="nickname">Player</div>
-          </div>
-          <div id="ranked-card" class="ranked-box">
-            <img id="ranked-img" class="ranked-img" src="assets/iron.png" alt="Ranked">
-          </div>
-          <div class="ranked-title" id="ranked-title">Iron</div>
-          <div class="ranked-progress">
-            <div class="ranked-bar-wrap">
-              <div class="ranked-bar" id="ranked-bar"></div>
-            </div>
-            <span class="ranked-bar-text" id="ranked-bar-text">0/1500</span>
-            <span class="ranked-arrow" id="ranked-arrow" title="Upgrade">
-              <svg viewBox="0 0 24 24"><path d="M12 4l-7 8h4v8h6v-8h4z"/></svg>
-            </span>
           </div>
         </section>
 
@@ -363,39 +367,6 @@
 
   <!-- Page Logic -->
   <script>
-    // ==== Ranked Logic ====
-    const RANKS = [
-      {name: 'Iron',      min:    0,  img: 'iron.png',       next: 1500},
-      {name: 'Bronze',    min: 1500,  img: 'bronze.png',     next: 3000},
-      {name: 'Silver',    min: 3000,  img: 'silver.png',     next: 5000},
-      {name: 'Gold',      min: 5000,  img: 'gold.png',       next: 8000},
-      {name: 'Platinum',  min: 8000,  img: 'plat.png',       next: 10500},
-      {name: 'Emrald',    min:10500,  img: 'emrald.png',     next: 15000},
-      {name: 'Diamon',    min:15000,  img: 'diamon.png',     next: 20000},
-      {name: 'Master',    min:20000,  img: 'master.png',     next: 30000},
-      {name: 'Grand Master',min:30000,img: 'grandmaster.png',next: 50000},
-      {name: 'Challenger',min:50000,  img: 'challenger.png', next: null}
-    ];
-
-    function getRankInfo(balance){
-      let cur = RANKS[0];
-      for(let i=RANKS.length-1;i>=0;i--){
-        if(balance >= RANKS[i].min){
-          cur = RANKS[i];
-          break;
-        }
-      }
-      return cur;
-    }
-    function getNextRank(curRank){
-      for(let i=0;i<RANKS.length;i++){
-        if(RANKS[i].name === curRank.name && RANKS[i].next){
-          return RANKS[i+1];
-        }
-      }
-      return null;
-    }
-
     // Telegram + robust userId with fallback to storage
     const tg = window.Telegram?.WebApp;
     try { tg && tg.ready(); } catch(e){}
@@ -432,11 +403,12 @@
     const achGrid= document.getElementById('ach');
     const mask   = document.getElementById('mask');
     const popOk  = document.getElementById('pop-ok');
-    const rankedImg = document.getElementById('ranked-img');
-    const rankedTitle = document.getElementById('ranked-title');
-    const rankedBar = document.getElementById('ranked-bar');
-    const rankedBarText = document.getElementById('ranked-bar-text');
-    const rankedArrow = document.getElementById('ranked-arrow');
+
+    // Rank System UI refs
+    const rankCadre = document.getElementById('rank-cadre');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const rankProgress = document.querySelector('.rank-progress');
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
     cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
@@ -453,7 +425,6 @@
 
     // Formatters
     const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
-    const fmtShort = v => Number(v||0).toLocaleString("en-US",{maximumFractionDigits:0});
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
@@ -684,7 +655,6 @@
           const newW = s.val().balance || 0;
           wlcEl.textContent = fmtWLC(newW);
           idbSet(`wlc:${userId}:balance`, newW).catch(()=>{});
-          updateRankedView(newW);
         } else {
           const newU = s.val().usdtBalance || 0;
           usdtEl.textContent = fmtUSD(newU);
@@ -693,41 +663,49 @@
       }
     }
 
-    // Name hydrate
+    // --- NEW RANK SYSTEM LOGIC ---
+    const ranks = [
+      { name: 'Iron',        min: 0,       next: 1500,    img: 'iron.png' },
+      { name: 'Bronze',      min: 1500,    next: 3000,    img: 'bronze.png' },
+      { name: 'Silver',      min: 3000,    next: 5000,    img: 'silver.png' },
+      { name: 'Gold',        min: 5000,    next: 8000,    img: 'gold.png' },
+      { name: 'Platinum',    min: 8000,    next: 10500,   img: 'plat.png' },
+      { name: 'Emerald',     min: 10500,   next: 15000,   img: 'emrald.png' },
+      { name: 'Diamond',     min: 15000,   next: 20000,   img: 'diamon.png' },
+      { name: 'Master',      min: 20000,   next: 30000,   img: 'master.png' },
+      { name: 'Grandmaster', min: 30000,   next: 50000,   img: 'grandmaster.png' },
+      { name: 'Challenger',  min: 50000,   next: null,    img: 'challenger.png' }
+    ];
+
+    function updateRank(balance) {
+      const currentRank = [...ranks].reverse().find(rank => balance >= rank.min);
+      if (!currentRank) return;
+
+      rankCadre.src = `assets/ranks/${currentRank.img}`;
+      rankCadre.alt = currentRank.name;
+
+      if (currentRank.next !== null) {
+        rankProgress.style.display = 'flex';
+        const prevMin = currentRank.min;
+        const nextMax = currentRank.next;
+        const progress = Math.max(0, balance - prevMin);
+        const totalForLevel = nextMax - prevMin;
+        const percentage = Math.min(100, (progress / totalForLevel) * 100);
+
+        progressFill.style.width = `${percentage}%`;
+        progressText.textContent = `${Math.floor(balance)} / ${nextMax}`;
+      } else {
+        rankProgress.style.display = 'none';
+      }
+    }
+    // --- END RANK SYSTEM LOGIC ---
+
     async function hydrateName(){
-      // Set Name from Telegram object first
       const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
       nameEl.textContent = fullName;
-      // Then try to get a cached name from IndexedDB
-      try {
-        const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
+      try{ const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
         if (cachedName) nameEl.textContent = cachedName;
-      } catch {}
-    }
-
-    function updateRankedView(balance) {
-      const cur = getRankInfo(balance);
-      const next = getNextRank(cur);
-      rankedImg.src = "assets/" + cur.img;
-      rankedTitle.textContent = cur.name;
-      // Progress
-      let nMin = cur.min;
-      let nMax = next ? next.min : cur.min;
-      let nTarget = next ? next.min : cur.min;
-      let barText = "";
-      let percent = 1;
-      if (next) {
-        percent = Math.min((balance - nMin) / (nTarget - nMin), 1);
-        percent = Math.max(percent, 0);
-        barText = `${fmtShort(balance)}/${fmtShort(nTarget)}`;
-        rankedArrow.style.visibility = percent >= 1 ? "hidden" : "visible";
-      } else {
-        percent = 1;
-        barText = `${fmtShort(balance)}/${fmtShort(nTarget)}`;
-        rankedArrow.style.visibility = "hidden";
-      }
-      rankedBar.style.width = (percent * 100) + "%";
-      rankedBarText.textContent = barText;
+      }catch{}
     }
 
     function init(){
@@ -738,13 +716,11 @@
 
       hydrateName();
 
-      updateRankedView(0);
-
       (async ()=>{
         const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
         if (typeof cached === 'number') {
-          wlcEl.textContent = fmtWLC(cached);
-          updateRankedView(cached);
+            wlcEl.textContent = fmtWLC(cached);
+            updateRank(cached); // Initial rank update from cache
         }
       })();
 
@@ -753,7 +729,7 @@
         const v = typeof s.val()==='number' ? s.val() : 0;
         wlcEl.textContent = fmtWLC(v);
         idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
-        updateRankedView(v);
+        updateRank(v); // Update rank on balance change
       });
       db.ref('users/'+userId+'/usdtBalance').on('value', s=>{
         const v = typeof s.val()==='number' ? s.val() : 0;
