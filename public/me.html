@@ -26,14 +26,25 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
       overflow:hidden;
     }
+    
+    /* Prevent image selection/context menu */
+    img, svg {
+      -webkit-user-select: none; /* Safari */
+      -moz-user-select: none; /* Firefox */
+      -ms-user-select: none; /* IE10+ */
+      user-select: none;
+      -webkit-user-drag: none;
+      -webkit-touch-callout: none;
+    }
 
     /* Ambient */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
+      /* Golden glow, shifted left */
       background:
-        radial-gradient(60vw 60vw at 18% 18%, rgba(120,255,160,0.08), transparent 70%),
-        radial-gradient(50vw 50vw at 82% 22%, rgba(255,240,140,0.06), transparent 70%),
-        radial-gradient(70vw 70vw at 50% 86%, rgba(90,180,255,0.07), transparent 70%);
+        radial-gradient(60vw 60vw at 14% 18%, rgba(255,215,90,0.07), transparent 70%),
+        radial-gradient(50vw 50vw at 78% 22%, rgba(255,240,140,0.05), transparent 70%),
+        radial-gradient(70vw 70vw at 46% 86%, rgba(200,160,80,0.06), transparent 70%);
       filter: blur(8px) saturate(110%);
     }
     .wrap{
@@ -205,12 +216,12 @@
 
     /* Cap (header) */
     .cap{
-      position:relative; height: clamp(22px, 5.5vw, 28px); /* Smaller height */
+      position:relative; height: clamp(20px, 5vw, 26px); /* Final Smaller height */
       display:flex; align-items:center; justify-content:center;
       background: linear-gradient(180deg, #5aa4ff, #3385ff);
-      color:#eaf3ff; font-weight:900; letter-spacing:.3px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
+      color:#eaf3ff; font-weight:900; letter-spacing:.2px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
       border-bottom: 1px solid rgba(0,0,0,.25);
-      font-size: clamp(10px, 2.5vw, 13px); /* Smaller font size */
+      font-size: clamp(9px, 2.3vw, 12px); /* Final Smaller font size */
       border-top-left-radius: 14px; border-top-right-radius: 14px;
       padding: 0 2px;
     }
@@ -218,20 +229,22 @@
       background: linear-gradient(180deg, #ffcb5a, #ffad33);
       color:#2a1a00; text-shadow: 0 1px 1px rgba(255,255,255,.35);
     }
-    .cap .pin{ position:absolute; top:-6px; width:10px; height:10px; border-radius:50%;
+    .cap .pin{ position:absolute; top:-5px; width:8px; height:8px; border-radius:50%;
       background: radial-gradient(circle at 30% 30%, #fff, #bcd, #566); box-shadow: 0 1px 2px rgba(0,0,0,.5);
     }
-    .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
+    .cap .pin.l{ left:8px; } .cap .pin.r{ right:8px; }
 
     /* Body with gift */
     .body{
       position:relative; flex:1; display:flex; align-items:center; justify-content:center;
-      padding:8px;
+      padding: 4px;
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      overflow: hidden; /* Ensure gift image is contained */
     }
     .gift-img{
-      width: clamp(65px, 80%, 150px); /* Adjusted size */
-      max-height: 80%; height: auto; object-fit: contain;
+      width: 100%; height: 100%;
+      object-fit: cover; /* Cover the area, maintaining aspect ratio */
+      object-position: center;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
       pointer-events:none;
     }
@@ -311,7 +324,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
         </div>
         <div class="icon-btn" id="cfg-btn" title="Settings" aria-label="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54-1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
         </div>
       </div>
 
@@ -530,24 +543,14 @@
       if (!u) u = {};
       if (!u.meDailyState){
         u.meDailyState = {
-          currentDay: 1,
-          lastClaimAt: 0,
-          nextAvailableAt: tNow,
-          expiresAt: tNow + 8*3600*1000,
-          claimedDays: {},
-          version: 1
+          currentDay: 1, lastClaimAt: 0, nextAvailableAt: tNow,
+          expiresAt: tNow + 8*3600*1000, claimedDays: {}, version: 1
         };
       } else {
         const st = u.meDailyState;
         if (tNow > (st.expiresAt||0) && tNow >= (st.nextAvailableAt||0)){
-          u.meDailyState = {
-            currentDay: st.currentDay, // Keep current day if expired
-            lastClaimAt: st.lastClaimAt,
-            nextAvailableAt: tNow,
-            expiresAt: tNow + 8*3600*1000,
-            claimedDays: st.claimedDays,
-            version: (st.version||1)
-          };
+          st.nextAvailableAt = tNow;
+          st.expiresAt = tNow + 8*3600*1000;
         }
       }
       if (typeof u.usdtBalance !== 'number') u.usdtBalance = 0;
@@ -559,7 +562,7 @@
       if (day===7)  return { type:'WLC', amount:0.1,  label:'+0.100000 WLC' };
       if (day===15) return { type:'USDT',amount:0.2,  label:'+0.200 USDT' };
       if (day===24) return { type:'WLC', amount:1.0,  label:'+1.000000 WLC' };
-      if (day===30) return { type:'WLC', amount:2.0, label:'+2.000000 WLC' }; // Medal logic can be added here
+      if (day===30) return { type:'WLC', amount:2.0, label:'+2.000000 WLC' };
       const pool = [
         {type:'WLC', amount:0.000005, label:'+0.000005 WLC'},
         {type:'WLC', amount:0.00004,  label:'+0.000040 WLC'},
@@ -571,39 +574,32 @@
 
     function renderDaily(){
       if (!daily) return;
-      const t = now(), st = daily;
+      const t = now();
+      const st = daily;
       document.querySelectorAll('.day').forEach(tile=>{
         const day = Number(tile.dataset.day);
         tile.classList.remove('locked','claimable','claimed');
         const timerEl = tile.querySelector('.timer');
-        timerEl.style.display='none'; timerEl.textContent='';
+        timerEl.style.display='none';
 
         const isClaimed = !!(st.claimedDays && st.claimedDays[day]);
-        
+
         if (isClaimed) {
-            tile.classList.add('claimed');
-            return;
-        }
-        
-        if (day < st.currentDay) {
-            tile.classList.add('locked'); // Past and not claimed
-            return;
-        }
-
-        if (day > st.currentDay) {
+          tile.classList.add('claimed');
+        } else if (day < st.currentDay) {
+          tile.classList.add('claimed'); // Treat past, unclaimed days as claimed/missed
+        } else if (day === st.currentDay) {
+          if (t < st.nextAvailableAt) {
             tile.classList.add('locked');
-            return;
-        }
-
-        // This is the current, active day (day === st.currentDay)
-        if (t < st.nextAvailableAt) { // Not available yet, show timer
-            tile.classList.add('locked');
-            timerEl.style.display='block';
+            timerEl.style.display = 'block';
             timerEl.textContent = msToHMS(st.nextAvailableAt - t);
-        } else if (t <= st.expiresAt) { // Available to be claimed
+          } else if (t <= st.expiresAt) {
             tile.classList.add('claimable');
-        } else { // Expired
-            tile.classList.add('locked');
+          } else {
+            tile.classList.add('locked'); // Expired
+          }
+        } else { // day > st.currentDay
+          tile.classList.add('locked');
         }
       });
     }
@@ -632,11 +628,9 @@
     }
 
     function showPop(reward){
-      const popTitle = document.getElementById('pop-title');
-      const popDesc = document.getElementById('pop-desc');
       const popReward = document.getElementById('pop-reward');
-      popTitle.textContent = 'Congratulations!';
-      popDesc.textContent = 'Your daily reward has been added to your balance.';
+      document.getElementById('pop-title').textContent = 'Congratulations!';
+      document.getElementById('pop-desc').textContent = 'Your daily reward has been added to your balance.';
       popReward.textContent = reward.label;
       popReward.className = 'reward'; // Reset class
       if (reward.type.startsWith('WLC')) {
@@ -660,17 +654,13 @@
 
     async function syncDaily(userRef){
       const tNow = now();
-      await userRef.transaction(u=>{
-        return ensureStateInit(u, tNow);
-      });
+      await userRef.transaction(u => ensureStateInit(u, tNow));
       const snap = await userRef.once('value');
       daily = snap.val().meDailyState;
       renderDaily();
 
       if (!timerId){
-        timerId = setInterval(()=>{
-          renderDaily();
-        }, 1000);
+        timerId = setInterval(renderDaily, 1000);
       }
     }
 
@@ -678,16 +668,16 @@
       const tNow = now(); let reward = null;
       try {
         const { committed, snapshot } = await userRef.transaction(u=>{
-          if (!u) return u; // Should not happen if init is correct
+          if (!u) return u;
           u = ensureStateInit(u, tNow);
           const st = u.meDailyState;
 
           if (day !== st.currentDay || tNow < st.nextAvailableAt || tNow > st.expiresAt) {
-            return; // Abort transaction by returning undefined
+            return; // Abort transaction
           }
 
           const rw = rewardFor(day);
-          reward = rw; // Store reward to show in popup
+          reward = rw;
 
           if (rw.type.startsWith('WLC')) u.balance = (u.balance||0) + rw.amount;
           if (rw.type==='USDT')         u.usdtBalance = (u.usdtBalance||0) + rw.amount;
@@ -696,7 +686,7 @@
           st.claimedDays[String(day)] = tNow;
           st.lastClaimAt = tNow;
 
-          if (day >= 30){ // Reset cycle
+          if (day >= 30){
             st.currentDay = 1;
             st.claimedDays = {};
           } else {
@@ -737,7 +727,6 @@
       const currentRank = [...ranks].reverse().find(rank => balance >= rank.min);
       if (!currentRank) return;
 
-      // Make sure you have the rank images in the "assets" folder.
       rankCadre.src = `assets/${currentRank.img}`;
 
       if (currentRank.next !== Infinity) {
@@ -751,7 +740,6 @@
         progressFill.style.width = `${percentage}%`;
         progressText.textContent = `${Math.floor(balance)} / ${nextMax}`;
       } else {
-        // For Challenger rank, hide the progress bar
         rankProgress.style.display = 'none';
       }
     }
@@ -777,7 +765,7 @@
         const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
         if (typeof cached === 'number') {
             wlcEl.textContent = fmtWLC(cached);
-            updateRank(cached); // Initial rank update from cache
+            updateRank(cached);
         }
       })();
 
@@ -786,7 +774,7 @@
         const v = typeof s.val()==='number' ? s.val() : 0;
         wlcEl.textContent = fmtWLC(v);
         idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
-        updateRank(v); // Update rank on balance change
+        updateRank(v);
       });
       db.ref('users/'+userId+'/usdtBalance').on('value', s=>{
         const v = typeof s.val()==='number' ? s.val() : 0;
