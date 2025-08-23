@@ -40,7 +40,7 @@
     /* Ambient */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
-      /* Golden glow, shifted left */
+      /* Golden glow, shifted left as requested */
       background:
         radial-gradient(60vw 60vw at 14% 18%, rgba(255,215,90,0.07), transparent 70%),
         radial-gradient(50vw 50vw at 78% 22%, rgba(255,240,140,0.05), transparent 70%),
@@ -105,7 +105,6 @@
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      /* --- Professional Glow Effect --- */
       filter: drop-shadow(0 0 8px rgba(120, 180, 255, 0.35)) drop-shadow(0 0 20px rgba(120, 180, 255, 0.2));
     }
     .rank-progress {
@@ -210,18 +209,18 @@
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
       display:flex; flex-direction:column;
       aspect-ratio: 1 / 1.05;
-      margin-bottom: 30px; /* Space for timer */
+      margin-bottom: 30px;
     }
     .day.special{ transform: scale(1.02); }
 
     /* Cap (header) */
     .cap{
-      position:relative; height: clamp(20px, 5vw, 26px); /* Final Smaller height */
+      position:relative; height: clamp(20px, 5vw, 26px);
       display:flex; align-items:center; justify-content:center;
       background: linear-gradient(180deg, #5aa4ff, #3385ff);
       color:#eaf3ff; font-weight:900; letter-spacing:.2px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
       border-bottom: 1px solid rgba(0,0,0,.25);
-      font-size: clamp(9px, 2.3vw, 12px); /* Final Smaller font size */
+      font-size: clamp(9px, 2.3vw, 12px);
       border-top-left-radius: 14px; border-top-right-radius: 14px;
       padding: 0 2px;
     }
@@ -239,14 +238,13 @@
       position:relative; flex:1; display:flex; align-items:center; justify-content:center;
       padding: 4px;
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      overflow: hidden; /* Ensure gift image is contained */
+      overflow: hidden;
     }
     .gift-img{
       width: 100%; height: 100%;
-      object-fit: cover; /* Cover the area, maintaining aspect ratio */
+      object-fit: cover;
       object-position: center;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
-      pointer-events:none;
     }
 
     /* Timer directly below the card (visually) */
@@ -549,6 +547,8 @@
       } else {
         const st = u.meDailyState;
         if (tNow > (st.expiresAt||0) && tNow >= (st.nextAvailableAt||0)){
+           // If the claim window for the current day is missed, don't reset everything.
+           // Just move the availability window to now.
           st.nextAvailableAt = tNow;
           st.expiresAt = tNow + 8*3600*1000;
         }
@@ -587,16 +587,17 @@
         if (isClaimed) {
           tile.classList.add('claimed');
         } else if (day < st.currentDay) {
-          tile.classList.add('claimed'); // Treat past, unclaimed days as claimed/missed
+          tile.classList.add('claimed'); // Treat past, unclaimed days as missed.
         } else if (day === st.currentDay) {
-          if (t < st.nextAvailableAt) {
-            tile.classList.add('locked');
-            timerEl.style.display = 'block';
-            timerEl.textContent = msToHMS(st.nextAvailableAt - t);
-          } else if (t <= st.expiresAt) {
+          if (t >= st.nextAvailableAt && t <= st.expiresAt) {
             tile.classList.add('claimable');
           } else {
-            tile.classList.add('locked'); // Expired
+            tile.classList.add('locked');
+            if (t < st.nextAvailableAt) {
+              // This is the correct place for the timer for the *current* day if it's not available yet.
+              timerEl.style.display = 'block';
+              timerEl.textContent = msToHMS(st.nextAvailableAt - t);
+            }
           }
         } else { // day > st.currentDay
           tile.classList.add('locked');
@@ -632,7 +633,7 @@
       document.getElementById('pop-title').textContent = 'Congratulations!';
       document.getElementById('pop-desc').textContent = 'Your daily reward has been added to your balance.';
       popReward.textContent = reward.label;
-      popReward.className = 'reward'; // Reset class
+      popReward.className = 'reward';
       if (reward.type.startsWith('WLC')) {
           popReward.classList.add('wlc');
       } else if (reward.type === 'USDT') {
@@ -673,7 +674,7 @@
           const st = u.meDailyState;
 
           if (day !== st.currentDay || tNow < st.nextAvailableAt || tNow > st.expiresAt) {
-            return; // Abort transaction
+            return;
           }
 
           const rw = rewardFor(day);
@@ -709,7 +710,6 @@
       }
     }
 
-    // --- RANK SYSTEM LOGIC ---
     const ranks = [
       { name: 'Iron',        min: 0,       next: 1500,    img: 'iron.png' },
       { name: 'Bronze',      min: 1500,    next: 3000,    img: 'bronze.png' },
@@ -743,7 +743,6 @@
         rankProgress.style.display = 'none';
       }
     }
-    // --- END RANK SYSTEM LOGIC ---
 
     async function hydrateName(){
       const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
