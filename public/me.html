@@ -193,10 +193,65 @@
       box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    /* Achievements grid - 5 per row */
-    .ach{ display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; }
-
-    /* Day card ... (باقي الستايل كما كان) */
+    /* Achievements grid */
+    .ach {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(62px, 1fr));
+      gap: 12px;
+      justify-items: stretch;
+      align-items: stretch;
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+    .day {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      user-select: none;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 6px 18px rgba(0,0,0,.40);
+      display: flex;
+      flex-direction: column;
+      aspect-ratio: 1 / 1;
+      min-width: 0;
+      min-height: 0;
+      max-width: 100%;
+      margin-bottom: 30px;
+    }
+    .body {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px 8px 4px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-bottom-left-radius: 14px;
+      border-bottom-right-radius: 14px;
+      min-width: 0;
+      min-height: 0;
+      max-width: 100%;
+    }
+    .gift-img {
+      width: 70%;
+      max-width: 70px;
+      max-height: 70px;
+      aspect-ratio: 1/1;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
+      pointer-events: none;
+      user-select: none;
+    }
+    body, html, .wrap, .card, .scroll {
+      overflow-x: hidden !important;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -629,6 +684,7 @@
           const newW = s.val().balance || 0;
           wlcEl.textContent = fmtWLC(newW);
           idbSet(`wlc:${userId}:balance`, newW).catch(()=>{});
+          updateRankedView(newW);
         } else {
           const newU = s.val().usdtBalance || 0;
           usdtEl.textContent = fmtUSD(newU);
@@ -682,7 +738,6 @@
 
       hydrateName();
 
-      // ملاحظة: عند بدء الصفحة نضع أقل رانك (iron) مؤقتاً
       updateRankedView(0);
 
       (async ()=>{
