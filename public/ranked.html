@@ -108,31 +108,29 @@
 
     .rows{ display:flex; flex-direction:column; gap:10px; }
 
-    /* OKX-like pill row: deep black glass with subtle lime accent */
+    /* OKX-like pill row: deep black glass, no extra top glow */
     .row{
       position:relative;
       display:grid; grid-template-columns: 66px 52px 1fr auto; align-items:center; gap:10px;
-      padding: 10px 14px;               /* كان 12px 14px => قلّلنا الارتفاع */
+      padding: 10px 14px;               /* reduced height */
       border-radius: 999px;             /* pill look */
       background:
-        /* subtle lime aura from left */
-        radial-gradient(120% 160% at 0% 50%, rgba(150,255,110,.10) 0%, rgba(0,0,0,0) 55%),
         /* glass sheen */
         linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
         /* dark base */
         linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
       border:1px solid var(--okx-border);
       box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
-      min-height: 50px;                 /* كان 62px => -20% تقريباً */
+      min-height: 50px;                 /* ~ -20% from 62px */
       transition: transform var(--t-fast), filter var(--t-fast), box-shadow var(--t-fast);
       overflow:hidden;
     }
-    /* إزالة اللمعان العلوي فوق كل المستطيلات */
+    /* remove any overlay gloss */
     .row::after{ content:none; }
 
     .row:hover{ transform: translateY(-1px); filter: saturate(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.52); }
 
-    /* Golden left-to-right tint for Top 3 (progressively stronger) */
+    /* Golden left-to-right tint for Top 3 (no green accent) */
     .row.top-3{
       border-color: rgba(255,210,90,.35);
       background:
@@ -189,14 +187,14 @@
       font-size:.85rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
-    /* Amount (lime, OKX-like) */
+    /* Amount (lime) */
     .amt{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-weight:900; letter-spacing:.3px; color: var(--lime);
       text-shadow: 0 0 14px rgba(125,255,163,.10), 0 0 4px rgba(182,255,106,.12);
     }
 
-    /* Self highlight: keep edge glow only for player's row */
+    /* Self highlight: edge glow only for player's row */
     .row.self{
       outline: 2px solid rgba(120,255,200,.35);
       box-shadow: 0 0 0 2px rgba(120,255,200,.18) inset, 0 12px 28px rgba(120,255,200,.10);
