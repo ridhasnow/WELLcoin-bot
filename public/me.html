@@ -47,7 +47,7 @@
       padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
     }
 
-    /* Main glass card - golden tint and slight left shift */
+    /* Main glass card - golden tint and slight left shift (2px) */
     .card{
       width:min(96vw, 620px);
       height:min(96vh, 900px);
@@ -60,7 +60,7 @@
       backdrop-filter: blur(12px) saturate(130%);
       position:relative; overflow:hidden; display:flex; flex-direction:column;
       margin-inline:auto;
-      transform: translateX(-4px);
+      transform: translateX(-2px);
     }
     .card::before{
       content:""; position:absolute; inset:0; border-radius: var(--r-lg);
@@ -114,7 +114,7 @@
       width:120px; height:120px; object-fit:contain;
       image-rendering: -webkit-optimize-contrast;
       filter: drop-shadow(0 0 16px rgba(120,200,255,.36)) drop-shadow(0 8px 22px rgba(0,0,0,.55));
-      z-index:1;
+      z-index:1; pointer-events:none; user-select:none;
     }
     .rank-badge-wrap::after{
       content:""; position:absolute; inset:6px; border-radius:18px;
@@ -200,25 +200,26 @@
       box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    /* Achievements grid - 5 per row (strict) */
+    /* Achievements grid - 5 per row (responsive clamps to keep look across devices) */
     .ach{
       display:grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap:12px;
     }
+    @media (max-width: 360px){
+      .ach{ gap:10px; }
+    }
 
-    /* Day card - modern, image full-bleed inside body, timer visible below */
+    /* Day card - taller to fully reveal image, timer below the card */
     .day{
       position:relative; border-radius:14px;
-      /* IMPORTANT: visible to show the timer below the card */
-      overflow:visible;
-      user-select:none;
+      overflow:visible; user-select:none;
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
       border:1px solid rgba(255,255,255,.14);
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
       display:flex; flex-direction:column;
-      aspect-ratio: 1 / 1.06;
-      margin-bottom: 30px; /* space for timer */
+      aspect-ratio: 1 / 1.2; /* taller => more depth for image */
+      margin-bottom: 38px; /* space for timer below */
     }
     .day.special{
       border-color: rgba(255,210,90,.45);
@@ -244,27 +245,26 @@
     }
     .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
 
-    /* Body becomes an edge-to-edge thumbnail holder */
+    /* Body holds the image fully (no crop) */
     .body{
       position:relative; flex:1;
-      display:block;
-      padding:0; /* full-bleed */
+      display:flex; align-items:center; justify-content:center;
+      padding:8px; /* breathing room to show image fully */
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;
-      overflow:hidden; /* keep image clipped to rounded corners */
+      overflow:hidden; /* maintain rounded corners */
     }
     .gift-img{
-      position:absolute; inset:0;
       width:100%; height:100%;
-      object-fit: cover; /* fill card area elegantly */
+      object-fit: contain; /* show entire image */
       filter: saturate(110%) contrast(102%) drop-shadow(0 4px 8px rgba(0,0,0,.25));
-      pointer-events:none;
-      transform: scale(1.02); /* slight zoom to avoid edge gaps */
+      pointer-events:none; user-select:none;
+      -webkit-user-drag:none;
     }
 
-    /* Timer directly below the card (visually) */
+    /* Timer sits BELOW the card (not inside) */
     .timer{
-      position:absolute; left:0; right:0; bottom:-22px;
+      position:absolute; left:0; right:0; bottom:-24px;
       font-size:12px; font-weight:900; color:#d3ddff; opacity:.98; text-align:center;
       text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events:none;
     }
@@ -320,12 +320,19 @@
     .confetti{
       position:fixed; inset:0; z-index:22; pointer-events:none;
     }
+
+    /* Gate overlay */
+    .gate{
+      position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.85);
+      color:#ffe9a8; font-weight:900; letter-spacing:.3px; text-align:center; padding:24px;
+    }
   </style>
 </head>
 <body>
   <div class="glow"></div>
 
-  <div class="wrap">
+  <div class="wrap" id="app-wrap">
     <div class="card">
       <div class="topbar">
         <div class="icon-btn" id="back-btn" title="Back" aria-label="Back">
@@ -342,7 +349,7 @@
           <div class="ranked">
             <div id="rank-name" class="rank-name">Iron</div>
             <div class="rank-badge-wrap" aria-live="polite">
-              <img id="rank-badge" class="rank-badge" src="assets/iron.png" alt="Rank badge">
+              <img id="rank-badge" class="rank-badge" src="assets/iron.png" alt="Rank badge" draggable="false">
             </div>
             <div class="rank-progress">
               <div class="progress-bar" aria-label="Rank progress">
@@ -405,6 +412,7 @@
     </div>
   </div>
   <canvas id="confetti" class="confetti"></canvas>
+  <div id="gate" class="gate">Please open this page from Telegram App.</div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -438,6 +446,21 @@
 
   <!-- Page Logic -->
   <script>
+    // Light obfuscation / reduce console noise in production
+    (function harden(){
+      try{
+        // Disable right-click, image drag, and common dev hotkeys
+        document.addEventListener('contextmenu', e=>e.preventDefault());
+        document.addEventListener('dragstart', e=>e.preventDefault(), {passive:false});
+        document.addEventListener('keydown', e=>{
+          const k = e.key?.toLowerCase();
+          if (k==='f12' || (e.ctrlKey&&e.shiftKey&&(k==='i'||k==='j'||k==='c')) || (e.ctrlKey && k==='u')) { e.preventDefault(); e.stopPropagation(); }
+        }, true);
+        // Mute console in production surfaces
+        ['log','info','debug'].forEach(m=>{ try{ console[m]=()=>{} }catch{} });
+      }catch{}
+    })();
+
     // Telegram + robust userId with fallback to storage
     const tg = window.Telegram?.WebApp;
     try { tg && tg.ready(); } catch(e){}
@@ -451,13 +474,31 @@
     }
     function ensureUserId(cb){
       if (!userId) userId = storedId();
-      if (userId) return cb();
+      if (userId) { authOK = true; return cb(); }
       setTimeout(()=>{
         tgUser = tg?.initDataUnsafe?.user || tgUser;
         userId = tgUser?.id || storedId();
-        if (userId) cb(); else window.location.replace('welcome.html');
-      }, 60);
+        if (userId) { authOK = true; cb(); }
+        else {
+          showGate(true);
+          try{ window.location.replace('welcome.html'); }catch{}
+        }
+      }, 80);
     }
+
+    // Gate display for unauthorized access
+    let authOK = false;
+    function showGate(show){
+      const g = document.getElementById('gate');
+      g.style.display = show ? 'flex' : 'none';
+      const app = document.getElementById('app-wrap');
+      app.style.filter = show ? 'blur(6px) brightness(.6)' : '';
+      app.style.pointerEvents = show ? 'none' : '';
+    }
+    // Early hard gate if not in Telegram
+    setTimeout(()=>{
+      if (!authOK && !(tg && tg.initDataUnsafe && tg.initDataUnsafe.user)) showGate(true);
+    }, 200);
 
     // IndexedDB helpers
     const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
@@ -503,7 +544,7 @@
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:5, maximumFractionDigits:5});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
-    // Build achievements tiles (visual only)
+    // Build achievements tiles (visual only) - timer moved OUTSIDE body to sit below card
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -518,9 +559,9 @@
             Day ${i}
           </div>
           <div class="body">
-            <img class="gift-img" src="assets/gift.png" alt="gift">
-            <div class="timer" style="display:none"></div>
+            <img class="gift-img" src="assets/gift.png" alt="gift" draggable="false">
           </div>
+          <div class="timer" style="display:none"></div>
           <div class="check">
             <svg viewBox="0 0 64 64" aria-hidden="true">
               <defs>
@@ -804,7 +845,6 @@
       return null;
     }
     async function hydrateName(){
-      // 1) Try Firebase snapshot
       try{
         const snap = await db.ref('users/'+userId).once('value');
         const u = snap.val();
@@ -812,7 +852,6 @@
         if (n){ nameEl.textContent = n; try{ await idbSet(`wlc:${userId}:tgName`, n); }catch{} }
       }catch{}
 
-      // 2) Try cached IndexedDB
       try{
         const cachedName = await idbGet(`wlc:${userId}:tgName`);
         if (cachedName && !/^\s*$/.test(String(cachedName))) {
@@ -820,7 +859,6 @@
         }
       }catch{}
 
-      // 3) Try Telegram user
       const tgFull = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim();
       const tgHandle = tgUser?.username ? '@'+tgUser.username : '';
       const fallback = tgFull || tgHandle || 'Player';
@@ -828,7 +866,6 @@
         nameEl.textContent = fallback;
       }
 
-      // 4) React to future Firebase updates (displayName/nickname changes)
       try{
         db.ref('users/'+userId).on('value', s=>{
           const nu = s.val();
@@ -864,7 +901,7 @@
         const v = typeof s.val()==='number' ? s.val() : 0;
         wlcEl.textContent = fmtWLC(v);
         idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
-        updateRankUI(v); // live update rank (promote/demote)
+        updateRankUI(v);
       });
       db.ref('users/'+userId+'/usdtBalance').on('value', s=>{
         const v = typeof s.val()==='number' ? s.val() : 0;
