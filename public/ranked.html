@@ -19,7 +19,6 @@
       --okx-border:rgba(255,255,255,.10);
 
       --lime:#b6ff6a;     /* أرقام على اليمين */
-      --lime-2:#7dffa3;   /* لمعان طفيف */
       --gold-a:rgba(255,210,90,.26);
       --gold-b:rgba(255,210,90,.16);
       --gold-c:rgba(255,210,90,.10);
@@ -109,11 +108,12 @@
 
     .rows{ display:flex; flex-direction:column; gap:10px; }
 
-    /* OKX-like pill row: deep black glass with subtle lime accent and glossy top */
+    /* OKX-like pill row: deep black glass with subtle lime accent */
     .row{
       position:relative;
       display:grid; grid-template-columns: 66px 52px 1fr auto; align-items:center; gap:10px;
-      padding: 12px 14px; border-radius: 999px; /* pill look */
+      padding: 10px 14px;               /* كان 12px 14px => قلّلنا الارتفاع */
+      border-radius: 999px;             /* pill look */
       background:
         /* subtle lime aura from left */
         radial-gradient(120% 160% at 0% 50%, rgba(150,255,110,.10) 0%, rgba(0,0,0,0) 55%),
@@ -123,17 +123,13 @@
         linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
       border:1px solid var(--okx-border);
       box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
-      min-height: 62px;
+      min-height: 50px;                 /* كان 62px => -20% تقريباً */
       transition: transform var(--t-fast), filter var(--t-fast), box-shadow var(--t-fast);
       overflow:hidden;
     }
-    .row::after{
-      /* glossy streak on the top-left curve */
-      content:""; position:absolute; left:10px; right:50%; top:4px; height:10px; pointer-events:none;
-      background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0));
-      border-radius: 999px;
-      filter: blur(6px); opacity:.35;
-    }
+    /* إزالة اللمعان العلوي فوق كل المستطيلات */
+    .row::after{ content:none; }
+
     .row:hover{ transform: translateY(-1px); filter: saturate(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.52); }
 
     /* Golden left-to-right tint for Top 3 (progressively stronger) */
@@ -200,7 +196,7 @@
       text-shadow: 0 0 14px rgba(125,255,163,.10), 0 0 4px rgba(182,255,106,.12);
     }
 
-    /* Self highlight with edge glow */
+    /* Self highlight: keep edge glow only for player's row */
     .row.self{
       outline: 2px solid rgba(120,255,200,.35);
       box-shadow: 0 0 0 2px rgba(120,255,200,.18) inset, 0 12px 28px rgba(120,255,200,.10);
