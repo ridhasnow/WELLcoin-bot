@@ -210,7 +210,7 @@
       .ach{ gap:10px; }
     }
 
-    /* Day card - taller to fully reveal image, timer below the card */
+    /* Day card - adjusted height; image now fills without visible gaps using blurred cover backdrop */
     .day{
       position:relative; border-radius:14px;
       overflow:visible; user-select:none;
@@ -218,7 +218,7 @@
       border:1px solid rgba(255,255,255,.14);
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
       display:flex; flex-direction:column;
-      aspect-ratio: 1 / 1.2; /* taller => more depth for image */
+      aspect-ratio: 1 / 1.18;
       margin-bottom: 38px; /* space for timer below */
     }
     .day.special{
@@ -245,28 +245,35 @@
     }
     .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
 
-    /* Body holds the image fully (no crop) */
+    /* Body holds the image; blurred cover backdrop removes perceived gaps without cropping the main image */
     .body{
       position:relative; flex:1;
-      display:flex; align-items:center; justify-content:center;
-      padding:8px; /* breathing room to show image fully */
+      display:block;
+      padding:0; /* no inner gaps */
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;
-      overflow:hidden; /* maintain rounded corners */
+      overflow:hidden;
+    }
+    .body::before{
+      content:"";
+      position:absolute; inset:0; z-index:0;
+      background: center / cover no-repeat url('assets/gift.png');
+      filter: blur(16px) brightness(.95) saturate(110%);
+      transform: scale(1.08); /* bleed edges to ensure no edges show */
     }
     .gift-img{
+      position:absolute; inset:0; z-index:1;
       width:100%; height:100%;
-      object-fit: contain; /* show entire image */
-      filter: saturate(110%) contrast(102%) drop-shadow(0 4px 8px rgba(0,0,0,.25));
-      pointer-events:none; user-select:none;
-      -webkit-user-drag:none;
+      object-fit: contain; /* keep entire image visible */
+      filter: saturate(112%) contrast(103%) drop-shadow(0 4px 8px rgba(0,0,0,.25));
+      pointer-events:none; user-select:none; -webkit-user-drag:none;
     }
 
-    /* Timer sits BELOW the card (not inside) */
+    /* Timer sits BELOW the card (single time line, no 'In') */
     .timer{
       position:absolute; left:0; right:0; bottom:-24px;
       font-size:12px; font-weight:900; color:#d3ddff; opacity:.98; text-align:center;
-      text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events:none;
+      text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events:none; white-space:nowrap;
     }
 
     /* States */
@@ -544,7 +551,7 @@
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:5, maximumFractionDigits:5});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
-    // Build achievements tiles (visual only) - timer moved OUTSIDE body to sit below card
+    // Build achievements tiles (visual only) - timer below card
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -660,7 +667,9 @@
           tile.classList.add('claimable');
         } else if (t < st.nextAvailableAt){
           tile.classList.add('locked');
-          timerEl.style.display=''; timerEl.textContent = 'In ' + msToHMS(st.nextAvailableAt - t);
+          timerEl.style.display='';
+          // Only time, no 'In'
+          timerEl.textContent = msToHMS(st.nextAvailableAt - t);
         } else {
           tile.classList.add('locked');
         }
