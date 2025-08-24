@@ -11,21 +11,23 @@
       --text:#eef3ff;
       --muted:#aeb8d0;
 
-      --glass-1: rgba(255,255,255,0.08);
-      --glass-2: rgba(255,255,255,0.05);
-      --glass-border: rgba(255,255,255,0.14);
+      /* Glass + OKX-like pill palette */
+      --okx-base-1:#161a1f;
+      --okx-base-2:#0e1216;
+      --okx-glass-top:rgba(255,255,255,.06);
+      --okx-glass-btm:rgba(255,255,255,.035);
+      --okx-border:rgba(255,255,255,.10);
 
-      --accent:#c8ff7a; /* أصفر مخضر للرصيد */
-      --accent2:#7cffb5;
-
-      --gold-a: rgba(255,210,90,.26); /* لامع */
-      --gold-b: rgba(255,190,60,.12); /* أقل */
-      --gold-c: rgba(255,220,120,.18);
+      --lime:#b6ff6a;     /* أرقام على اليمين */
+      --lime-2:#7dffa3;   /* لمعان طفيف */
+      --gold-a:rgba(255,210,90,.26);
+      --gold-b:rgba(255,210,90,.16);
+      --gold-c:rgba(255,210,90,.10);
 
       --shadow-1:0 12px 40px rgba(0,0,0,.55);
       --shadow-2:0 6px 18px rgba(0,0,0,.40);
 
-      --r-lg:22px; --r-md:14px; --r-sm:10px;
+      --r-lg:22px; --r-md:16px; --r-sm:12px;
 
       --t-fast:.14s ease-out; --t-med:.20s ease-out;
     }
@@ -37,6 +39,7 @@
       overflow:hidden;
     }
 
+    /* Ambient */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
@@ -46,6 +49,7 @@
       filter: blur(8px) saturate(110%);
     }
 
+    /* Page shell */
     .wrap{ position:relative; z-index:1; width:100%; height:100%; display:flex; align-items:stretch; justify-content:center; }
     .card{
       width:100vw; height:100vh; transform: translateX(-2px);
@@ -66,6 +70,7 @@
       -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.9;
     }
 
+    /* Topbar (back only) */
     .topbar{
       position:absolute; inset:0 0 auto 0; height:56px;
       display:flex; align-items:center; justify-content:flex-start;
@@ -104,61 +109,70 @@
 
     .rows{ display:flex; flex-direction:column; gap:10px; }
 
-    /* أسلوب المستطيل الزجاجي الأساسي */
+    /* OKX-like pill row: deep black glass with subtle lime accent and glossy top */
     .row{
       position:relative;
-      display:grid; grid-template-columns: 56px 52px 1fr auto; align-items:center; gap:10px;
-      padding: 10px 12px; border-radius: 14px;
+      display:grid; grid-template-columns: 66px 52px 1fr auto; align-items:center; gap:10px;
+      padding: 12px 14px; border-radius: 999px; /* pill look */
       background:
-        linear-gradient(180deg, var(--glass-1), var(--glass-2));
-      border:1px solid var(--glass-border);
-      box-shadow: 0 6px 18px rgba(0,0,0,.35);
-      min-height: 64px;
+        /* subtle lime aura from left */
+        radial-gradient(120% 160% at 0% 50%, rgba(150,255,110,.10) 0%, rgba(0,0,0,0) 55%),
+        /* glass sheen */
+        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
+        /* dark base */
+        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
+      border:1px solid var(--okx-border);
+      box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
+      min-height: 62px;
       transition: transform var(--t-fast), filter var(--t-fast), box-shadow var(--t-fast);
       overflow:hidden;
     }
     .row::after{
-      /* لمعان زجاج خفيف */
-      content:""; position:absolute; inset:0; pointer-events:none;
-      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      mix-blend-mode: screen;
+      /* glossy streak on the top-left curve */
+      content:""; position:absolute; left:10px; right:50%; top:4px; height:10px; pointer-events:none;
+      background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0));
+      border-radius: 999px;
+      filter: blur(6px); opacity:.35;
     }
-    .row:hover{ transform: translateY(-1px); filter: saturate(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.42); }
+    .row:hover{ transform: translateY(-1px); filter: saturate(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.52); }
 
-    /* تدرّج ذهبي من اليسار لليمين للثلاثة الأوائل بشفافية زجاجية */
-    .row.top-1{
-      border-color: rgba(255,210,90,.65);
-      box-shadow: 0 18px 32px rgba(255,210,90,.28), 0 6px 16px rgba(0,0,0,.40);
+    /* Golden left-to-right tint for Top 3 (progressively stronger) */
+    .row.top-3{
+      border-color: rgba(255,210,90,.35);
       background:
-        linear-gradient(90deg, var(--gold-a) 0%, rgba(255,210,90,.10) 60%, rgba(255,210,90,.05) 100%),
-        linear-gradient(180deg, var(--glass-1), var(--glass-2));
+        linear-gradient(90deg, var(--gold-c) 0%, rgba(255,210,90,.06) 55%, rgba(255,210,90,0) 100%),
+        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
+        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
     }
     .row.top-2{
-      border-color: rgba(255,210,90,.50);
-      box-shadow: 0 14px 28px rgba(255,210,90,.24), 0 6px 16px rgba(0,0,0,.38);
+      border-color: rgba(255,210,90,.45);
       background:
-        linear-gradient(90deg, rgba(255,210,90,.20) 0%, rgba(255,210,90,.10) 60%, rgba(255,210,90,.05) 100%),
-        linear-gradient(180deg, var(--glass-1), var(--glass-2));
+        linear-gradient(90deg, var(--gold-b) 0%, rgba(255,210,90,.08) 60%, rgba(255,210,90,0) 100%),
+        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
+        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
     }
-    .row.top-3{
-      border-color: rgba(255,210,90,.42);
-      box-shadow: 0 12px 24px rgba(255,210,90,.20), 0 6px 16px rgba(0,0,0,.36);
+    .row.top-1{
+      border-color: rgba(255,210,90,.60);
+      box-shadow: 0 18px 32px rgba(255,210,90,.28), 0 6px 16px rgba(0,0,0,.48);
       background:
-        linear-gradient(90deg, rgba(255,210,90,.16) 0%, rgba(255,210,90,.08) 60%, rgba(255,210,90,.04) 100%),
-        linear-gradient(180deg, var(--glass-1), var(--glass-2));
+        linear-gradient(90deg, var(--gold-a) 0%, rgba(255,210,90,.12) 62%, rgba(255,210,90,0) 100%),
+        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
+        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
     }
 
+    /* Left chunk: rank number + badge */
     .pos{
-      display:flex; align-items:center; justify-content:flex-start; gap:6px;
+      display:flex; align-items:center; justify-content:flex-start; gap:8px;
       font-weight:900; color:#eaf3ff; letter-spacing:.3px; opacity:.98;
     }
     .rank-badge{
-      width:26px; height:26px; object-fit:contain; display:block;
+      width:28px; height:28px; object-fit:contain; display:block;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,.45));
     }
 
+    /* Avatar */
     .avatar{
-      width:44px; height:44px; border-radius:12px; overflow:hidden;
+      width:44px; height:44px; border-radius:14px; overflow:hidden;
       display:grid; place-items:center;
       background: #0b0f16; border:1px solid rgba(255,255,255,.12);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
@@ -169,6 +183,7 @@
       text-shadow: 0 2px 6px rgba(0,0,0,.6);
     }
 
+    /* Names */
     .name{ display:flex; flex-direction:column; gap:2px; min-width:0; }
     .name .label{
       font-weight:900; letter-spacing:.25px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -178,22 +193,23 @@
       font-size:.85rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
+    /* Amount (lime, OKX-like) */
     .amt{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-weight:900; letter-spacing:.3px; color: var(--accent);
-      text-shadow: 0 0 10px rgba(180,255,120,.10);
+      font-weight:900; letter-spacing:.3px; color: var(--lime);
+      text-shadow: 0 0 14px rgba(125,255,163,.10), 0 0 4px rgba(182,255,106,.12);
     }
 
-    /* تمييز اللاعب نفسه مع إشعاع حواف 3D */
+    /* Self highlight with edge glow */
     .row.self{
       outline: 2px solid rgba(120,255,200,.35);
-      box-shadow: 0 0 0 2px rgba(120,255,200,.20) inset, 0 12px 28px rgba(120,255,200,.10);
+      box-shadow: 0 0 0 2px rgba(120,255,200,.18) inset, 0 12px 28px rgba(120,255,200,.10);
     }
     .row.self::before{
-      content:""; position:absolute; inset:-2px; border-radius:16px; pointer-events:none;
-      background: radial-gradient(140% 60% at 10% 50%, rgba(120,255,200,.25), transparent 60%),
-                  radial-gradient(140% 60% at 90% 50%, rgba(120,255,200,.18), transparent 60%);
-      filter: blur(6px); opacity:.9;
+      content:""; position:absolute; inset:-2px; border-radius:999px; pointer-events:none;
+      background: radial-gradient(120% 60% at 10% 50%, rgba(120,255,200,.30), transparent 60%),
+                  radial-gradient(120% 60% at 90% 50%, rgba(120,255,200,.22), transparent 60%);
+      filter: blur(7px); opacity:.9;
       animation: glow 1.6s ease-in-out infinite alternate;
     }
     @keyframes glow{
@@ -202,9 +218,11 @@
     }
 
     .empty{
-      margin: 14px 6px; padding: 14px; border-radius: 12px;
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid rgba(255,255,255,.12);
+      margin: 14px 6px; padding: 14px; border-radius: 14px;
+      background:
+        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
+        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
+      border:1px solid var(--okx-border);
       color:#bfd0ff; text-align:center; letter-spacing:.3px;
     }
 
@@ -238,6 +256,7 @@
 
   <div id="gate" class="gate">Please open this page from Telegram App.</div>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -318,7 +337,7 @@
       window.location.href = url;
     }
 
-    // Rank thresholds and badges (نفس الموجودة في me.html)
+    // Rank thresholds and badges (consistent with me.html)
     const RANKS = [
       { name:'Iron',         key:'iron',        min:     0, img:'iron.png' },
       { name:'Bronze',       key:'bronze',      min:  1500, img:'bronze.png' },
@@ -365,10 +384,8 @@
     }
 
     let firstFocusDone = false;
-    let latestList = [];
 
     function renderList(list){
-      latestList = list;
       rowsEl.innerHTML = '';
       if (!list.length){
         emptyEl.style.display = '';
@@ -415,7 +432,6 @@
 
       rowsEl.appendChild(frag);
 
-      // ركّز الكاميرا على صف اللاعب مباشرة عند الدخول لأول مرة أو إذا لم يتم التثبيت بعد
       if (!firstFocusDone){
         focusSelfRow(true);
         firstFocusDone = true;
@@ -425,11 +441,9 @@
     function focusSelfRow(smooth=true){
       const myRow = rowsEl.querySelector(`.row[data-id="${String(userId)}"]`);
       if (!myRow) return;
-      // scrollIntoView مع block:center لتوسيط الصف
       try{
         myRow.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
       }catch{
-        // fallback manual
         const r = myRow.getBoundingClientRect();
         const s = scrollEl.getBoundingClientRect();
         const delta = (r.top + r.height/2) - (s.top + s.height/2);
@@ -437,22 +451,20 @@
       }
     }
 
-    // Live leaderboard subscription WITHOUT limit (يعرض كل اللاعبين)
+    // Live leaderboard (no limit)
     let unsub = null;
     function subscribeLeaderboard(){
-      const q = db.ref('users').orderByChild('balance'); // لا limit
+      const q = db.ref('users').orderByChild('balance');
       const handler = (snap)=>{
         const val = snap.val() || {};
         const arr = [];
         for (const id in val){
           const u = val[id] || {};
           const bal = typeof u.balance === 'number' ? u.balance : 0;
-          // إدراج الجميع (حتى صفر)، لكن يمكن تجاهل إن أردت لاحقاً
           const nm = bestName(u);
           const uname = bestUsername(u);
           arr.push({ id, user:u, balance: bal, name: nm, username: uname });
         }
-        // Sort desc by balance
         arr.sort((a,b)=> b.balance - a.balance);
         renderList(arr);
       };
@@ -470,12 +482,10 @@
 
     ensureUserId(init);
 
-    // إعادة التركيز على اللاعب إذا عاد للصفحة من الخلفية
     document.addEventListener('visibilitychange', ()=>{
       if (!document.hidden) focusSelfRow(true);
     });
 
-    // تنظيف
     window.addEventListener('beforeunload', ()=>{ try{ unsub && unsub(); }catch{} });
   </script>
 </body>
