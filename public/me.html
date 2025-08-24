@@ -8,21 +8,26 @@
   <style>
     :root{
       --bg:#05070b;
-      --glass:rgba(20,24,32,0.62);
-      --glass-border:rgba(150,175,250,0.20);
+      --glass:rgba(250,230,170,0.10);
+      --glass-2:rgba(250,235,190,0.08);
+      --glass-border:rgba(255,228,150,0.28);
       --text:#eef3ff;
       --muted:#b9c3d9;
+
       --gold:#ffd36a; --gold-2:#ffe9a8;
       --green:#39e58a; --green-2:#9dffd0;
       --blue:#70a0ff; --danger:#ff6b6b;
+
       --shadow-1:0 12px 40px rgba(0,0,0,.55);
       --shadow-2:0 6px 18px rgba(0,0,0,.40);
+
       --r-lg:22px; --r-md:14px; --r-sm:10px;
       --t-fast:.12s ease-out; --t-med:.18s ease-out;
     }
 
     html,body{height:100%}
-    body{ margin:0; background:#000; color:var(--text);
+    body{
+      margin:0; background:#000; color:var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
       overflow:hidden;
     }
@@ -41,23 +46,28 @@
       display:flex; align-items:center; justify-content:center;
       padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
     }
+
+    /* Main glass card - golden tint and slight left shift */
     .card{
       width:min(96vw, 620px);
       height:min(96vh, 900px);
-      background: linear-gradient(180deg, rgba(30,36,50,0.50), rgba(18,22,30,0.58));
+      background:
+        linear-gradient(180deg, var(--glass), var(--glass-2)),
+        linear-gradient(180deg, rgba(30,36,50,0.30), rgba(18,22,30,0.36));
       border-radius: var(--r-lg);
       border: 1px solid var(--glass-border);
       box-shadow: var(--shadow-1);
-      backdrop-filter: blur(10px) saturate(120%);
+      backdrop-filter: blur(12px) saturate(130%);
       position:relative; overflow:hidden; display:flex; flex-direction:column;
       margin-inline:auto;
+      transform: translateX(-4px);
     }
     .card::before{
       content:""; position:absolute; inset:0; border-radius: var(--r-lg);
       padding:1px; background:
-        linear-gradient(135deg, rgba(255,220,120,.28), rgba(120,190,255,.22), rgba(80,255,170,.25));
+        linear-gradient(135deg, rgba(255,230,150,.35), rgba(120,190,255,.22), rgba(80,255,170,.25));
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.85;
+      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.9;
     }
 
     /* Topbar */
@@ -82,21 +92,64 @@
     .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px 18px 16px; }
 
     /* Profile */
-    .profile{ display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; }
-    .avatar-halo{ width:122px; height:122px; border-radius:50%; position:relative; display:grid; place-items:center; filter:saturate(115%); }
-    .ring{ position:absolute; inset:-5px; border-radius:50%;
-      background: conic-gradient(from 0deg, #8b5, #d99, #e9c, #d99, #8b5);
-      animation: spin 8.8s linear infinite; box-shadow: 0 0 14px rgba(255,220,140,.25);
+    .profile{
+      display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;
     }
-    @keyframes spin{ to{ transform: rotate(360deg);} }
-    .ring::after{ content:""; position:absolute; inset:4px; border-radius:50%;
-      background: radial-gradient(140% 140% at 50% 25%, rgba(255,255,255,.16), rgba(0,0,0,.16));
+
+    /* Rank area (replaces avatar/bronze frame) */
+    .ranked{
+      width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;
     }
-    .avatar{
-      position:relative; z-index:1; width:110px; height:110px; border-radius:50%;
-      object-fit:cover; border:2px solid rgba(255,255,255,.18); background:#121418;
-      box-shadow: 0 10px 26px rgba(0,0,0,.55);
+    .rank-name{
+      font-weight:900; letter-spacing:.3px; font-size:1.06rem;
+      background: linear-gradient(90deg, #e6f1ff, #fff);
+      -webkit-background-clip: text; background-clip:text; color: transparent;
+      text-shadow: 0 1px 2px rgba(0,0,0,.35);
     }
+    .rank-badge-wrap{
+      position:relative; width:140px; height:140px; display:grid; place-items:center;
+      filter:saturate(115%);
+    }
+    .rank-badge{
+      width:120px; height:120px; object-fit:contain;
+      image-rendering: -webkit-optimize-contrast;
+      filter: drop-shadow(0 0 16px rgba(120,200,255,.36)) drop-shadow(0 8px 22px rgba(0,0,0,.55));
+      z-index:1;
+    }
+    .rank-badge-wrap::after{
+      content:""; position:absolute; inset:6px; border-radius:18px;
+      background: radial-gradient(70% 70% at 50% 50%, rgba(120,200,255,.20), rgba(0,0,0,0));
+      filter: blur(6px);
+    }
+
+    .rank-progress{
+      width:min(92%, 460px); display:flex; flex-direction:column; gap:8px; align-items:stretch;
+    }
+    .progress-bar{
+      height:14px; border-radius:999px; overflow:hidden; position:relative;
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.30);
+    }
+    .progress-bar .fill{
+      height:100%; width:0%; border-radius:999px;
+      background: linear-gradient(90deg, #45e27f, #9dffd0);
+      box-shadow: 0 0 14px rgba(60,220,130,.35);
+      transition: width .35s ease;
+    }
+    .progress-meta{
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      font-weight:900; letter-spacing:.25px; color:#dff7ea;
+      text-shadow: 0 1px 2px rgba(0,0,0,.35);
+    }
+    .progress-meta .up{
+      width:14px; height:14px; display:inline-block;
+      filter: drop-shadow(0 0 6px rgba(80,255,160,.55));
+    }
+    .next-need{
+      font-size:.88rem; color:#cfe0ff; text-align:center; opacity:.95;
+    }
+
     .namebox{
       display:inline-flex; flex-direction:column; gap:4px; align-items:center;
       padding:10px 16px; border-radius: 14px;
@@ -157,8 +210,8 @@
       border:1px solid rgba(255,255,255,.14);
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
       display:flex; flex-direction:column;
-      aspect-ratio: 1 / 1.05; /* أكبر وأكثر وضوحاً */
-      margin-bottom: 30px; /* مساحة للعداد أسفل الكرت */
+      aspect-ratio: 1 / 1.05;
+      margin-bottom: 30px; /* space for timer below */
     }
     .day.special{ transform: scale(1.02); }
 
@@ -170,7 +223,7 @@
       color:#eaf3ff; font-weight:900; letter-spacing:.3px; text-shadow: 0 1px 2px rgba(0,0,0,.35);
       border-bottom: 1px solid rgba(0,0,0,.25);
       font-size: clamp(12px, 3.2vw, 15px);
-      border-top-left-radius: 14px; border-top-right-radius: 14px; /* لا تخرج خارج البطاقة */
+      border-top-left-radius: 14px; border-top-right-radius: 14px;
     }
     .day.special .cap{
       background: linear-gradient(180deg, #ffcb5a, #ffad33);
@@ -219,6 +272,37 @@
 
     .spacer{ height:14px; }
     * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+
+    /* Popup (Top-up/Claim confirmation) */
+    .mask{
+      position:fixed; inset:0; z-index:20; display:none; align-items:center; justify-content:center;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px) saturate(120%);
+    }
+    .pop{
+      width:min(92vw, 460px);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:18px; padding:18px 16px; box-shadow: 0 14px 40px rgba(0,0,0,.55);
+      text-align:center; color:#eef3ff; position:relative; overflow:hidden;
+    }
+    .pop h3{ margin:6px 0 6px; font-size:1.2rem; letter-spacing:.3px; }
+    .pop .desc{ margin:6px 0 10px; color:#d5e1ff; }
+    .pop .reward{
+      margin:10px auto 14px; font-weight:900; letter-spacing:.5px;
+      color:#45e27f; text-shadow: 0 1px 2px rgba(0,0,0,.45);
+    }
+    .pop .ok{
+      border:none; border-radius:12px; padding:10px 18px; cursor:pointer;
+      background: linear-gradient(90deg, #45e27f, #9dffd0); color:#0b2117;
+      font-weight:900; letter-spacing:.3px; box-shadow: 0 8px 22px rgba(60,220,130,.35);
+      transition: transform var(--t-fast), filter var(--t-fast);
+    }
+    .pop .ok:active{ transform: translateY(1px) scale(0.99); }
+
+    /* Confetti canvas */
+    .confetti{
+      position:fixed; inset:0; z-index:22; pointer-events:none;
+    }
   </style>
 </head>
 <body>
@@ -237,10 +321,26 @@
 
       <div class="scroll">
         <section class="profile">
-          <div class="avatar-halo">
-            <div class="ring"></div>
-            <img id="avatar" class="avatar" alt="avatar">
+          <!-- Ranked area (badge + progress) -->
+          <div class="ranked">
+            <div id="rank-name" class="rank-name">Iron</div>
+            <div class="rank-badge-wrap" aria-live="polite">
+              <img id="rank-badge" class="rank-badge" src="assets/iron.png" alt="Rank badge">
+            </div>
+            <div class="rank-progress">
+              <div class="progress-bar" aria-label="Rank progress">
+                <div id="rank-progress-fill" class="fill" style="width:0%"></div>
+              </div>
+              <div class="progress-meta">
+                <span id="rank-progress-text">0 / 1500</span>
+                <svg class="up" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#39e58a" d="M12 4l6 8h-4v8h-4v-8H6z"/>
+                </svg>
+              </div>
+              <div id="rank-next-need" class="next-need">Need 1500 WLC to reach Bronze</div>
+            </div>
           </div>
+
           <div class="namebox">
             <div id="player-name" class="nickname">Player</div>
           </div>
@@ -348,28 +448,23 @@
     function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
     function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
 
-    // Stored avatar URL keys (in case index persisted one)
-    function getStoredAvatarUrl(){
-      const keys = ['wlc_tg_photo_url','tg_photo_url','wlc_avatar_url','avatar_url'];
-      for (const k of keys){
-        try{
-          const s = sessionStorage.getItem(k); if (s) return s;
-          const l = localStorage.getItem(k);  if (l) return l;
-        }catch{}
-      }
-      return null;
-    }
-
     // UI refs
     const backBtn = document.getElementById('back-btn');
     const cfgBtn  = document.getElementById('cfg-btn');
-    const avatarEl = document.getElementById('avatar');
+
     const nameEl = document.getElementById('player-name');
     const wlcEl  = document.getElementById('wlc-amount');
     const usdtEl = document.getElementById('usdt-amount');
     const achGrid= document.getElementById('ach');
     const mask   = document.getElementById('mask');
     const popOk  = document.getElementById('pop-ok');
+
+    // Rank UI refs
+    const rankNameEl = document.getElementById('rank-name');
+    const rankBadgeEl= document.getElementById('rank-badge');
+    const rankFillEl = document.getElementById('rank-progress-fill');
+    const rankTextEl = document.getElementById('rank-progress-text');
+    const rankNeedEl = document.getElementById('rank-next-need');
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
     cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
@@ -385,6 +480,7 @@
     }
 
     // Formatters
+    const fmtInt = v => Number(v||0).toLocaleString("en-US",{maximumFractionDigits:0});
     const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
@@ -616,6 +712,7 @@
           const newW = s.val().balance || 0;
           wlcEl.textContent = fmtWLC(newW);
           idbSet(`wlc:${userId}:balance`, newW).catch(()=>{});
+          updateRankUI(newW);
         } else {
           const newU = s.val().usdtBalance || 0;
           usdtEl.textContent = fmtUSD(newU);
@@ -624,46 +721,64 @@
       }
     }
 
-    // Avatar + Name hydrate (robust chain)
-    let avatarObjectUrl = null;
-    async function hydrateAvatarAndName(){
+    // Rank definitions and UI update
+    const RANKS = [
+      { name:'Iron',         key:'iron',        min:     0, img:'iron.png' },
+      { name:'Bronze',       key:'bronze',      min:  1500, img:'bronze.png' },
+      { name:'Silver',       key:'silver',      min:  3000, img:'silver.png' },
+      { name:'Gold',         key:'gold',        min:  5000, img:'gold.png' },
+      { name:'Platinum',     key:'plat',        min:  8000, img:'plat.png' },
+      { name:'Emerald',      key:'emrald',      min: 10500, img:'emrald.png' },
+      { name:'Diamond',      key:'diamon',      min: 15000, img:'diamon.png' },
+      { name:'Master',       key:'master',      min: 20000, img:'master.png' },
+      { name:'Grand Master', key:'grandmaster', min: 30000, img:'grandmaster.png' },
+      { name:'Challenger',   key:'challenger',  min: 50000, img:'challenger.png' }
+    ];
+    function computeRank(balance){
+      const b = Math.max(0, Number(balance||0));
+      let idx = 0;
+      for (let i=0;i<RANKS.length;i++){ if (b >= RANKS[i].min) idx = i; }
+      const cur = RANKS[idx];
+      const next = RANKS[idx+1] || null;
+      const min = cur.min;
+      const nextMin = next ? next.min : null;
+      let pct = 1;
+      if (nextMin !== null){
+        pct = Math.max(0, Math.min(1, (b - min) / (nextMin - min)));
+      }
+      return { b, cur, next, min, nextMin, pct };
+    }
+    function updateRankUI(balance){
+      const { b, cur, next, min, nextMin, pct } = computeRank(balance);
+      rankNameEl.textContent = cur.name;
+      const imgPath = `assets/${cur.img}`;
+      if (rankBadgeEl.getAttribute('src') !== imgPath){
+        rankBadgeEl.setAttribute('src', imgPath);
+        rankBadgeEl.setAttribute('alt', `${cur.name} badge`);
+      }
+      rankFillEl.style.width = `${Math.round(pct*100)}%`;
+
+      if (nextMin === null){
+        rankTextEl.textContent = `${fmtInt(b)} / ${fmtInt(cur.min)}+`;
+        rankNeedEl.textContent = `Max Rank • ${cur.name}`;
+      } else {
+        rankTextEl.textContent = `${fmtInt(b)} / ${fmtInt(nextMin)}`;
+        const need = Math.max(0, nextMin - b);
+        rankNeedEl.textContent = need > 0
+          ? `Need ${fmtInt(need)} WLC to reach ${next.name}`
+          : `Ready to advance to ${next.name}!`;
+      }
+    }
+
+    // Name only hydrate
+    function hydrateName(){
       const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
       nameEl.textContent = fullName;
-
-      try{ const cachedName = await idbGet(`wlc:${userId}:tgName`).catch(()=>null);
-        if (cachedName) nameEl.textContent = cachedName;
-      }catch{}
-
-      // 1) IndexedDB blob
       try{
-        const cachedBlob = await idbGet(`wlc:${userId}:tgAvatarBlob`).catch(()=>null);
-        if (cachedBlob instanceof Blob){
-          avatarObjectUrl = URL.createObjectURL(cachedBlob);
-          avatarEl.src = avatarObjectUrl; return;
-        }
+        sessionStorage.setItem(`wlc:${userId}:tgName`, fullName);
+        localStorage.setItem(`wlc:${userId}:tgName`, fullName);
       }catch{}
-
-      // 2) Firebase user avatarUrl/photoUrl/profile/avatarUrl
-      try{
-        const paths = ['avatarUrl','photoUrl','profile/avatarUrl'];
-        for (const p of paths){
-          const snap = await db.ref(`users/${userId}/${p}`).once('value');
-          const url = snap.val();
-          if (url && typeof url === 'string'){ avatarEl.src = url; return; }
-        }
-      }catch{}
-
-      // 3) Stored URL in storage
-      const storedUrl = getStoredAvatarUrl();
-      if (storedUrl){ avatarEl.src = storedUrl; return; }
-
-      // 4) Telegram photo_url
-      if (tgUser?.photo_url){ avatarEl.src = tgUser.photo_url; return; }
-
-      // 5) Fallback
-      avatarEl.src = 'assets/player1.png';
     }
-    window.addEventListener('beforeunload', ()=>{ if (avatarObjectUrl){ try{ URL.revokeObjectURL(avatarObjectUrl); }catch{} } });
 
     function init(){
       try{
@@ -671,11 +786,16 @@
         localStorage.setItem('wlc_user_id', String(userId));
       }catch{}
 
-      hydrateAvatarAndName();
+      hydrateName();
 
       (async ()=>{
         const cached = await idbGet(`wlc:${userId}:balance`).catch(()=>null);
-        if (typeof cached === 'number') wlcEl.textContent = fmtWLC(cached);
+        if (typeof cached === 'number'){
+          wlcEl.textContent = fmtWLC(cached);
+          updateRankUI(cached);
+        } else {
+          updateRankUI(0);
+        }
       })();
 
       const userRef = db.ref('users/'+userId);
@@ -683,6 +803,7 @@
         const v = typeof s.val()==='number' ? s.val() : 0;
         wlcEl.textContent = fmtWLC(v);
         idbSet(`wlc:${userId}:balance`, v).catch(()=>{});
+        updateRankUI(v); // live update rank (promote/demote)
       });
       db.ref('users/'+userId+'/usdtBalance').on('value', s=>{
         const v = typeof s.val()==='number' ? s.val() : 0;
