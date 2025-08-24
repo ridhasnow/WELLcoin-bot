@@ -6,14 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <meta name="referrer" content="no-referrer">
-  <!-- CSP خفيفة لا تكسر WebView + Firebase. يمكنك تشديدها على السيرفر إن أردت. -->
+  <!-- CSP tuned for Telegram WebView + Firebase (allows HTTPS and WSS). Tighten further on server if needed. -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' https: data: blob:;
     script-src 'self' 'unsafe-inline' https://www.gstatic.com;
     style-src 'self' 'unsafe-inline';
     img-src 'self' https: data: blob:;
     font-src 'self' https: data:;
-    connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app https://*.googleusercontent.com;
+    connect-src 'self' https: wss: https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app https://*.googleusercontent.com;
     object-src 'none';
     base-uri 'self';
   ">
@@ -210,7 +210,7 @@
       text-shadow: 0 0 14px rgba(125,255,163,.10), 0 0 4px rgba(182,255,106,.12);
       font-size: clamp(11px, 3.4vw, 13px);
       justify-self: end; text-align: right;
-      min-width: 88px; /* مساحة أقل = مساحة أكبر للاسم */
+      min-width: 88px;
     }
 
     /* تمييز مستطيل اللاعب فقط بإشعاع حواف */
@@ -292,7 +292,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    // منع بعض التفاعلات
+    // منع بعض التفاعلات (لا يكسر المكتبات)
     (function harden(){
       try{
         document.addEventListener('contextmenu', e=>e.preventDefault());
@@ -307,31 +307,18 @@
     const gateEl  = document.getElementById('gate');
     const rowsEl  = document.getElementById('rows');
     const emptyEl = document.getElementById('empty');
-    const scrollEl= document.getElementById('scroll');
     const backBtn = document.getElementById('back-btn');
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); window.location.href='index.html'; });
 
     // Telegram-only gating
-    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 
     function showGate(show){
       gateEl.style.display = show ? 'flex' : 'none';
-      const app = document.getElementById('app-wrap');
-      app.style.filter = show ? 'blur(6px) brightness(.6)' : '';
-      app.style.pointerEvents = show ? 'none' : '';
-    }
-
-    function waitForTelegramUser(timeoutMs=2500){
-      return new Promise(resolve=>{
-        const start = Date.now();
-        const tick = ()=>{
-          const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
-          if (u || Date.now() - start > timeoutMs) return resolve(u);
-          setTimeout(tick, 50);
-        };
-        tick();
-      });
+      const appWrap = document.getElementById('app-wrap');
+      appWrap.style.filter = show ? 'blur(6px) brightness(.6)' : '';
+      appWrap.style.pointerEvents = show ? 'none' : '';
     }
 
     // Firebase config
@@ -391,24 +378,6 @@
     }
 
     let unsub = null;
-    function subscribeLeaderboard(userId){
-      const q = db.ref('users').orderByChild('balance');
-      const handler = (snap)=>{
-        const val = snap.val() || {};
-        const arr = [];
-        for (const id in val){
-          const u = val[id] || {};
-          const bal = typeof u.balance === 'number' ? u.balance : 0;
-          const nm = bestName(u);
-          const uname = bestUsername(u);
-          arr.push({ id, user:u, balance: bal, name: nm, username: uname });
-        }
-        arr.sort((a,b)=> b.balance - a.balance);
-        renderList(arr, userId);
-      };
-      q.on('value', handler);
-      unsub = ()=> q.off('value', handler);
-    }
 
     function renderList(list, userId){
       rowsEl.innerHTML = '';
@@ -449,18 +418,43 @@
         frag.appendChild(row);
       });
       rowsEl.appendChild(frag);
+    }
 
-      // تركيز صف اللاعب إن وُجد
-      if (userId){
-        const myRow = rowsEl.querySelector(`.row[data-id="${String(userId)}"]`);
-        if (myRow){
-          try{ myRow.scrollIntoView({behavior:'smooth', block:'center'}); }catch{}
+    function subscribeLeaderboard(userId){
+      const q = db.ref('users').orderByChild('balance');
+      const handler = (snap)=>{
+        try{
+          const val = snap.val() || {};
+          const arr = [];
+          for (const id in val){
+            const u = val[id] || {};
+            const bal = typeof u.balance === 'number' ? u.balance : 0;
+            const nm = bestName(u);
+            const uname = (function(){
+              const p = u.profile || {};
+              const n = u.username || p.username || '';
+              return n ? ('@'+String(n).replace(/^@+/,'')) : '';
+            })();
+            arr.push({ id, user:u, balance: bal, name: nm, username: uname });
+          }
+          arr.sort((a,b)=> b.balance - a.balance);
+          renderList(arr, userId);
+        }catch(e){
+          console.error('Render error:', e);
+          emptyEl.textContent = 'Error rendering leaderboard.'; emptyEl.style.display='';
         }
-      }
+      };
+      const onErr = (err)=>{
+        console.error('Firebase error:', err);
+        emptyEl.textContent = (err && err.code) ? ('Database error: '+err.code) : 'Database error';
+        emptyEl.style.display = '';
+      };
+      q.on('value', handler, onErr);
+      unsub = ()=> q.off('value', handler);
     }
 
     async function boot(){
-      // إن لم تكن داخل تيليجرام، اقفل
+      // يجب أن تعمل داخل تيليجرام فقط
       if (!tg){
         showGate(true);
         return;
@@ -468,11 +462,15 @@
       try{ tg.ready(); }catch{}
       showGate(false);
 
-      // انتظر user من تيليجرام قليلاً (بدون منع التشغيل لو ما وصل)
-      const u = await waitForTelegramUser(2500);
-      const userId = u && u.id ? String(u.id) : null;
+      // حاول الحصول على userId (ليس إجباريًا للعرض)
+      let userId = null;
+      try{ userId = tg.initDataUnsafe && tg.initDataUnsafe.user ? String(tg.initDataUnsafe.user.id) : null; }catch{}
+      // لو تأخر، انتظر قليلًا ثم تابع
+      if (!userId){
+        await new Promise(r=>setTimeout(r, 300));
+        try{ userId = tg.initDataUnsafe && tg.initDataUnsafe.user ? String(tg.initDataUnsafe.user.id) : null; }catch{}
+      }
 
-      // ابدأ الاشتراك
       subscribeLeaderboard(userId);
     }
 
