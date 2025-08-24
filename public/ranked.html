@@ -159,6 +159,9 @@
     .rank-badge{
       width:28px; height:28px; object-fit:contain; display:block;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,.45));
+      /* منع الضغط المطوّل/النسخ */
+      -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; -webkit-user-drag:none;
+      pointer-events:none;
     }
 
     /* الصورة */
@@ -167,21 +170,39 @@
       display:grid; place-items:center;
       background: #0b0f16; border:1px solid rgba(255,255,255,.12);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      /* منع الضغط المطوّل داخل الصورة */
+      -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;
     }
-    .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .avatar img{
+      width:100%; height:100%; object-fit:cover; display:block;
+      /* منع الضغط المطوّل/الحفظ */
+      -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; -webkit-user-drag:none;
+      pointer-events:none;
+    }
     .avatar .letter{
       font-weight:900; color:#ffe59e; letter-spacing:.3px;
       text-shadow: 0 2px 6px rgba(0,0,0,.6);
+      -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;
+      pointer-events:none;
     }
 
-    /* الاسم واسم المستخدم */
+    /* الاسم واسم المستخدم — عرض كامل حتى سطرين، بلا نقاط ... */
     .name{ display:flex; flex-direction:column; gap:2px; min-width:0; }
     .name .label{
-      font-weight:900; letter-spacing:.25px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      color:#eef3ff;
+      font-weight:900; letter-spacing:.25px; color:#eef3ff;
+      font-size: clamp(13px, 3.6vw, 15px);
+      line-height:1.15;
+      white-space:normal; text-overflow:clip;
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2;
+      overflow:hidden; word-break:break-word; hyphens:auto;
     }
     .name .muted{
-      font-size:.85rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      color:var(--muted);
+      font-size: clamp(12px, 3.2vw, 13px);
+      line-height:1.1;
+      white-space:normal; text-overflow:clip;
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2;
+      overflow:hidden; word-break:break-word; hyphens:auto;
     }
 
     /* قيمة الرصيد على اليمين (ليموني مثل الصورة) */
@@ -261,6 +282,15 @@
           const k = e.key?.toLowerCase();
           if (k==='f12' || (e.ctrlKey&&e.shiftKey&&(k==='i'||k==='j'||k==='c')) || (e.ctrlKey && k==='u')) { e.preventDefault(); e.stopPropagation(); }
         }, true);
+        // منع الضغط المطوّل على الصور داخل الويب فيوز (iOS/Android غالباً)
+        ['touchstart','touchend','touchcancel'].forEach(ev=>{
+          document.addEventListener(ev, (e)=>{
+            const t = e.target;
+            if (t && (t.tagName==='IMG' || t.closest('.avatar') || t.classList?.contains('rank-badge'))) {
+              e.preventDefault();
+            }
+          }, {passive:false});
+        });
       }catch{}
     })();
 
@@ -396,13 +426,13 @@
         if (String(it.id) === String(userId)) row.classList.add('self');
 
         const rk = computeRank(it.balance);
-        const badge = `<img class="rank-badge" src="assets/${rk.img}" alt="${rk.name}">`;
+        const badge = `<img class="rank-badge" src="assets/${rk.img}" alt="${rk.name}" draggable="false" oncontextmenu="return false">`;
 
         const av = document.createElement('div');
         av.className = 'avatar';
         const url = avatarUrl(it.user) || '';
         if (url){
-          av.innerHTML = `<img src="${url}" alt="avatar" referrerpolicy="no-referrer" loading="eager" decoding="async">`;
+          av.innerHTML = `<img src="${url}" alt="avatar" referrerpolicy="no-referrer" loading="eager" decoding="async" draggable="false" oncontextmenu="return false">`;
         } else {
           av.innerHTML = `<div class="letter">${letterOf(it.name)}</div>`;
         }
