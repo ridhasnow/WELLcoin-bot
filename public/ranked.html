@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="dark">
   <style>
     :root{
-      --bg:#000; /* خلفية سوداء */
+      --bg:#000;
       --text:#eef3ff;
       --muted:#aeb8d0;
 
@@ -15,11 +15,12 @@
       --glass-2: rgba(255,255,255,0.05);
       --glass-border: rgba(255,255,255,0.14);
 
-      --gold-1:#806b1d; --gold-2:#d9b64b; --gold-3:#ffe59e;
-      --gold-4:#ffcb5a; --gold-5:#ffb73a;
+      --accent:#c8ff7a; /* أصفر مخضر للرصيد */
+      --accent2:#7cffb5;
 
-      --accent:#b3ff7a; /* أصفر مخضر */
-      --accent-2:#7cffb5;
+      --gold-a: rgba(255,210,90,.26); /* لامع */
+      --gold-b: rgba(255,190,60,.12); /* أقل */
+      --gold-c: rgba(255,220,120,.18);
 
       --shadow-1:0 12px 40px rgba(0,0,0,.55);
       --shadow-2:0 6px 18px rgba(0,0,0,.40);
@@ -36,7 +37,6 @@
       overflow:hidden;
     }
 
-    /* Ambient light */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
@@ -46,7 +46,6 @@
       filter: blur(8px) saturate(110%);
     }
 
-    /* Full-screen glass page with rounded corners, shifted 2px to the left */
     .wrap{ position:relative; z-index:1; width:100%; height:100%; display:flex; align-items:stretch; justify-content:center; }
     .card{
       width:100vw; height:100vh; transform: translateX(-2px);
@@ -67,10 +66,10 @@
       -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.9;
     }
 
-    /* Topbar */
     .topbar{
       position:absolute; inset:0 0 auto 0; height:56px;
-      display:flex; align-items:center; justify-content:space-between;
+      display:flex; align-items:center; justify-content:flex-start;
+      gap:8px;
       padding: max(10px, env(safe-area-inset-top)) 12px 10px 12px; z-index:2;
     }
     .icon-btn{
@@ -82,13 +81,11 @@
       transition: transform var(--t-fast), background var(--t-med), border-color var(--t-med);
       box-shadow: var(--shadow-2); backdrop-filter: blur(6px);
     }
-    .icon-btn:hover{ background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
     .icon-btn:active{ transform: scale(.97); }
     .icon-btn svg{ width:18px; height:18px; fill:#eaf2ff; opacity:.95 }
 
     .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 14px max(18px, env(safe-area-inset-bottom)) 14px; }
 
-    /* Title */
     .title{
       margin: 4px 4px 14px 6px;
       display:flex; align-items:baseline; justify-content:flex-start; gap:10px;
@@ -105,28 +102,61 @@
       font-size: .96rem; letter-spacing:.3px;
     }
 
-    /* Rows container */
     .rows{ display:flex; flex-direction:column; gap:10px; }
 
-    /* Base row (glass) */
+    /* أسلوب المستطيل الزجاجي الأساسي */
     .row{
       position:relative;
-      display:grid; grid-template-columns: 54px 52px 1fr auto; align-items:center; gap:10px;
+      display:grid; grid-template-columns: 56px 52px 1fr auto; align-items:center; gap:10px;
       padding: 10px 12px; border-radius: 14px;
-      background: linear-gradient(180deg, var(--glass-1), var(--glass-2));
+      background:
+        linear-gradient(180deg, var(--glass-1), var(--glass-2));
       border:1px solid var(--glass-border);
       box-shadow: 0 6px 18px rgba(0,0,0,.35);
       min-height: 64px;
       transition: transform var(--t-fast), filter var(--t-fast), box-shadow var(--t-fast);
+      overflow:hidden;
+    }
+    .row::after{
+      /* لمعان زجاج خفيف */
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      mix-blend-mode: screen;
     }
     .row:hover{ transform: translateY(-1px); filter: saturate(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.42); }
+
+    /* تدرّج ذهبي من اليسار لليمين للثلاثة الأوائل بشفافية زجاجية */
+    .row.top-1{
+      border-color: rgba(255,210,90,.65);
+      box-shadow: 0 18px 32px rgba(255,210,90,.28), 0 6px 16px rgba(0,0,0,.40);
+      background:
+        linear-gradient(90deg, var(--gold-a) 0%, rgba(255,210,90,.10) 60%, rgba(255,210,90,.05) 100%),
+        linear-gradient(180deg, var(--glass-1), var(--glass-2));
+    }
+    .row.top-2{
+      border-color: rgba(255,210,90,.50);
+      box-shadow: 0 14px 28px rgba(255,210,90,.24), 0 6px 16px rgba(0,0,0,.38);
+      background:
+        linear-gradient(90deg, rgba(255,210,90,.20) 0%, rgba(255,210,90,.10) 60%, rgba(255,210,90,.05) 100%),
+        linear-gradient(180deg, var(--glass-1), var(--glass-2));
+    }
+    .row.top-3{
+      border-color: rgba(255,210,90,.42);
+      box-shadow: 0 12px 24px rgba(255,210,90,.20), 0 6px 16px rgba(0,0,0,.36);
+      background:
+        linear-gradient(90deg, rgba(255,210,90,.16) 0%, rgba(255,210,90,.08) 60%, rgba(255,210,90,.04) 100%),
+        linear-gradient(180deg, var(--glass-1), var(--glass-2));
+    }
+
     .pos{
-      display:flex; align-items:center; justify-content:center; font-weight:900;
-      color:#eaf3ff; letter-spacing:.3px; opacity:.95;
+      display:flex; align-items:center; justify-content:flex-start; gap:6px;
+      font-weight:900; color:#eaf3ff; letter-spacing:.3px; opacity:.98;
     }
-    .pos .medal{
-      width:24px; height:24px; margin-right:6px; display:none;
+    .rank-badge{
+      width:26px; height:26px; object-fit:contain; display:block;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.45));
     }
+
     .avatar{
       width:44px; height:44px; border-radius:12px; overflow:hidden;
       display:grid; place-items:center;
@@ -138,9 +168,8 @@
       font-weight:900; color:#ffe59e; letter-spacing:.3px;
       text-shadow: 0 2px 6px rgba(0,0,0,.6);
     }
-    .name{
-      display:flex; flex-direction:column; gap:2px; min-width:0;
-    }
+
+    .name{ display:flex; flex-direction:column; gap:2px; min-width:0; }
     .name .label{
       font-weight:900; letter-spacing:.25px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       color:#eef3ff;
@@ -148,40 +177,30 @@
     .name .muted{
       font-size:.85rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
+
     .amt{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-weight:900; letter-spacing:.3px; color: var(--accent);
       text-shadow: 0 0 10px rgba(180,255,120,.10);
     }
 
-    /* Top 3 (golden gradient variants) */
-    .top-1{
-      background:
-        linear-gradient(90deg, rgba(255,210,90,.22), rgba(255,200,70,.10)),
-        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
-      border-color: rgba(255,210,90,.55);
-      box-shadow: 0 12px 28px rgba(255,210,90,.28), 0 6px 16px rgba(0,0,0,.40);
+    /* تمييز اللاعب نفسه مع إشعاع حواف 3D */
+    .row.self{
+      outline: 2px solid rgba(120,255,200,.35);
+      box-shadow: 0 0 0 2px rgba(120,255,200,.20) inset, 0 12px 28px rgba(120,255,200,.10);
     }
-    .top-2{
-      background:
-        linear-gradient(90deg, rgba(255,210,90,.18), rgba(255,200,70,.08)),
-        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
-      border-color: rgba(255,210,90,.45);
-      box-shadow: 0 10px 24px rgba(255,210,90,.24), 0 6px 16px rgba(0,0,0,.38);
+    .row.self::before{
+      content:""; position:absolute; inset:-2px; border-radius:16px; pointer-events:none;
+      background: radial-gradient(140% 60% at 10% 50%, rgba(120,255,200,.25), transparent 60%),
+                  radial-gradient(140% 60% at 90% 50%, rgba(120,255,200,.18), transparent 60%);
+      filter: blur(6px); opacity:.9;
+      animation: glow 1.6s ease-in-out infinite alternate;
     }
-    .top-3{
-      background:
-        linear-gradient(90deg, rgba(255,210,90,.14), rgba(255,200,70,.06)),
-        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
-      border-color: rgba(255,210,90,.38);
-      box-shadow: 0 8px 22px rgba(255,210,90,.20), 0 6px 16px rgba(0,0,0,.36);
+    @keyframes glow{
+      from{ opacity:.65; }
+      to  { opacity:1; }
     }
-    .row.top-1 .pos .medal, .row.top-2 .pos .medal, .row.top-3 .pos .medal{ display:inline-block; }
 
-    /* Highlight self */
-    .self{ outline: 2px solid rgba(120,255,200,.35); box-shadow: 0 0 0 2px rgba(120,255,200,.25) inset, 0 10px 24px rgba(120,255,200,.10); }
-
-    /* Empty state */
     .empty{
       margin: 14px 6px; padding: 14px; border-radius: 12px;
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
@@ -189,7 +208,6 @@
       color:#bfd0ff; text-align:center; letter-spacing:.3px;
     }
 
-    /* Gate overlay */
     .gate{
       position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
       background: rgba(0,0,0,.85);
@@ -206,15 +224,10 @@
         <div class="icon-btn" id="back-btn" title="Back" aria-label="Back">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
         </div>
-        <div class="icon-btn" id="cfg-btn" title="Settings" aria-label="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-        </div>
       </div>
 
-      <div class="scroll">
-        <div class="title">
-          <h1>Leaderboard</h1>
-        </div>
+      <div id="scroll" class="scroll">
+        <div class="title"><h1>Leaderboard</h1></div>
         <div class="subtitle">Global Rank • Real-time</div>
 
         <div id="rows" class="rows"></div>
@@ -225,42 +238,11 @@
 
   <div id="gate" class="gate">Please open this page from Telegram App.</div>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Audio keep-alive (same mechanics used elsewhere) -->
   <script>
-    (function audioBoot(){
-      let a = document.getElementById('preloadAudio');
-      if (!a) {
-        a = document.createElement('audio');
-        a.id = 'preloadAudio';
-        a.loop = true; a.preload='auto'; a.style.display='none';
-        a.src = 'assets/preload.mp3';
-        document.body.appendChild(a);
-      }
-      function persist(){ try{
-        sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
-        sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
-        if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
-          sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (a.currentTime || 0) * 1000));
-        }
-      }catch{}}
-      function prime(){ try{ a.muted = true; a.volume=.76; a.play().catch(()=>{});}catch{}}
-      function unmute(){ a.muted=false; a.volume=.76; a.play().catch(()=>{}); }
-      prime();
-      const ensure = ()=>{ unmute(); off(); };
-      function off(){ ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.removeEventListener(ev,ensure,{passive:true})); }
-      ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,ensure,{passive:true, once:true}));
-      window.addEventListener('pagehide', persist); window.addEventListener('beforeunload', persist);
-      document.addEventListener('visibilitychange', ()=>{ if (document.hidden) persist(); else a.play().catch(()=>{}); });
-    })();
-  </script>
-
-  <!-- Page Logic -->
-  <script>
-    // Basic hardening: disable context menu and common dev hotkeys
+    // Basic hardening
     (function harden(){
       try{
         document.addEventListener('contextmenu', e=>e.preventDefault());
@@ -318,11 +300,10 @@
     // UI refs
     const rowsEl = document.getElementById('rows');
     const emptyEl = document.getElementById('empty');
+    const scrollEl = document.getElementById('scroll');
     const backBtn = document.getElementById('back-btn');
-    const cfgBtn  = document.getElementById('cfg-btn');
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
-    cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
     function go(url){
       try{
         const a = document.getElementById('preloadAudio');
@@ -337,6 +318,26 @@
       window.location.href = url;
     }
 
+    // Rank thresholds and badges (نفس الموجودة في me.html)
+    const RANKS = [
+      { name:'Iron',         key:'iron',        min:     0, img:'iron.png' },
+      { name:'Bronze',       key:'bronze',      min:  1500, img:'bronze.png' },
+      { name:'Silver',       key:'silver',      min:  3000, img:'silver.png' },
+      { name:'Gold',         key:'gold',        min:  5000, img:'gold.png' },
+      { name:'Platinum',     key:'plat',        min:  8000, img:'plat.png' },
+      { name:'Emerald',      key:'emrald',      min: 10500, img:'emrald.png' },
+      { name:'Diamond',      key:'diamon',      min: 15000, img:'diamon.png' },
+      { name:'Master',       key:'master',      min: 20000, img:'master.png' },
+      { name:'Grand Master', key:'grandmaster', min: 30000, img:'grandmaster.png' },
+      { name:'Challenger',   key:'challenger',  min: 50000, img:'challenger.png' }
+    ];
+    function computeRank(balance){
+      const b = Math.max(0, Number(balance||0));
+      let idx = 0;
+      for (let i=0;i<RANKS.length;i++){ if (b >= RANKS[i].min) idx = i; }
+      return RANKS[idx] || RANKS[0];
+    }
+
     // Helpers
     const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
     function bestName(u){
@@ -349,6 +350,12 @@
       const combo = [first,last].filter(Boolean).join(' ').trim();
       return direct || prof || combo || 'Player';
     }
+    function bestUsername(u){
+      if (!u || typeof u !== 'object') return '';
+      const p = u.profile || {};
+      const n = u.username || p.username || '';
+      return n ? ('@' + String(n).replace(/^@+/, '')) : '';
+    }
     function avatarUrl(u){
       const p = u?.profile || {};
       return u?.avatarUrl || p?.avatarUrl || u?.photoUrl || p?.photoUrl || '';
@@ -357,13 +364,19 @@
       const ch = (name||'').trim()[0]; return (ch||'P').toUpperCase();
     }
 
+    let firstFocusDone = false;
+    let latestList = [];
+
     function renderList(list){
+      latestList = list;
       rowsEl.innerHTML = '';
       if (!list.length){
         emptyEl.style.display = '';
         return;
       }
       emptyEl.style.display = 'none';
+
+      const frag = document.createDocumentFragment();
 
       list.forEach((it, idx)=>{
         const pos = idx + 1;
@@ -374,10 +387,8 @@
         else if (pos === 3) row.classList.add('top-3');
         if (String(it.id) === String(userId)) row.classList.add('self');
 
-        const medalSvg = (pos<=3) ? `
-          <svg class="medal" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="${pos===1?'#ffcc33':(pos===2?'#d0d6e5':'#d89e57')}" d="M12 2l3 5 6 .9-4.3 4.2 1 6-5.7-3-5.7 3 1-6L3 7.9 9 7z"/>
-          </svg>` : `<span class="medal"></span>`;
+        const rk = computeRank(it.balance);
+        const badge = `<img class="rank-badge" src="assets/${rk.img}" alt="${rk.name}">`;
 
         const av = document.createElement('div');
         av.className = 'avatar';
@@ -388,8 +399,9 @@
           av.innerHTML = `<div class="letter">${letterOf(it.name)}</div>`;
         }
 
+        row.setAttribute('data-id', String(it.id));
         row.innerHTML = `
-          <div class="pos">${medalSvg}<span>#${pos}</span></div>
+          <div class="pos">${badge}<span>#${pos}</span></div>
           <div class="avatar-slot"></div>
           <div class="name">
             <div class="label" title="${it.name}">${it.name}</div>
@@ -398,25 +410,46 @@
           <div class="amt" title="${fmtWLC(it.balance)} WLC">${fmtWLC(it.balance)}</div>
         `;
         row.querySelector('.avatar-slot').replaceWith(av);
-        rowsEl.appendChild(row);
+        frag.appendChild(row);
       });
+
+      rowsEl.appendChild(frag);
+
+      // ركّز الكاميرا على صف اللاعب مباشرة عند الدخول لأول مرة أو إذا لم يتم التثبيت بعد
+      if (!firstFocusDone){
+        focusSelfRow(true);
+        firstFocusDone = true;
+      }
     }
 
-    // Live leaderboard query
+    function focusSelfRow(smooth=true){
+      const myRow = rowsEl.querySelector(`.row[data-id="${String(userId)}"]`);
+      if (!myRow) return;
+      // scrollIntoView مع block:center لتوسيط الصف
+      try{
+        myRow.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
+      }catch{
+        // fallback manual
+        const r = myRow.getBoundingClientRect();
+        const s = scrollEl.getBoundingClientRect();
+        const delta = (r.top + r.height/2) - (s.top + s.height/2);
+        scrollEl.scrollTop += delta;
+      }
+    }
+
+    // Live leaderboard subscription WITHOUT limit (يعرض كل اللاعبين)
     let unsub = null;
     function subscribeLeaderboard(){
-      // نجيب أعلى 500 رصيد مثلاً (عدّل الرقم حسب الحاجة)
-      const q = db.ref('users').orderByChild('balance').limitToLast(500);
+      const q = db.ref('users').orderByChild('balance'); // لا limit
       const handler = (snap)=>{
         const val = snap.val() || {};
         const arr = [];
         for (const id in val){
           const u = val[id] || {};
           const bal = typeof u.balance === 'number' ? u.balance : 0;
-          // تجاهل الحسابات بدون أي بيانات حقيقية
-          if (!u && bal<=0) continue;
+          // إدراج الجميع (حتى صفر)، لكن يمكن تجاهل إن أردت لاحقاً
           const nm = bestName(u);
-          const uname = u.username ? '@'+u.username : (u.profile?.username ? '@'+u.profile.username : '');
+          const uname = bestUsername(u);
           arr.push({ id, user:u, balance: bal, name: nm, username: uname });
         }
         // Sort desc by balance
@@ -428,7 +461,6 @@
     }
 
     function init(){
-      // Save userId for cross-pages
       try{
         sessionStorage.setItem('wlc_user_id', String(userId));
         localStorage.setItem('wlc_user_id', String(userId));
@@ -437,6 +469,14 @@
     }
 
     ensureUserId(init);
+
+    // إعادة التركيز على اللاعب إذا عاد للصفحة من الخلفية
+    document.addEventListener('visibilitychange', ()=>{
+      if (!document.hidden) focusSelfRow(true);
+    });
+
+    // تنظيف
+    window.addEventListener('beforeunload', ()=>{ try{ unsub && unsub(); }catch{} });
   </script>
 </body>
 </html>
