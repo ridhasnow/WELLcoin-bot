@@ -96,7 +96,7 @@
       display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;
     }
 
-    /* Rank area (replaces avatar/bronze frame) */
+    /* Rank area (badge + progress) */
     .ranked{
       width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;
     }
@@ -200,20 +200,30 @@
       box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    /* Achievements grid - 5 per row */
-    .ach{ display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; }
+    /* Achievements grid - 5 per row (strict) */
+    .ach{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap:12px;
+    }
 
-    /* Day card */
+    /* Day card - modern, image full-bleed inside body, timer visible below */
     .day{
-      position:relative; border-radius:14px; overflow:hidden; user-select:none;
+      position:relative; border-radius:14px;
+      /* IMPORTANT: visible to show the timer below the card */
+      overflow:visible;
+      user-select:none;
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
       border:1px solid rgba(255,255,255,.14);
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
       display:flex; flex-direction:column;
-      aspect-ratio: 1 / 1.05;
-      margin-bottom: 30px; /* space for timer below */
+      aspect-ratio: 1 / 1.06;
+      margin-bottom: 30px; /* space for timer */
     }
-    .day.special{ transform: scale(1.02); }
+    .day.special{
+      border-color: rgba(255,210,90,.45);
+      box-shadow: 0 10px 24px rgba(255,210,90,.20), inset 0 0 0 1px rgba(255,255,255,.06);
+    }
 
     /* Cap (header) */
     .cap{
@@ -234,16 +244,22 @@
     }
     .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
 
-    /* Body with gift */
+    /* Body becomes an edge-to-edge thumbnail holder */
     .body{
-      position:relative; flex:1; display:flex; align-items:center; justify-content:center;
-      padding:12px 10px 10px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      position:relative; flex:1;
+      display:block;
+      padding:0; /* full-bleed */
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;
+      overflow:hidden; /* keep image clipped to rounded corners */
     }
     .gift-img{
-      width: clamp(72px, 72%, 160px);
-      max-height: 75%; height: auto; object-fit: contain;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)) saturate(110%);
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit: cover; /* fill card area elegantly */
+      filter: saturate(110%) contrast(102%) drop-shadow(0 4px 8px rgba(0,0,0,.25));
       pointer-events:none;
+      transform: scale(1.02); /* slight zoom to avoid edge gaps */
     }
 
     /* Timer directly below the card (visually) */
@@ -254,7 +270,7 @@
     }
 
     /* States */
-    .day.locked{ filter: brightness(.92) saturate(.9); }
+    .day.locked{ filter: brightness(.96) saturate(.95); }
     .day.claimable{
       border-color: rgba(255,210,90,.55);
       box-shadow: 0 10px 24px rgba(255,210,90,.22), inset 0 0 0 1px rgba(255,255,255,.05);
@@ -266,6 +282,7 @@
     .check{
       position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
       opacity:0; transform: scale(.9); transition: opacity .2s ease, transform .2s ease;
+      background: linear-gradient(180deg, rgba(0,0,0,.1), rgba(0,0,0,.2));
     }
     .day.claimed .check{ opacity:1; transform: scale(1); }
     .check svg{ width:56px; height:56px; }
@@ -364,7 +381,7 @@
                 <span>USDT</span>
               </div>
             </div>
-            <div class="bal-amt" id="usdt-amount">0.000</div>
+            <div class="bal-amt" id="usdt-amount">0.00000</div>
             <button class="bal-cta usdt" id="usdt-withdraw">Withdraw</button>
           </div>
         </section>
@@ -482,7 +499,8 @@
     // Formatters
     const fmtInt = v => Number(v||0).toLocaleString("en-US",{maximumFractionDigits:0});
     const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
-    const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:3, maximumFractionDigits:3});
+    // USDT with 5 decimals as requested
+    const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:5, maximumFractionDigits:5});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
     // Build achievements tiles (visual only)
@@ -571,14 +589,14 @@
 
     function rewardFor(day){
       if (day===7)  return { type:'WLC', amount:0.1,  label:'+0.100000 WLC' };
-      if (day===15) return { type:'USDT',amount:0.2,  label:'+0.200 USDT' };
+      if (day===15) return { type:'USDT',amount:0.2,  label:'+0.20000 USDT' };
       if (day===24) return { type:'WLC', amount:1.0,  label:'+1.000000 WLC' };
       if (day===30) return { type:'WLC_MEDAL', amount:2.0, label:'+2.000000 WLC + Medal' };
       const pool = [
-        {type:'WLC', amount:0.000005, label:'+0.000005 WLC'},
-        {type:'WLC', amount:0.00004,  label:'+0.000040 WLC'},
-        {type:'USDT',amount:0.002,    label:'+0.002 USDT'},
-        {type:'USDT',amount:0.01,     label:'+0.010 USDT'},
+        {type:'WLC',  amount:0.000005, label:'+0.000005 WLC'},
+        {type:'WLC',  amount:0.00004,  label:'+0.000040 WLC'},
+        {type:'USDT', amount:0.002,    label:'+0.00200 USDT'},
+        {type:'USDT', amount:0.01,     label:'+0.01000 USDT'},
       ];
       return pool[Math.floor(Math.random()*pool.length)];
     }
@@ -770,13 +788,56 @@
       }
     }
 
-    // Name only hydrate
-    function hydrateName(){
-      const fullName = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim() || (tgUser?.first_name||'Player');
-      nameEl.textContent = fullName;
+    // Name hydration (robust and reactive)
+    function bestNameFromFirebase(u){
+      if (!u || typeof u !== 'object') return null;
+      const p = u.profile || {};
+      const direct = u.displayName || u.name || u.nickname || u.username;
+      const prof = p.displayName || p.name || p.nickname || p.username;
+      const first = u.firstName || p.firstName || (u.first_name) || null;
+      const last  = u.lastName  || p.lastName  || (u.last_name)  || null;
+
+      if (direct) return String(direct);
+      if (prof) return String(prof);
+      const combo = [first,last].filter(Boolean).join(' ').trim();
+      if (combo) return combo;
+      return null;
+    }
+    async function hydrateName(){
+      // 1) Try Firebase snapshot
       try{
-        sessionStorage.setItem(`wlc:${userId}:tgName`, fullName);
-        localStorage.setItem(`wlc:${userId}:tgName`, fullName);
+        const snap = await db.ref('users/'+userId).once('value');
+        const u = snap.val();
+        const n = bestNameFromFirebase(u);
+        if (n){ nameEl.textContent = n; try{ await idbSet(`wlc:${userId}:tgName`, n); }catch{} }
+      }catch{}
+
+      // 2) Try cached IndexedDB
+      try{
+        const cachedName = await idbGet(`wlc:${userId}:tgName`);
+        if (cachedName && !/^\s*$/.test(String(cachedName))) {
+          nameEl.textContent = cachedName;
+        }
+      }catch{}
+
+      // 3) Try Telegram user
+      const tgFull = [tgUser?.first_name||'', tgUser?.last_name||''].filter(Boolean).join(' ').trim();
+      const tgHandle = tgUser?.username ? '@'+tgUser.username : '';
+      const fallback = tgFull || tgHandle || 'Player';
+      if (nameEl.textContent === 'Player' || nameEl.textContent.trim() === ''){
+        nameEl.textContent = fallback;
+      }
+
+      // 4) React to future Firebase updates (displayName/nickname changes)
+      try{
+        db.ref('users/'+userId).on('value', s=>{
+          const nu = s.val();
+          const n2 = bestNameFromFirebase(nu);
+          if (n2 && nameEl.textContent !== n2){
+            nameEl.textContent = n2;
+            idbSet(`wlc:${userId}:tgName`, n2).catch(()=>{});
+          }
+        });
       }catch{}
     }
 
