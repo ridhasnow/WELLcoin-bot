@@ -27,12 +27,12 @@
 
     html,body{height:100%}
     body{
-      margin:0; background:#000; color:var(--text);
+      margin:0; background:transparent; color:var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
       overflow:hidden;
     }
 
-    /* Ambient */
+    /* Ambient (kept, but card fills screen so this is subtle) */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
@@ -43,14 +43,14 @@
     }
     .wrap{
       position:relative; z-index:1; width:100%; height:100%;
-      display:flex; align-items:center; justify-content:center;
-      padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
+      display:flex; align-items:stretch; justify-content:center;
+      padding: 0;
     }
 
-    /* Main glass card - golden tint and slight left shift (2px) */
+    /* Full-screen glass page, slightly left by 2px, rounded corners */
     .card{
-      width:min(96vw, 620px);
-      height:min(96vh, 900px);
+      width:100vw;
+      height:100vh;
       background:
         linear-gradient(180deg, var(--glass), var(--glass-2)),
         linear-gradient(180deg, rgba(30,36,50,0.30), rgba(18,22,30,0.36));
@@ -59,7 +59,7 @@
       box-shadow: var(--shadow-1);
       backdrop-filter: blur(12px) saturate(130%);
       position:relative; overflow:hidden; display:flex; flex-direction:column;
-      margin-inline:auto;
+      margin: 0;
       transform: translateX(-2px);
     }
     .card::before{
@@ -74,7 +74,7 @@
     .topbar{
       position:absolute; inset:0 0 auto 0; height:56px;
       display:flex; align-items:center; justify-content:space-between;
-      padding: 10px 12px; z-index:2;
+      padding: max(10px, env(safe-area-inset-top)) 12px 10px 12px; z-index:2;
     }
     .icon-btn{
       width:38px; height:38px; border-radius:12px;
@@ -89,7 +89,7 @@
     .icon-btn:active{ transform: scale(.97); }
     .icon-btn svg{ width:18px; height:18px; fill:#eaf2ff; opacity:.95 }
 
-    .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px 18px 16px; }
+    .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 16px max(18px, env(safe-area-inset-bottom)) 16px; }
 
     /* Profile */
     .profile{
@@ -200,7 +200,7 @@
       box-shadow: 0 0 10px rgba(255,211,106,.45);
     }
 
-    /* Achievements grid - 5 per row (responsive clamps to keep look across devices) */
+    /* Achievements grid - 5 per row */
     .ach{
       display:grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -210,7 +210,7 @@
       .ach{ gap:10px; }
     }
 
-    /* Day card - adjusted height; image now fills without visible gaps using blurred cover backdrop */
+    /* Day card - tuned, image shows fully; timer below card */
     .day{
       position:relative; border-radius:14px;
       overflow:visible; user-select:none;
@@ -220,6 +220,7 @@
       display:flex; flex-direction:column;
       aspect-ratio: 1 / 1.18;
       margin-bottom: 38px; /* space for timer below */
+      transition: filter .25s ease;
     }
     .day.special{
       border-color: rgba(255,210,90,.45);
@@ -245,21 +246,14 @@
     }
     .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
 
-    /* Body holds the image; blurred cover backdrop removes perceived gaps without cropping the main image */
+    /* Body holds the image with BLACK background (no gaps), image stays fully visible */
     .body{
       position:relative; flex:1;
       display:block;
-      padding:0; /* no inner gaps */
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      padding:0;
+      background: #000; /* requested black base to match gift.png edges */
       border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;
       overflow:hidden;
-    }
-    .body::before{
-      content:"";
-      position:absolute; inset:0; z-index:0;
-      background: center / cover no-repeat url('assets/gift.png');
-      filter: blur(16px) brightness(.95) saturate(110%);
-      transform: scale(1.08); /* bleed edges to ensure no edges show */
     }
     .gift-img{
       position:absolute; inset:0; z-index:1;
@@ -269,7 +263,7 @@
       pointer-events:none; user-select:none; -webkit-user-drag:none;
     }
 
-    /* Timer sits BELOW the card (single time line, no 'In') */
+    /* Timer BELOW the card, single line (no 'In') */
     .timer{
       position:absolute; left:0; right:0; bottom:-24px;
       font-size:12px; font-weight:900; color:#d3ddff; opacity:.98; text-align:center;
@@ -283,16 +277,20 @@
       box-shadow: 0 10px 24px rgba(255,210,90,.22), inset 0 0 0 1px rgba(255,255,255,.05);
       animation: pulse 1.4s ease-in-out infinite alternate;
     }
+    .day.claimed{
+      filter: brightness(.60) saturate(.9); /* dim after claim */
+    }
     @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.36)); } }
 
-    /* Claimed overlay (modern check) */
+    /* Claimed overlay (modern check) - ABOVE image and slightly lower (middle of lower half) */
     .check{
       position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
-      opacity:0; transform: scale(.9); transition: opacity .2s ease, transform .2s ease;
-      background: linear-gradient(180deg, rgba(0,0,0,.1), rgba(0,0,0,.2));
+      opacity:0; transform: translateY(18%) scale(.9); transition: opacity .2s ease, transform .2s ease;
+      z-index:3; /* above gift image */
     }
-    .day.claimed .check{ opacity:1; transform: scale(1); }
-    .check svg{ width:56px; height:56px; }
+    .day.claimed .check{ opacity:1; transform: translateY(18%) scale(1); }
+    .check .mark{ width:76px; height:76px; }
+    .check svg{ width:100%; height:100%; }
 
     .spacer{ height:14px; }
     * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
@@ -333,6 +331,64 @@
       position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
       background: rgba(0,0,0,.85);
       color:#ffe9a8; font-weight:900; letter-spacing:.3px; text-align:center; padding:24px;
+    }
+
+    /* Daily tasks button + modal */
+    .tasks-cta{ display:flex; align-items:center; justify-content:center; padding:8px 0 2px; }
+    .btn-earn{
+      position:relative; isolation:isolate; cursor:pointer; user-select:none;
+      border:none; border-radius: 14px; padding:14px 22px;
+      color:#231a00; font-weight:900; letter-spacing:.4px;
+      background: linear-gradient(180deg, #ffd36a, #ffca45 55%, #ffb72e);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.35),
+        0 10px 24px rgba(255,200,80,.35),
+        0 3px 0 rgba(150,100,10,.35);
+      overflow:hidden;
+    }
+    .btn-earn::before{
+      content:""; position:absolute; inset:-120% -20%; z-index:0;
+      background:
+        radial-gradient(20px 6px at 10% 40%, rgba(255,255,255,.75), transparent 60%),
+        radial-gradient(26px 8px at 30% 60%, rgba(255,255,255,.55), transparent 60%),
+        linear-gradient(120deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.7) 35%, rgba(255,255,255,.0) 70%);
+      transform: rotate(10deg);
+      animation: electric 2.2s linear infinite;
+      mix-blend-mode: screen;
+      pointer-events:none;
+    }
+    .btn-earn::after{
+      content:""; position:absolute; inset:0; border-radius:14px; z-index:1; pointer-events:none;
+      box-shadow: inset 0 0 18px rgba(255,255,255,.22);
+    }
+    .btn-earn span{ position:relative; z-index:2; }
+    .btn-earn:active{ transform: translateY(1px); }
+    @keyframes electric{
+      from{ transform: translateX(-40%) translateY(-10%) rotate(10deg); }
+      to  { transform: translateX(40%)  translateY(10%)  rotate(10deg); }
+    }
+
+    .tasks-modal{
+      position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(4px) saturate(120%);
+      padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
+    }
+    .tasks-frame-wrap{
+      width:min(96vw, 720px);
+      height:min(86vh, 860px);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:16px; overflow:hidden; position:relative;
+      box-shadow: 0 14px 40px rgba(0,0,0,.55);
+    }
+    .tasks-close{
+      position:absolute; top:8px; right:8px; z-index:2;
+      border:none; border-radius:10px; padding:6px 10px; font-weight:900; cursor:pointer;
+      background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.08));
+      color:#fff; box-shadow: 0 4px 12px rgba(0,0,0,.35);
+    }
+    .tasks-iframe{
+      position:absolute; inset:0; width:100%; height:100%; border:0; background:#0b0f16;
     }
   </style>
 </head>
@@ -405,6 +461,13 @@
           <div id="ach" class="ach"></div>
         </section>
 
+        <section>
+          <div class="section-title">Daily tasks</div>
+          <div class="tasks-cta">
+            <button id="start-earn" class="btn-earn"><span>Start Earn</span></button>
+          </div>
+        </section>
+
         <div class="spacer"></div>
       </div>
     </div>
@@ -420,6 +483,14 @@
   </div>
   <canvas id="confetti" class="confetti"></canvas>
   <div id="gate" class="gate">Please open this page from Telegram App.</div>
+
+  <!-- Daily tasks modal (loads tasks.html when available) -->
+  <div id="tasks-modal" class="tasks-modal" style="display:none">
+    <div class="tasks-frame-wrap">
+      <button id="tasks-close" class="tasks-close">Close</button>
+      <iframe id="tasks-frame" class="tasks-iframe" title="Daily tasks"></iframe>
+    </div>
+  </div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -531,6 +602,11 @@
     const rankTextEl = document.getElementById('rank-progress-text');
     const rankNeedEl = document.getElementById('rank-next-need');
 
+    // Tasks modal refs
+    const tasksModal = document.getElementById('tasks-modal');
+    const tasksFrame = document.getElementById('tasks-frame');
+    const tasksClose = document.getElementById('tasks-close');
+
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
     cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
     function go(url){
@@ -551,7 +627,7 @@
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:5, maximumFractionDigits:5});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
-    // Build achievements tiles (visual only) - timer below card
+    // Build achievements tiles (visual only) - timer below card, check above image
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -570,17 +646,19 @@
           </div>
           <div class="timer" style="display:none"></div>
           <div class="check">
-            <svg viewBox="0 0 64 64" aria-hidden="true">
-              <defs>
-                <radialGradient id="g" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="#9cffc8" stop-opacity="1"/>
-                  <stop offset="70%" stop-color="#45e27f" stop-opacity="0.9"/>
-                  <stop offset="100%" stop-color="#00c060" stop-opacity="0.0"/>
-                </radialGradient>
-              </defs>
-              <circle cx="32" cy="32" r="22" fill="url(#g)"></circle>
-              <path d="M22 33.5l6 6 14-14" fill="none" stroke="#dfffef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <div class="mark">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <defs>
+                  <radialGradient id="g" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#9cffc8" stop-opacity="1"/>
+                    <stop offset="70%" stop-color="#45e27f" stop-opacity="0.9"/>
+                    <stop offset="100%" stop-color="#00c060" stop-opacity="0.0"/>
+                  </radialGradient>
+                </defs>
+                <circle cx="32" cy="32" r="22" fill="url(#g)"></circle>
+                <path d="M22 33.5l6 6 14-14" fill="none" stroke="#dfffef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
           </div>
         `;
         achGrid.appendChild(d);
@@ -668,8 +746,7 @@
         } else if (t < st.nextAvailableAt){
           tile.classList.add('locked');
           timerEl.style.display='';
-          // Only time, no 'In'
-          timerEl.textContent = msToHMS(st.nextAvailableAt - t);
+          timerEl.textContent = msToHMS(st.nextAvailableAt - t); // only time
         } else {
           tile.classList.add('locked');
         }
@@ -887,6 +964,21 @@
       }catch{}
     }
 
+    // Daily tasks open/close handlers (loads tasks.html when available)
+    function openTasks(){
+      try{
+        tasksFrame.src = 'tasks.html';
+        tasksModal.style.display = 'flex';
+      }catch(e){
+        // fallback: navigate
+        window.location.href = 'tasks.html';
+      }
+    }
+    function closeTasks(){
+      tasksModal.style.display = 'none';
+      try{ tasksFrame.src = 'about:blank'; }catch{}
+    }
+
     function init(){
       try{
         sessionStorage.setItem('wlc_user_id', String(userId));
@@ -919,6 +1011,12 @@
 
       document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
       document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
+
+      // Daily tasks button + modal close
+      const earnBtn = document.getElementById('start-earn');
+      if (earnBtn) earnBtn.addEventListener('click', openTasks);
+      if (tasksClose) tasksClose.addEventListener('click', closeTasks);
+      tasksModal?.addEventListener('click', (e)=>{ if (e.target === tasksModal) closeTasks(); });
 
       sync(userRef).catch(console.warn);
       attachTileHandlers(userRef);
