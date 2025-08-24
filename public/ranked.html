@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <title>Leaderboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <meta name="referrer" content="no-referrer">
-  <!-- CSP خفيفة وآمنة وتسمح لـ Firebase بالعمل -->
+  <!-- CSP خفيفة لا تكسر WebView + Firebase. يمكنك تشديدها على السيرفر إن أردت. -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' https: data: blob:;
     script-src 'self' 'unsafe-inline' https://www.gstatic.com;
@@ -14,11 +14,8 @@
     img-src 'self' https: data: blob:;
     font-src 'self' https: data:;
     connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app https://*.googleusercontent.com;
-    media-src 'self' data: blob:;
     object-src 'none';
-    frame-ancestors 'self' https://t.me https://web.telegram.org;
     base-uri 'self';
-    upgrade-insecure-requests;
   ">
   <style>
     :root{
@@ -27,13 +24,13 @@
       --muted:#aeb8d0;
 
       /* لوحة زجاجية داكنة (نمط OKX) */
-      --okx-base-1:#161a1f;  /* أعلى المستطيل */
-      --okx-base-2:#0e1216;  /* أسفل المستطيل */
+      --okx-base-1:#161a1f;
+      --okx-base-2:#0e1216;
       --okx-glass-top:rgba(255,255,255,.06);
       --okx-glass-btm:rgba(255,255,255,.035);
       --okx-border:rgba(255,255,255,.10);
 
-      --lime:#b6ff6a;     /* اللون الليموني لقيمة الرصيد يمين */
+      --lime:#b6ff6a;
       --gold-a:rgba(255,210,90,.22);
       --gold-b:rgba(255,210,90,.16);
       --gold-c:rgba(255,210,90,.10);
@@ -49,12 +46,12 @@
     html,body{height:100%}
     body{
       margin:0; background:var(--bg); color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial;
       overflow:hidden;
       -webkit-text-size-adjust:100%;
     }
 
-    /* خلفية عامة محايدة (لا توهج أخضر) */
+    /* خلفية عامة محايدة */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
@@ -83,7 +80,6 @@
       -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.9;
     }
 
-    /* شريط علوي: زر رجوع فقط */
     .topbar{
       position:absolute; inset:0 0 auto 0; height:56px;
       display:flex; align-items:center; justify-content:flex-start;
@@ -123,28 +119,24 @@
 
     .rows{ display:flex; flex-direction:column; gap:10px; }
 
-    /* مظهر المستطيل مثل لقطة OKX: أسود زجاجي، Pill، بدون أي توهج فوقه */
+    /* مظهر المستطيل */
     .row{
       position:relative;
       display:grid; grid-template-columns: 66px 52px 1fr auto; align-items:center; gap:10px;
-      padding: 10px 14px;              /* أقل ~20% */
-      border-radius: 999px;             /* pill */
+      padding: 10px 14px;
+      border-radius: 999px;
       background:
         linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
         linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
-      background-repeat:no-repeat;
       border:1px solid var(--okx-border);
       box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
       min-height: 50px;
       transition: transform var(--t-fast), filter var(--t-fast), box-shadow var(--t-fast);
       overflow:hidden;
     }
-    /* تأكيد عدم وجود أي توهج/لمعان إضافي */
     .row::after, .row::before{ content:none !important; }
-
     .row:hover{ transform: translateY(-1px); filter: saturate(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.52); }
 
-    /* تدرّج ذهبي لتمييز الثلاثة الأوائل فقط (يسار→يمين) */
     .row.top-1{
       border-color: rgba(255,210,90,.60);
       box-shadow: 0 18px 32px rgba(255,210,90,.24), 0 6px 16px rgba(0,0,0,.48);
@@ -168,7 +160,6 @@
         linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
     }
 
-    /* يسار: رقم الترتيب + بادج الرانك */
     .pos{
       display:flex; align-items:center; justify-content:flex-start; gap:8px;
       font-weight:900; color:#eaf3ff; letter-spacing:.3px; opacity:.98;
@@ -179,7 +170,6 @@
       user-select:none; -webkit-user-drag:none; pointer-events:none;
     }
 
-    /* الصورة */
     .avatar{
       width:44px; height:44px; border-radius:14px; overflow:hidden;
       display:grid; place-items:center;
@@ -215,12 +205,12 @@
 
     /* الرصيد — أصغر ومُحاذى يمين لإتاحة مساحة للاسم */
     .amt{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
       font-weight:900; letter-spacing:.3px; color: var(--lime);
       text-shadow: 0 0 14px rgba(125,255,163,.10), 0 0 4px rgba(182,255,106,.12);
       font-size: clamp(11px, 3.4vw, 13px);
       justify-self: end; text-align: right;
-      min-width: 92px;
+      min-width: 88px; /* مساحة أقل = مساحة أكبر للاسم */
     }
 
     /* تمييز مستطيل اللاعب فقط بإشعاع حواف */
@@ -251,18 +241,18 @@
 
     .gate{
       position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
-      background: rgba(0,0,0,.85);
+      background: rgba(0,0,0,.92);
       color:#ffe9a8; font-weight:900; letter-spacing:.3px; text-align:center; padding:24px;
     }
 
-    /* Responsive لضبط الهواتف الصغيرة والكبيرة */
+    /* Responsive */
     @media (max-width: 360px){
       .row{ grid-template-columns: 60px 48px 1fr auto; padding: 9px 12px; min-height: 46px; }
       .avatar{ width:40px; height:40px; border-radius:12px; }
       .rank-badge{ width:24px; height:24px; }
       .name .label{ font-size: 13px; -webkit-line-clamp: 2; }
       .name .muted{ font-size: 12px; -webkit-line-clamp: 2; }
-      .amt{ min-width: 86px; font-size: 12px; }
+      .amt{ min-width: 82px; font-size: 12px; }
     }
     @media (min-width: 768px){
       .row{ padding: 12px 16px; }
@@ -270,7 +260,7 @@
       .rank-badge{ width:30px; height:30px; }
       .name .label{ font-size: 16px; }
       .name .muted{ font-size: 14px; }
-      .amt{ font-size: 14px; min-width: 110px; }
+      .amt{ font-size: 14px; min-width: 108px; }
     }
   </style>
 </head>
@@ -295,14 +285,14 @@
     </div>
   </div>
 
-  <div id="gate" class="gate">Please open this page from Telegram App.</div>
+  <div id="gate" class="gate">يرجى فتح الصفحة من داخل تطبيق تيليجرام فقط.</div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    // Hardening خفيف بدون كسر المكتبات
+    // منع بعض التفاعلات
     (function harden(){
       try{
         document.addEventListener('contextmenu', e=>e.preventDefault());
@@ -314,37 +304,37 @@
       }catch{}
     })();
 
-    // Telegram WebApp
-    const tg = window.Telegram?.WebApp;
-    try { tg && tg.ready(); } catch(e){}
-    let tgUser = tg?.initDataUnsafe?.user || null;
-    let userId = tgUser?.id || null;
+    const gateEl  = document.getElementById('gate');
+    const rowsEl  = document.getElementById('rows');
+    const emptyEl = document.getElementById('empty');
+    const scrollEl= document.getElementById('scroll');
+    const backBtn = document.getElementById('back-btn');
 
-    function storedId(){
-      try{
-        return sessionStorage.getItem('wlc_user_id') || localStorage.getItem('wlc_user_id') || null;
-      }catch{ return null; }
-    }
-    let authOK = false;
+    backBtn.addEventListener('click', (e)=>{ e.preventDefault(); window.location.href='index.html'; });
+
+    // Telegram-only gating
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
     function showGate(show){
-      const g = document.getElementById('gate');
-      g.style.display = show ? 'flex' : 'none';
+      gateEl.style.display = show ? 'flex' : 'none';
       const app = document.getElementById('app-wrap');
       app.style.filter = show ? 'blur(6px) brightness(.6)' : '';
       app.style.pointerEvents = show ? 'none' : '';
     }
-    function ensureUserId(cb){
-      if (!userId) userId = storedId();
-      if (userId) { authOK = true; return cb(); }
-      setTimeout(()=>{
-        tgUser = tg?.initDataUnsafe?.user || tgUser;
-        userId = tgUser?.id || storedId();
-        if (userId) { authOK = true; cb(); } else { showGate(true); try{ window.location.replace('welcome.html'); }catch{} }
-      }, 80);
-    }
-    setTimeout(()=>{ if (!authOK && !(tg && tg.initDataUnsafe && tg.initDataUnsafe.user)) showGate(true); }, 200);
 
-    // Firebase
+    function waitForTelegramUser(timeoutMs=2500){
+      return new Promise(resolve=>{
+        const start = Date.now();
+        const tick = ()=>{
+          const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+          if (u || Date.now() - start > timeoutMs) return resolve(u);
+          setTimeout(tick, 50);
+        };
+        tick();
+      });
+    }
+
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -355,30 +345,8 @@
       appId: "1:108640533638:web:ed07516d96ac38f47f6507"
     };
     const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(app);
+    const db  = firebase.database(app);
 
-    // UI
-    const rowsEl = document.getElementById('rows');
-    const emptyEl = document.getElementById('empty');
-    const scrollEl = document.getElementById('scroll');
-    const backBtn = document.getElementById('back-btn');
-
-    backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
-    function go(url){
-      try{
-        const a = document.getElementById('preloadAudio');
-        if (a) {
-          sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
-          sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
-          if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
-            sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (a.currentTime || 0) * 1000));
-          }
-        }
-      }catch{}
-      window.location.href = url;
-    }
-
-    // رتب + صور البادجات
     const RANKS = [
       { name:'Iron',         key:'iron',        min:     0, img:'iron.png' },
       { name:'Bronze',       key:'bronze',      min:  1500, img:'bronze.png' },
@@ -397,8 +365,6 @@
       for (let i=0;i<RANKS.length;i++){ if (b >= RANKS[i].min) idx = i; }
       return RANKS[idx] || RANKS[0];
     }
-
-    // Helpers
     const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
     function bestName(u){
       if (!u || typeof u !== 'object') return 'Player';
@@ -414,7 +380,7 @@
       if (!u || typeof u !== 'object') return '';
       const p = u.profile || {};
       const n = u.username || p.username || '';
-      return n ? ('@' + String(n).replace(/^@+/, '')) : '';
+      return n ? ('@'+String(n).replace(/^@+/,'')) : '';
     }
     function avatarUrl(u){
       const p = u?.profile || {};
@@ -424,26 +390,40 @@
       const ch = (name||'').trim()[0]; return (ch||'P').toUpperCase();
     }
 
-    let firstFocusDone = false;
+    let unsub = null;
+    function subscribeLeaderboard(userId){
+      const q = db.ref('users').orderByChild('balance');
+      const handler = (snap)=>{
+        const val = snap.val() || {};
+        const arr = [];
+        for (const id in val){
+          const u = val[id] || {};
+          const bal = typeof u.balance === 'number' ? u.balance : 0;
+          const nm = bestName(u);
+          const uname = bestUsername(u);
+          arr.push({ id, user:u, balance: bal, name: nm, username: uname });
+        }
+        arr.sort((a,b)=> b.balance - a.balance);
+        renderList(arr, userId);
+      };
+      q.on('value', handler);
+      unsub = ()=> q.off('value', handler);
+    }
 
-    function renderList(list){
+    function renderList(list, userId){
       rowsEl.innerHTML = '';
-      if (!list.length){
-        emptyEl.style.display = '';
-        return;
-      }
-      emptyEl.style.display = 'none';
+      if (!list.length){ emptyEl.style.display=''; return; }
+      emptyEl.style.display='none';
 
       const frag = document.createDocumentFragment();
-
       list.forEach((it, idx)=>{
         const pos = idx + 1;
         const row = document.createElement('div');
         row.className = 'row';
-        if (pos === 1) row.classList.add('top-1');
-        else if (pos === 2) row.classList.add('top-2');
-        else if (pos === 3) row.classList.add('top-3');
-        if (String(it.id) === String(userId)) row.classList.add('self');
+        if (pos===1) row.classList.add('top-1');
+        else if (pos===2) row.classList.add('top-2');
+        else if (pos===3) row.classList.add('top-3');
+        if (userId && String(it.id)===String(userId)) row.classList.add('self');
 
         const rk = computeRank(it.balance);
         const badge = `<img class="rank-badge" src="assets/${rk.img}" alt="${rk.name}">`;
@@ -451,11 +431,9 @@
         const av = document.createElement('div');
         av.className = 'avatar';
         const url = avatarUrl(it.user) || '';
-        if (url){
-          av.innerHTML = `<img src="${url}" alt="avatar" referrerpolicy="no-referrer" loading="eager" decoding="async">`;
-        } else {
-          av.innerHTML = `<div class="letter">${letterOf(it.name)}</div>`;
-        }
+        av.innerHTML = url
+          ? `<img src="${url}" alt="avatar" referrerpolicy="no-referrer" loading="eager" decoding="async">`
+          : `<div class="letter">${letterOf(it.name)}</div>`;
 
         row.setAttribute('data-id', String(it.id));
         row.innerHTML = `
@@ -470,64 +448,35 @@
         row.querySelector('.avatar-slot').replaceWith(av);
         frag.appendChild(row);
       });
-
       rowsEl.appendChild(frag);
 
-      // تركيز الكاميرا على صف اللاعب مباشرة عند أول فتح
-      if (!firstFocusDone){
-        focusSelfRow(true);
-        firstFocusDone = true;
-      }
-    }
-
-    function focusSelfRow(smooth=true){
-      const myRow = rowsEl.querySelector(`.row[data-id="${String(userId)}"]`);
-      if (!myRow) return;
-      try{
-        myRow.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
-      }catch{
-        const r = myRow.getBoundingClientRect();
-        const s = scrollEl.getBoundingClientRect();
-        const delta = (r.top + r.height/2) - (s.top + s.height/2);
-        scrollEl.scrollTop += delta;
-      }
-    }
-
-    // اشتراك مباشر في كل المستخدمين (بدون حد)
-    let unsub = null;
-    function subscribeLeaderboard(){
-      const q = db.ref('users').orderByChild('balance');
-      const handler = (snap)=>{
-        const val = snap.val() || {};
-        const arr = [];
-        for (const id in val){
-          const u = val[id] || {};
-          const bal = typeof u.balance === 'number' ? u.balance : 0;
-          const nm = bestName(u);
-          const uname = bestUsername(u);
-          arr.push({ id, user:u, balance: bal, name: nm, username: uname });
+      // تركيز صف اللاعب إن وُجد
+      if (userId){
+        const myRow = rowsEl.querySelector(`.row[data-id="${String(userId)}"]`);
+        if (myRow){
+          try{ myRow.scrollIntoView({behavior:'smooth', block:'center'}); }catch{}
         }
-        arr.sort((a,b)=> b.balance - a.balance);
-        renderList(arr);
-      };
-      q.on('value', handler);
-      unsub = ()=> q.off('value', handler);
+      }
     }
 
-    function init(){
-      try{
-        sessionStorage.setItem('wlc_user_id', String(userId));
-        localStorage.setItem('wlc_user_id', String(userId));
-      }catch{}
-      subscribeLeaderboard();
+    async function boot(){
+      // إن لم تكن داخل تيليجرام، اقفل
+      if (!tg){
+        showGate(true);
+        return;
+      }
+      try{ tg.ready(); }catch{}
+      showGate(false);
+
+      // انتظر user من تيليجرام قليلاً (بدون منع التشغيل لو ما وصل)
+      const u = await waitForTelegramUser(2500);
+      const userId = u && u.id ? String(u.id) : null;
+
+      // ابدأ الاشتراك
+      subscribeLeaderboard(userId);
     }
 
-    ensureUserId(init);
-
-    document.addEventListener('visibilitychange', ()=>{
-      if (!document.hidden) focusSelfRow(true);
-    });
-
+    document.addEventListener('DOMContentLoaded', boot);
     window.addEventListener('beforeunload', ()=>{ try{ unsub && unsub(); }catch{} });
   </script>
 </body>
