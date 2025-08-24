@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar">
 <head>
   <meta charset="utf-8">
   <title>Leaderboard</title>
@@ -11,21 +11,22 @@
       --text:#eef3ff;
       --muted:#aeb8d0;
 
-      --okx-base-1:#161a1f;
-      --okx-base-2:#0e1216;
+      /* لوحة زجاجية داكنة (نمط OKX) */
+      --okx-base-1:#161a1f;  /* أعلى المستطيل */
+      --okx-base-2:#0e1216;  /* أسفل المستطيل */
       --okx-glass-top:rgba(255,255,255,.06);
       --okx-glass-btm:rgba(255,255,255,.035);
       --okx-border:rgba(255,255,255,.10);
 
-      --lime:#b6ff6a;
-      --gold-a:rgba(255,210,90,.26);
+      --lime:#b6ff6a;     /* اللون الليموني لقيمة الرصيد يمين */
+      --gold-a:rgba(255,210,90,.22);
       --gold-b:rgba(255,210,90,.16);
       --gold-c:rgba(255,210,90,.10);
 
       --shadow-1:0 12px 40px rgba(0,0,0,.55);
       --shadow-2:0 6px 18px rgba(0,0,0,.40);
 
-      --r-lg:22px; --r-md:16px; --r-sm:12px;
+      --r-lg:22px;
 
       --t-fast:.14s ease-out; --t-med:.20s ease-out;
     }
@@ -37,7 +38,7 @@
       overflow:hidden;
     }
 
-    /* Ambient (بدون أي تدرج أخضر) */
+    /* خلفية عامة محايدة (لا توهج أخضر) */
     .glow{
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
@@ -66,6 +67,7 @@
       -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.9;
     }
 
+    /* شريط علوي: زر رجوع فقط */
     .topbar{
       position:absolute; inset:0 0 auto 0; height:56px;
       display:flex; align-items:center; justify-content:flex-start;
@@ -104,30 +106,43 @@
 
     .rows{ display:flex; flex-direction:column; gap:10px; }
 
-    /* مستطيل زجاجي أسود دون أي هالات فوقه */
+    /* مظهر المستطيل مثل لقطة OKX: أسود زجاجي، Pill، بدون أي توهج فوقه */
     .row{
       position:relative;
       display:grid; grid-template-columns: 66px 52px 1fr auto; align-items:center; gap:10px;
-      padding: 10px 14px;
-      border-radius: 999px;
+      padding: 10px 14px;              /* أقل ~20% */
+      border-radius: 999px;             /* pill */
       background:
         linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
         linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
       background-repeat:no-repeat;
-      background-origin:border-box;
       border:1px solid var(--okx-border);
-      box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
-      min-height: 50px; /* ~ -20% من 62px */
+      box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
+      min-height: 50px;
       transition: transform var(--t-fast), filter var(--t-fast), box-shadow var(--t-fast);
       overflow:hidden;
     }
-    /* تأكيد إزالة أي لمعان/توهج عام */
-    .row::after{ content:none; }
-    .row::before{ content:none; }
+    /* تأكيد عدم وجود أي توهج/لمعان إضافي */
+    .row::after, .row::before{ content:none !important; }
 
     .row:hover{ transform: translateY(-1px); filter: saturate(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.52); }
 
-    /* تدرج ذهبي لثلاثة الأوائل فقط */
+    /* تدرّج ذهبي لتمييز الثلاثة الأوائل فقط (يسار→يمين) */
+    .row.top-1{
+      border-color: rgba(255,210,90,.60);
+      box-shadow: 0 18px 32px rgba(255,210,90,.24), 0 6px 16px rgba(0,0,0,.48);
+      background:
+        linear-gradient(90deg, var(--gold-a) 0%, rgba(255,210,90,.12) 60%, rgba(255,210,90,0) 100%),
+        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
+        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
+    }
+    .row.top-2{
+      border-color: rgba(255,210,90,.45);
+      background:
+        linear-gradient(90deg, var(--gold-b) 0%, rgba(255,210,90,.08) 58%, rgba(255,210,90,0) 100%),
+        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
+        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
+    }
     .row.top-3{
       border-color: rgba(255,210,90,.35);
       background:
@@ -135,22 +150,8 @@
         linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
         linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
     }
-    .row.top-2{
-      border-color: rgba(255,210,90,.45);
-      background:
-        linear-gradient(90deg, var(--gold-b) 0%, rgba(255,210,90,.08) 60%, rgba(255,210,90,0) 100%),
-        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
-        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
-    }
-    .row.top-1{
-      border-color: rgba(255,210,90,.60);
-      box-shadow: 0 18px 32px rgba(255,210,90,.28), 0 6px 16px rgba(0,0,0,.48);
-      background:
-        linear-gradient(90deg, var(--gold-a) 0%, rgba(255,210,90,.12) 62%, rgba(255,210,90,0) 100%),
-        linear-gradient(180deg, var(--okx-glass-top), var(--okx-glass-btm)),
-        linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
-    }
 
+    /* يسار: رقم الترتيب + بادج الرانك (بدلاً من النجمة) */
     .pos{
       display:flex; align-items:center; justify-content:flex-start; gap:8px;
       font-weight:900; color:#eaf3ff; letter-spacing:.3px; opacity:.98;
@@ -160,6 +161,7 @@
       filter: drop-shadow(0 2px 6px rgba(0,0,0,.45));
     }
 
+    /* الصورة */
     .avatar{
       width:44px; height:44px; border-radius:14px; overflow:hidden;
       display:grid; place-items:center;
@@ -172,6 +174,7 @@
       text-shadow: 0 2px 6px rgba(0,0,0,.6);
     }
 
+    /* الاسم واسم المستخدم */
     .name{ display:flex; flex-direction:column; gap:2px; min-width:0; }
     .name .label{
       font-weight:900; letter-spacing:.25px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -181,13 +184,14 @@
       font-size:.85rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
+    /* قيمة الرصيد على اليمين (ليموني مثل الصورة) */
     .amt{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-weight:900; letter-spacing:.3px; color: var(--lime);
       text-shadow: 0 0 14px rgba(125,255,163,.10), 0 0 4px rgba(182,255,106,.12);
     }
 
-    /* إشعاع على الحواف لمستطيل اللاعب فقط */
+    /* تمييز مستطيل اللاعب فقط بإشعاع حواف */
     .row.self{
       outline: 2px solid rgba(120,255,200,.35);
       box-shadow: 0 0 0 2px rgba(120,255,200,.18) inset, 0 12px 28px rgba(120,255,200,.10);
@@ -243,10 +247,12 @@
 
   <div id="gate" class="gate">Please open this page from Telegram App.</div>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
+    // منع بعض التفاعلات التخريبية
     (function harden(){
       try{
         document.addEventListener('contextmenu', e=>e.preventDefault());
@@ -258,6 +264,7 @@
       }catch{}
     })();
 
+    // Telegram WebApp
     const tg = window.Telegram?.WebApp;
     try { tg && tg.ready(); } catch(e){}
     let tgUser = tg?.initDataUnsafe?.user || null;
@@ -287,6 +294,7 @@
     }
     setTimeout(()=>{ if (!authOK && !(tg && tg.initDataUnsafe && tg.initDataUnsafe.user)) showGate(true); }, 200);
 
+    // Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -299,6 +307,7 @@
     const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
     const db = firebase.database(app);
 
+    // UI
     const rowsEl = document.getElementById('rows');
     const emptyEl = document.getElementById('empty');
     const scrollEl = document.getElementById('scroll');
@@ -319,6 +328,7 @@
       window.location.href = url;
     }
 
+    // رتب + صور البادجات
     const RANKS = [
       { name:'Iron',         key:'iron',        min:     0, img:'iron.png' },
       { name:'Bronze',       key:'bronze',      min:  1500, img:'bronze.png' },
@@ -338,6 +348,7 @@
       return RANKS[idx] || RANKS[0];
     }
 
+    // Helpers
     const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
     function bestName(u){
       if (!u || typeof u !== 'object') return 'Player';
@@ -412,6 +423,7 @@
 
       rowsEl.appendChild(frag);
 
+      // تركيز الكاميرا على صف اللاعب مباشرة عند أول فتح
       if (!firstFocusDone){
         focusSelfRow(true);
         firstFocusDone = true;
@@ -431,6 +443,7 @@
       }
     }
 
+    // اشتراك مباشر في كل المستخدمين (بدون حد)
     let unsub = null;
     function subscribeLeaderboard(){
       const q = db.ref('users').orderByChild('balance');
