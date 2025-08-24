@@ -299,7 +299,6 @@
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
   <script>
     // --- CORE SETUP ---
     const tg = window.Telegram?.WebApp;
@@ -377,43 +376,49 @@
             const timerEl = tile.querySelector('.timer');
             timerEl.style.display = 'none';
 
-            const isClaimed = !!(state.claimedDays && state.claimedDays[day]);
-
+            const isClaimed = state.claimedDays && state.claimedDays[day];
+            
             if (isClaimed) {
                 tile.classList.add('claimed');
-            } else if (day < state.currentDay) {
+                return;
+            }
+
+            if (day < state.currentDay) {
                 tile.classList.add('locked'); // Missed day
-            } else if (day > state.currentDay) {
+                return;
+            }
+
+            if (day > state.currentDay) {
                 tile.classList.add('locked'); // Future day
-            } else { // This is the current, active day
-                if (currentTime < state.nextAvailableAt) {
-                    // Cooldown is active, show timer
-                    tile.classList.add('locked');
-                    timerEl.style.display = 'block';
-                    timerEl.textContent = msToHMS(state.nextAvailableAt - currentTime);
-                } else {
-                    // Cooldown is over, it's claimable
-                    tile.classList.add('claimable');
-                }
+                return;
+            }
+
+            // This is the current, active day (day === state.currentDay)
+            if (currentTime < state.nextAvailableAt) {
+                // Cooldown is active, show timer
+                tile.classList.add('locked');
+                timerEl.style.display = 'block';
+                timerEl.textContent = msToHMS(state.nextAvailableAt - currentTime);
+            } else {
+                // Cooldown is over, it's claimable
+                tile.classList.add('claimable');
             }
         });
     }
 
     async function claim(userRef, day) {
-      const currentTime = now();
       let reward = null;
       try {
         const { committed, snapshot } = await userRef.transaction(user => {
-          if (!user) return user;
-          
+          if (!user) return;
           const t = now();
           if (!user.meDailyState) {
-            user.meDailyState = { currentDay: 1, lastClaimAt: 0, nextAvailableAt: t, expiresAt: t + 8*3600*1000, claimedDays: {} };
+            user.meDailyState = { currentDay: 1, nextAvailableAt: t, claimedDays: {} };
           }
           const state = user.meDailyState;
 
           if (day !== state.currentDay || t < state.nextAvailableAt) {
-            return; // Abort if not current day or on cooldown
+            return; // Abort
           }
           
           const rewardData = rewardFor(day);
@@ -424,7 +429,6 @@
           
           state.claimedDays = state.claimedDays || {};
           state.claimedDays[String(day)] = t;
-          state.lastClaimAt = t;
           
           if (day >= 30) {
             state.currentDay = 1;
@@ -439,8 +443,6 @@
         });
 
         if (committed && reward) {
-          dailyState = snapshot.val().meDailyState;
-          renderDaily();
           showPop(reward);
         }
       } catch (error) {
@@ -504,25 +506,22 @@
       userRef.on('value', (snapshot) => {
         const userData = snapshot.val() || {};
         
-        // Update balances
         const wlcBalance = userData.balance || 0;
         const usdtBalance = userData.usdtBalance || 0;
         wlcEl.textContent = fmtWLC(wlcBalance);
         usdtEl.textContent = fmtUSD(usdtBalance);
         updateRank(wlcBalance);
         
-        // Update daily state
         dailyState = userData.meDailyState;
-        if (!dailyState) { // First time user
+        if (!dailyState) {
             const t = now();
-            dailyState = { currentDay: 1, lastClaimAt: 0, nextAvailableAt: t, claimedDays: {} };
+            dailyState = { currentDay: 1, nextAvailableAt: t, claimedDays: {} };
         }
         renderDaily();
       });
 
-      if (!dailyTimerInterval) {
-        dailyTimerInterval = setInterval(renderDaily, 1000);
-      }
+      if (dailyTimerInterval) clearInterval(dailyTimerInterval);
+      dailyTimerInterval = setInterval(renderDaily, 1000);
       
       achGrid.addEventListener('click', (e) => {
         const tile = e.target.closest('.day.claimable');
