@@ -6,21 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <meta name="referrer" content="no-referrer">
-  <!-- CSP tuned for Firebase + Telegram WebApp + inline CSS. Adjust on server for strongest enforcement. -->
+  <!-- CSP خفيفة وآمنة وتسمح لـ Firebase بالعمل -->
   <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
+    default-src 'self' https: data: blob:;
     script-src 'self' 'unsafe-inline' https://www.gstatic.com;
     style-src 'self' 'unsafe-inline';
-    img-src 'self' data: blob: https:;
-    font-src 'self' data:;
+    img-src 'self' https: data: blob:;
+    font-src 'self' https: data:;
     connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app https://*.googleusercontent.com;
     media-src 'self' data: blob:;
     object-src 'none';
     frame-ancestors 'self' https://t.me https://web.telegram.org;
     base-uri 'self';
-    upgrade-insecure-requests; block-all-mixed-content;
+    upgrade-insecure-requests;
   ">
-  <meta name="format-detection" content="telephone=no">
   <style>
     :root{
       --bg:#000;
@@ -169,7 +168,7 @@
         linear-gradient(180deg, var(--okx-base-1), var(--okx-base-2));
     }
 
-    /* يسار: رقم الترتيب + بادج الرانك (بدلاً من النجمة) */
+    /* يسار: رقم الترتيب + بادج الرانك */
     .pos{
       display:flex; align-items:center; justify-content:flex-start; gap:8px;
       font-weight:900; color:#eaf3ff; letter-spacing:.3px; opacity:.98;
@@ -194,11 +193,11 @@
       text-shadow: 0 2px 6px rgba(0,0,0,.6);
     }
 
-    /* الاسم واسم المستخدم — إظهار كامل حتى سطرين لكل منهما عند الطول */
+    /* الاسم واسم المستخدم — سطر/سطرين بدون نقاط ثلاثية */
     .name{ display:flex; flex-direction:column; gap:2px; min-width:0; }
     .name .label{
       font-weight:800;
-      font-size: clamp(13px, 3.6vw, 15px);     /* تصغير بسيط */
+      font-size: clamp(13px, 3.6vw, 15px);
       line-height: 1.15;
       color:#eef3ff;
       white-space: normal; overflow: hidden; text-overflow: clip;
@@ -214,14 +213,14 @@
       word-break: break-word; hyphens: auto;
     }
 
-    /* قيمة الرصيد على اليمين — أصغر ومُحاذاة يمين أكثر لتوسيع مساحة الاسم */
+    /* الرصيد — أصغر ومُحاذى يمين لإتاحة مساحة للاسم */
     .amt{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-weight:900; letter-spacing:.3px; color: var(--lime);
       text-shadow: 0 0 14px rgba(125,255,163,.10), 0 0 4px rgba(182,255,106,.12);
-      font-size: clamp(11px, 3.4vw, 13px);     /* أصغر من السابق */
-      justify-self: end; text-align: right;    /* مزاحة لليمين */
-      min-width: 92px;                          /* تترك مساحة أكبر للاسم */
+      font-size: clamp(11px, 3.4vw, 13px);
+      justify-self: end; text-align: right;
+      min-width: 92px;
     }
 
     /* تمييز مستطيل اللاعب فقط بإشعاع حواف */
@@ -256,7 +255,7 @@
       color:#ffe9a8; font-weight:900; letter-spacing:.3px; text-align:center; padding:24px;
     }
 
-    /* Responsive polish for very small and large screens */
+    /* Responsive لضبط الهواتف الصغيرة والكبيرة */
     @media (max-width: 360px){
       .row{ grid-template-columns: 60px 48px 1fr auto; padding: 9px 12px; min-height: 46px; }
       .avatar{ width:40px; height:40px; border-radius:12px; }
@@ -303,7 +302,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    // Hardening: basic user gesture protections and key combos; small anti-tamper guard
+    // Hardening خفيف بدون كسر المكتبات
     (function harden(){
       try{
         document.addEventListener('contextmenu', e=>e.preventDefault());
@@ -312,9 +311,6 @@
           const k = e.key?.toLowerCase();
           if (k==='f12' || (e.ctrlKey&&e.shiftKey&&(k==='i'||k==='j'||k==='c')) || (e.ctrlKey && k==='u')) { e.preventDefault(); e.stopPropagation(); }
         }, true);
-        // Freeze some globals to reduce trivial tampering
-        Object.freeze(window.navigator);
-        Object.freeze(Object.prototype); // light obfuscation; remove if it breaks third-party
       }catch{}
     })();
 
