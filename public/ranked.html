@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <style>
+    :root{
+      --bg:#000; /* خلفية سوداء */
+      --text:#eef3ff;
+      --muted:#aeb8d0;
+
+      --glass-1: rgba(255,255,255,0.08);
+      --glass-2: rgba(255,255,255,0.05);
+      --glass-border: rgba(255,255,255,0.14);
+
+      --gold-1:#806b1d; --gold-2:#d9b64b; --gold-3:#ffe59e;
+      --gold-4:#ffcb5a; --gold-5:#ffb73a;
+
+      --accent:#b3ff7a; /* أصفر مخضر */
+      --accent-2:#7cffb5;
+
+      --shadow-1:0 12px 40px rgba(0,0,0,.55);
+      --shadow-2:0 6px 18px rgba(0,0,0,.40);
+
+      --r-lg:22px; --r-md:14px; --r-sm:10px;
+
+      --t-fast:.14s ease-out; --t-med:.20s ease-out;
+    }
+
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+      overflow:hidden;
+    }
+
+    /* Ambient light */
+    .glow{
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(50vw 50vw at 15% 10%, rgba(120,255,160,0.06), transparent 70%),
+        radial-gradient(44vw 44vw at 85% 15%, rgba(255,240,140,0.05), transparent 70%),
+        radial-gradient(60vw 60vw at 50% 88%, rgba(90,180,255,0.06), transparent 70%);
+      filter: blur(8px) saturate(110%);
+    }
+
+    /* Full-screen glass page with rounded corners, shifted 2px to the left */
+    .wrap{ position:relative; z-index:1; width:100%; height:100%; display:flex; align-items:stretch; justify-content:center; }
+    .card{
+      width:100vw; height:100vh; transform: translateX(-2px);
+      background:
+        linear-gradient(180deg, rgba(250,235,190,0.10), rgba(250,240,200,0.08)),
+        linear-gradient(180deg, rgba(30,36,50,0.30), rgba(18,22,30,0.36));
+      border: 1px solid rgba(255,228,150,0.28);
+      border-radius: var(--r-lg);
+      backdrop-filter: blur(12px) saturate(130%);
+      box-shadow: var(--shadow-1);
+      overflow:hidden; display:flex; flex-direction:column;
+    }
+    .card::before{
+      content:""; position:absolute; inset:0; border-radius: var(--r-lg);
+      padding:1px; background:
+        linear-gradient(135deg, rgba(255,230,150,.35), rgba(120,190,255,.22), rgba(80,255,170,.25));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; opacity:.9;
+    }
+
+    /* Topbar */
+    .topbar{
+      position:absolute; inset:0 0 auto 0; height:56px;
+      display:flex; align-items:center; justify-content:space-between;
+      padding: max(10px, env(safe-area-inset-top)) 12px 10px 12px; z-index:2;
+    }
+    .icon-btn{
+      width:38px; height:38px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.12);
+      color:#fff; cursor:pointer; user-select:none;
+      transition: transform var(--t-fast), background var(--t-med), border-color var(--t-med);
+      box-shadow: var(--shadow-2); backdrop-filter: blur(6px);
+    }
+    .icon-btn:hover{ background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+    .icon-btn:active{ transform: scale(.97); }
+    .icon-btn svg{ width:18px; height:18px; fill:#eaf2ff; opacity:.95 }
+
+    .scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding: 62px 14px max(18px, env(safe-area-inset-bottom)) 14px; }
+
+    /* Title */
+    .title{
+      margin: 4px 4px 14px 6px;
+      display:flex; align-items:baseline; justify-content:flex-start; gap:10px;
+    }
+    .title h1{
+      margin:0; font-size: clamp(22px, 5.6vw, 28px);
+      letter-spacing:.5px; font-weight:900;
+      background: linear-gradient(90deg, #fff, #dfe9ff);
+      -webkit-background-clip: text; background-clip:text; color: transparent;
+      text-shadow: 0 1px 2px rgba(0,0,0,.35);
+    }
+    .subtitle{
+      margin: 0 0 12px 6px; color:#cfe0ff;
+      font-size: .96rem; letter-spacing:.3px;
+    }
+
+    /* Rows container */
+    .rows{ display:flex; flex-direction:column; gap:10px; }
+
+    /* Base row (glass) */
+    .row{
+      position:relative;
+      display:grid; grid-template-columns: 54px 52px 1fr auto; align-items:center; gap:10px;
+      padding: 10px 12px; border-radius: 14px;
+      background: linear-gradient(180deg, var(--glass-1), var(--glass-2));
+      border:1px solid var(--glass-border);
+      box-shadow: 0 6px 18px rgba(0,0,0,.35);
+      min-height: 64px;
+      transition: transform var(--t-fast), filter var(--t-fast), box-shadow var(--t-fast);
+    }
+    .row:hover{ transform: translateY(-1px); filter: saturate(1.02); box-shadow: 0 10px 22px rgba(0,0,0,.42); }
+    .pos{
+      display:flex; align-items:center; justify-content:center; font-weight:900;
+      color:#eaf3ff; letter-spacing:.3px; opacity:.95;
+    }
+    .pos .medal{
+      width:24px; height:24px; margin-right:6px; display:none;
+    }
+    .avatar{
+      width:44px; height:44px; border-radius:12px; overflow:hidden;
+      display:grid; place-items:center;
+      background: #0b0f16; border:1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .avatar .letter{
+      font-weight:900; color:#ffe59e; letter-spacing:.3px;
+      text-shadow: 0 2px 6px rgba(0,0,0,.6);
+    }
+    .name{
+      display:flex; flex-direction:column; gap:2px; min-width:0;
+    }
+    .name .label{
+      font-weight:900; letter-spacing:.25px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      color:#eef3ff;
+    }
+    .name .muted{
+      font-size:.85rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .amt{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-weight:900; letter-spacing:.3px; color: var(--accent);
+      text-shadow: 0 0 10px rgba(180,255,120,.10);
+    }
+
+    /* Top 3 (golden gradient variants) */
+    .top-1{
+      background:
+        linear-gradient(90deg, rgba(255,210,90,.22), rgba(255,200,70,.10)),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border-color: rgba(255,210,90,.55);
+      box-shadow: 0 12px 28px rgba(255,210,90,.28), 0 6px 16px rgba(0,0,0,.40);
+    }
+    .top-2{
+      background:
+        linear-gradient(90deg, rgba(255,210,90,.18), rgba(255,200,70,.08)),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border-color: rgba(255,210,90,.45);
+      box-shadow: 0 10px 24px rgba(255,210,90,.24), 0 6px 16px rgba(0,0,0,.38);
+    }
+    .top-3{
+      background:
+        linear-gradient(90deg, rgba(255,210,90,.14), rgba(255,200,70,.06)),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border-color: rgba(255,210,90,.38);
+      box-shadow: 0 8px 22px rgba(255,210,90,.20), 0 6px 16px rgba(0,0,0,.36);
+    }
+    .row.top-1 .pos .medal, .row.top-2 .pos .medal, .row.top-3 .pos .medal{ display:inline-block; }
+
+    /* Highlight self */
+    .self{ outline: 2px solid rgba(120,255,200,.35); box-shadow: 0 0 0 2px rgba(120,255,200,.25) inset, 0 10px 24px rgba(120,255,200,.10); }
+
+    /* Empty state */
+    .empty{
+      margin: 14px 6px; padding: 14px; border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.12);
+      color:#bfd0ff; text-align:center; letter-spacing:.3px;
+    }
+
+    /* Gate overlay */
+    .gate{
+      position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.85);
+      color:#ffe9a8; font-weight:900; letter-spacing:.3px; text-align:center; padding:24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+
+  <div class="wrap" id="app-wrap">
+    <div class="card">
+      <div class="topbar">
+        <div class="icon-btn" id="back-btn" title="Back" aria-label="Back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        </div>
+        <div class="icon-btn" id="cfg-btn" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 1h-3.8a.5.5 0 0 0-.49.41l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.7 7.05a.5.5 0 0 0 .12.64L4.85 9.27c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.61.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.04.24.25.41.49.41h3.8c.24 0 .45-.17.49-.41l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.22.09.48 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+        </div>
+      </div>
+
+      <div class="scroll">
+        <div class="title">
+          <h1>Leaderboard</h1>
+        </div>
+        <div class="subtitle">Global Rank • Real-time</div>
+
+        <div id="rows" class="rows"></div>
+        <div id="empty" class="empty" style="display:none">No players yet. Be the first one to play!</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="gate" class="gate">Please open this page from Telegram App.</div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- Audio keep-alive (same mechanics used elsewhere) -->
+  <script>
+    (function audioBoot(){
+      let a = document.getElementById('preloadAudio');
+      if (!a) {
+        a = document.createElement('audio');
+        a.id = 'preloadAudio';
+        a.loop = true; a.preload='auto'; a.style.display='none';
+        a.src = 'assets/preload.mp3';
+        document.body.appendChild(a);
+      }
+      function persist(){ try{
+        sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
+        sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
+        if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
+          sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (a.currentTime || 0) * 1000));
+        }
+      }catch{}}
+      function prime(){ try{ a.muted = true; a.volume=.76; a.play().catch(()=>{});}catch{}}
+      function unmute(){ a.muted=false; a.volume=.76; a.play().catch(()=>{}); }
+      prime();
+      const ensure = ()=>{ unmute(); off(); };
+      function off(){ ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.removeEventListener(ev,ensure,{passive:true})); }
+      ['pointerdown','touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,ensure,{passive:true, once:true}));
+      window.addEventListener('pagehide', persist); window.addEventListener('beforeunload', persist);
+      document.addEventListener('visibilitychange', ()=>{ if (document.hidden) persist(); else a.play().catch(()=>{}); });
+    })();
+  </script>
+
+  <!-- Page Logic -->
+  <script>
+    // Basic hardening: disable context menu and common dev hotkeys
+    (function harden(){
+      try{
+        document.addEventListener('contextmenu', e=>e.preventDefault());
+        document.addEventListener('dragstart', e=>e.preventDefault(), {passive:false});
+        document.addEventListener('keydown', e=>{
+          const k = e.key?.toLowerCase();
+          if (k==='f12' || (e.ctrlKey&&e.shiftKey&&(k==='i'||k==='j'||k==='c')) || (e.ctrlKey && k==='u')) { e.preventDefault(); e.stopPropagation(); }
+        }, true);
+      }catch{}
+    })();
+
+    // Telegram gating
+    const tg = window.Telegram?.WebApp;
+    try { tg && tg.ready(); } catch(e){}
+    let tgUser = tg?.initDataUnsafe?.user || null;
+    let userId = tgUser?.id || null;
+
+    function storedId(){
+      try{
+        return sessionStorage.getItem('wlc_user_id') || localStorage.getItem('wlc_user_id') || null;
+      }catch{ return null; }
+    }
+    let authOK = false;
+    function showGate(show){
+      const g = document.getElementById('gate');
+      g.style.display = show ? 'flex' : 'none';
+      const app = document.getElementById('app-wrap');
+      app.style.filter = show ? 'blur(6px) brightness(.6)' : '';
+      app.style.pointerEvents = show ? 'none' : '';
+    }
+    function ensureUserId(cb){
+      if (!userId) userId = storedId();
+      if (userId) { authOK = true; return cb(); }
+      setTimeout(()=>{
+        tgUser = tg?.initDataUnsafe?.user || tgUser;
+        userId = tgUser?.id || storedId();
+        if (userId) { authOK = true; cb(); } else { showGate(true); try{ window.location.replace('welcome.html'); }catch{} }
+      }, 80);
+    }
+    setTimeout(()=>{ if (!authOK && !(tg && tg.initDataUnsafe && tg.initDataUnsafe.user)) showGate(true); }, 200);
+
+    // Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
+      authDomain: "wellcoinbotgame.firebaseapp.com",
+      databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "wellcoinbotgame",
+      storageBucket: "wellcoinbotgame.appspot.com",
+      messagingSenderId: "108640533638",
+      appId: "1:108640533638:web:ed07516d96ac38f47f6507"
+    };
+    const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(app);
+
+    // UI refs
+    const rowsEl = document.getElementById('rows');
+    const emptyEl = document.getElementById('empty');
+    const backBtn = document.getElementById('back-btn');
+    const cfgBtn  = document.getElementById('cfg-btn');
+
+    backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
+    cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
+    function go(url){
+      try{
+        const a = document.getElementById('preloadAudio');
+        if (a) {
+          sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
+          sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
+          if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
+            sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (a.currentTime || 0) * 1000));
+          }
+        }
+      }catch{}
+      window.location.href = url;
+    }
+
+    // Helpers
+    const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
+    function bestName(u){
+      if (!u || typeof u !== 'object') return 'Player';
+      const p = u.profile || {};
+      const direct = u.displayName || u.name || u.nickname || u.username;
+      const prof = p.displayName || p.name || p.nickname || p.username;
+      const first = u.firstName || p.firstName || u.first_name || '';
+      const last  = u.lastName  || p.lastName  || u.last_name  || '';
+      const combo = [first,last].filter(Boolean).join(' ').trim();
+      return direct || prof || combo || 'Player';
+    }
+    function avatarUrl(u){
+      const p = u?.profile || {};
+      return u?.avatarUrl || p?.avatarUrl || u?.photoUrl || p?.photoUrl || '';
+    }
+    function letterOf(name){
+      const ch = (name||'').trim()[0]; return (ch||'P').toUpperCase();
+    }
+
+    function renderList(list){
+      rowsEl.innerHTML = '';
+      if (!list.length){
+        emptyEl.style.display = '';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      list.forEach((it, idx)=>{
+        const pos = idx + 1;
+        const row = document.createElement('div');
+        row.className = 'row';
+        if (pos === 1) row.classList.add('top-1');
+        else if (pos === 2) row.classList.add('top-2');
+        else if (pos === 3) row.classList.add('top-3');
+        if (String(it.id) === String(userId)) row.classList.add('self');
+
+        const medalSvg = (pos<=3) ? `
+          <svg class="medal" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="${pos===1?'#ffcc33':(pos===2?'#d0d6e5':'#d89e57')}" d="M12 2l3 5 6 .9-4.3 4.2 1 6-5.7-3-5.7 3 1-6L3 7.9 9 7z"/>
+          </svg>` : `<span class="medal"></span>`;
+
+        const av = document.createElement('div');
+        av.className = 'avatar';
+        const url = avatarUrl(it.user) || '';
+        if (url){
+          av.innerHTML = `<img src="${url}" alt="avatar" referrerpolicy="no-referrer" loading="eager" decoding="async">`;
+        } else {
+          av.innerHTML = `<div class="letter">${letterOf(it.name)}</div>`;
+        }
+
+        row.innerHTML = `
+          <div class="pos">${medalSvg}<span>#${pos}</span></div>
+          <div class="avatar-slot"></div>
+          <div class="name">
+            <div class="label" title="${it.name}">${it.name}</div>
+            <div class="muted" title="${it.username||''}">${it.username||''}</div>
+          </div>
+          <div class="amt" title="${fmtWLC(it.balance)} WLC">${fmtWLC(it.balance)}</div>
+        `;
+        row.querySelector('.avatar-slot').replaceWith(av);
+        rowsEl.appendChild(row);
+      });
+    }
+
+    // Live leaderboard query
+    let unsub = null;
+    function subscribeLeaderboard(){
+      // نجيب أعلى 500 رصيد مثلاً (عدّل الرقم حسب الحاجة)
+      const q = db.ref('users').orderByChild('balance').limitToLast(500);
+      const handler = (snap)=>{
+        const val = snap.val() || {};
+        const arr = [];
+        for (const id in val){
+          const u = val[id] || {};
+          const bal = typeof u.balance === 'number' ? u.balance : 0;
+          // تجاهل الحسابات بدون أي بيانات حقيقية
+          if (!u && bal<=0) continue;
+          const nm = bestName(u);
+          const uname = u.username ? '@'+u.username : (u.profile?.username ? '@'+u.profile.username : '');
+          arr.push({ id, user:u, balance: bal, name: nm, username: uname });
+        }
+        // Sort desc by balance
+        arr.sort((a,b)=> b.balance - a.balance);
+        renderList(arr);
+      };
+      q.on('value', handler);
+      unsub = ()=> q.off('value', handler);
+    }
+
+    function init(){
+      // Save userId for cross-pages
+      try{
+        sessionStorage.setItem('wlc_user_id', String(userId));
+        localStorage.setItem('wlc_user_id', String(userId));
+      }catch{}
+      subscribeLeaderboard();
+    }
+
+    ensureUserId(init);
+  </script>
+</body>
+</html>
