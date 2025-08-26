@@ -1,3 +1,4 @@
+<script>
 // ---------- DOM Refs ----------
 const bgEl = document.getElementById('bg');
 const soundBtn = document.getElementById('soundBtn');
@@ -168,8 +169,8 @@ function setProgress(pct, msg) {
 }
 function incProgress() { doneSteps++; setProgress(Math.floor(doneSteps*100/totalSteps), "Preparing game, please wait..."); }
 
-// ---------- Assets ----------
-const BASE_ASSETS = [
+// ---------- Assets (base list + optional manifest merge) ----------
+let BASE_ASSETS = [
   "assets/ak.jpg",
   "assets/bmwcar.jpg",
   "assets/bodyguards.jpg",
@@ -191,7 +192,6 @@ const BASE_ASSETS = [
   "assets/clock.jpg",
   "assets/computer.png",
   "assets/daily-icon.png",
-  "assets/dragon-frame.png",
   "assets/enemy1-attack1.png",
   "assets/enemy1-attack2.png",
   "assets/enemy1.png",
@@ -226,12 +226,40 @@ const BASE_ASSETS = [
   "assets/wife.jpg",
   "assets/wlc.png",
   "assets/yacht.jpg",
-  "assets/youtube-icon.png"
+  "assets/youtube-icon.png",
+  "assets/usdt.png",
+  "assets/silver.png",
+  "assets/plat.png",
+  "assets/master.png",
+  "assets/iron.png",
+  "assets/gold.png",
+  "assets/grandmaster (1).png",
+  "assets/emrald.png",
+  "assets/diamon.png",
+  "assets/challenger.png",
+  "assets/bronze.png",
+  "assets/gift.png"
 ];
+// Exclude background.mp4 even if present anywhere
+function filterOutBackgroundMp4(list){
+  return Array.from(new Set(list)).filter(p => !/background\.mp4$/i.test(p));
+}
+// Try merging a manifest if exists (assets/asset-manifest.json should be an array of paths)
+async function maybeMergeAssetsManifest() {
+  try {
+    const res = await fetch('assets/asset-manifest.json', { cache: 'no-cache' });
+    if (!res.ok) return;
+    const arr = await res.json();
+    if (Array.isArray(arr) && arr.length) {
+      BASE_ASSETS = filterOutBackgroundMp4([...BASE_ASSETS, ...arr]);
+    }
+  } catch(e) {}
+}
+BASE_ASSETS = filterOutBackgroundMp4(BASE_ASSETS);
 
 // ---------- Firebase Config ----------
 const firebaseConfig = {
-  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5يboBkw",
+  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw", // تم إزالة الحرف العربي الخاطئ
   authDomain: "wellcoinbotgame.firebaseapp.com",
   databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "wellcoinbotgame",
@@ -246,8 +274,53 @@ tg.ready();
 const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser?.id ? tgUser.id.toString() : null;
 
+// ---------- تهيئة بيانات المستخدم + صورة البروفايل مسبقًا ----------
+async function preloadUserProfile() {
+  try {
+    const firstName = (tgUser?.first_name || '').trim();
+    const lastName  = (tgUser?.last_name  || '').trim();
+    const username  = (tgUser?.username   || '').trim();
+    const photoUrl  = (tgUser?.photo_url  || '').trim();
+    const displayName = (firstName || lastName)
+      ? [firstName, lastName].filter(Boolean).join(' ').trim()
+      : (username ? `@${username}` : 'Player');
+
+    const profile = { id: userId, firstName, lastName, username, displayName, photoUrl };
+    try {
+      sessionStorage.setItem('wlc_user_id', String(userId||''));
+      localStorage.setItem('wlc_user_id', String(userId||''));
+      localStorage.setItem('wlc_profile_json', JSON.stringify(profile));
+    } catch(e) {}
+    await idbSet('userProfile:'+userId, profile);
+
+    // Warm and cache avatar if CORS allows; else warm-image only
+    if (photoUrl) {
+      let cached = false;
+      try {
+        const res = await fetch(photoUrl, { credentials:'omit' });
+        if (res.ok) {
+          const blob = await res.blob();
+          await idbSet('userAvatar:'+userId, blob);
+          if ('createImageBitmap' in window) { try { await createImageBitmap(blob); } catch(e){} }
+          cached = true;
+        }
+      } catch(e) {}
+      if (!cached) {
+        await new Promise(resolve => {
+          const i = new Image();
+          i.onload = resolve; i.onerror = resolve;
+          i.referrerPolicy = 'no-referrer';
+          i.decoding = 'async';
+          i.src = photoUrl;
+        });
+        await idbSet('userAvatarUrl:'+userId, photoUrl);
+      }
+    }
+  } catch(e) {}
+}
+
 // ---------- تسريع التحميل مع توازي + fallback ----------
-const CONCURRENCY = 6;
+const CONCURRENCY = Math.min(8, (navigator.hardwareConcurrency||6));
 const MAX_RETRIES = 2;
 
 async function fetchBlob(url, retries = MAX_RETRIES) {
@@ -332,7 +405,7 @@ async function loadAsset(src) {
 }
 
 async function preloadAssetsWithConcurrency(assets) {
-  totalSteps = 2 + assets.length; // + user + shop
+  totalSteps = 3 + assets.length; // + user + shop + profile-prep
   setProgress(0, "Preparing game, please wait...");
 
   const results = new Array(assets.length);
@@ -372,10 +445,18 @@ async function preloadAll() {
     }
   } catch(e) {}
 
-  // 3) تحميل الأصول سريعًا
-  const results = await preloadAssetsWithConcurrency(BASE_ASSETS);
+  // 2.1) تهيئة بيانات المستخدم وصورته (من Telegram مباشرة مثل welcome)
+  await preloadUserProfile();
+  incProgress();
 
-  // 4) بيانات المستخدم (شرط أساسي)
+  // 3) تحميل قائمة الأصول كاملة (مع استبعاد background.mp4) إن توفر manifest
+  await maybeMergeAssetsManifest();
+  const assetList = filterOutBackgroundMp4(BASE_ASSETS);
+
+  // 4) تحميل الأصول سريعًا
+  const results = await preloadAssetsWithConcurrency(assetList);
+
+  // 5) بيانات المستخدم من Firebase (شرط أساسي)
   setProgress(Math.floor(doneSteps*100/totalSteps), "Loading player data...");
   if (!userId) {
     setProgress(100, "Please login via Telegram");
@@ -396,14 +477,14 @@ async function preloadAll() {
     setProgress(100, "Network error. Retrying may help.");
   }
 
-  // 5) متجر (غير قاتل)
+  // 6) متجر (غير قاتل)
   try {
     const shopSnap = await db.ref("users/" + userId + "/shopItems").get();
     if (shopSnap.exists()) await idbSet('shopItems', shopSnap.val());
   } catch(e) {}
   incProgress();
 
-  // 6) لا نظهر أي رسالة “assets failed” — نمضي ونترك المفقود يتحمل لاحقًا
+  // 7) لا نظهر أي رسالة “assets failed” — نمضي ونترك المفقود يتحمل لاحقًا
   const stillFailed = results.filter(r => !r.ok);
   if (stillFailed.length) {
     console.warn('[preload] Non-blocking assets failed:', stillFailed.map(r=>r.src));
@@ -483,3 +564,4 @@ document.addEventListener('DOMContentLoaded', preloadAll);
 (function initTouchDotListener() {
   // موجودة فوق في CSS والإنشاء في initTouchDot
 })();
+</script>
