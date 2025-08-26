@@ -31,6 +31,15 @@
       --muted:#ddd;
       --card:#2a2a2a;
       --card2:#1a1a1a;
+
+      /* LED ring controls (slower + softer by default) */
+      --led-speed: 6s;     /* bigger = slower */
+      --led-width: 1.2;    /* stroke width of the bright segment */
+      --led-on: 3.2;       /* bright segment length (of 100 pathLength) */
+      --led-off: 96.8;     /* gap after the segment */
+      --led-faint: .06;    /* overall faint border glow */
+      --led-ds1: .28;      /* outer glow intensity 1 */
+      --led-ds2: .10;      /* outer glow intensity 2 */
     }
     body {
       background: #000;
@@ -94,22 +103,24 @@
       isolation: isolate;
     }
 
-    /* LED ring along the border: thin glowing segment rotating around edges */
+    /* LED ring along the border: thin glowing segment rotating around edges (slower + softer) */
     .led-ring{ position:absolute; inset:0; z-index:1; pointer-events:none; }
     .led-ring svg{ width:100%; height:100%; display:block; }
     .led-ring .faint{
-      stroke: rgba(255,215,120,.12);
-      stroke-width: 1.2;
-      filter: blur(.2px);
+      stroke: rgba(255,215,120,var(--led-faint));
+      stroke-width: 1;
+      filter: none;
     }
     .led-ring .dash{
       stroke: url(#glow);
-      stroke-width: 2;
+      stroke-width: var(--led-width);
       stroke-linecap: round;
-      stroke-dasharray: 6 94;       /* small bright segment */
+      stroke-dasharray: var(--led-on) var(--led-off);
       stroke-dashoffset: 0;
-      animation: dash-rotate 2.6s linear infinite;
-      filter: drop-shadow(0 0 6px rgba(255,215,120,.65)) drop-shadow(0 0 14px rgba(255,215,120,.28));
+      animation: dash-rotate var(--led-speed) linear infinite;
+      filter:
+        drop-shadow(0 0 4px rgba(255,215,120, var(--led-ds1)))
+        drop-shadow(0 0 10px rgba(255,215,120, var(--led-ds2)));
     }
     @keyframes dash-rotate{ to { stroke-dashoffset: -100; } }
 
@@ -215,12 +226,12 @@
       background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); color:#fff; cursor:pointer;
     }
 
-    /* Confetti */
+    /* Confetti (visible over modal) */
     .confetti{
       position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index: 2;
     }
     .confetti .piece{
-      position:absolute; width:8px; height:12px; opacity:.95; border-radius:2px;
+      position:absolute; width:9px; height:14px; opacity:.98; border-radius:2px;
       will-change: transform, opacity;
       animation: confetti-fall 1200ms ease-out forwards;
     }
@@ -397,30 +408,30 @@
       };
     }
 
-    // Confetti overlay on the whole modal (ensures visibility)
+    // Confetti overlay on the modal (high visibility)
     function fireConfetti(container){
       const c = document.createElement('div'); c.className='confetti';
       container.appendChild(c);
       const colors = ['#ff4757','#fffa65','#2ed573','#1e90ff','#eccc68','#ffa502','#7bed9f','#70a1ff','#ff6b81'];
       const rect = container.getBoundingClientRect();
-      const pieces = 120;
+      const pieces = 140;
       for (let i=0;i<pieces;i++){
         const piece = document.createElement('div'); piece.className='piece';
         piece.style.background = colors[(Math.random()*colors.length)|0];
-        const x0 = (rect.width/2) + (Math.random()*80 - 40);
+        const x0 = (rect.width/2) + (Math.random()*90 - 45);
         const x1 = Math.random()*rect.width;
-        const y1 = rect.height + 80 + Math.random()*100;
+        const y1 = rect.height + 100 + Math.random()*120;
         const r0 = (Math.random()*180 - 90) + 'deg';
         piece.style.setProperty('--x0', x0+'px');
         piece.style.setProperty('--x1', x1+'px');
         piece.style.setProperty('--y1', y1+'px');
         piece.style.setProperty('--r0', r0);
         piece.style.left = '0px'; piece.style.top = '0px';
-        piece.style.animationDuration = (900 + Math.random()*700)+'ms';
+        piece.style.animationDuration = (1000 + Math.random()*800)+'ms';
         c.appendChild(piece);
-        setTimeout(()=> piece.remove(), 2000);
+        setTimeout(()=> piece.remove(), 2200);
       }
-      setTimeout(()=> c.remove(), 2100);
+      setTimeout(()=> c.remove(), 2300);
     }
     function showCongratsModal(textHTML){
       const wrap = document.createElement('div');
@@ -437,7 +448,7 @@
 
     // Render helpers
     function ledRingMarkup(){
-      // SVG thin dash rotating around rounded rect
+      // SVG thin dash rotating around rounded rect (uses CSS vars for speed/softness)
       return `
         <div class="led-ring" aria-hidden="true">
           <svg viewBox="0 0 100 100" preserveAspectRatio="none">
