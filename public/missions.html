@@ -31,7 +31,6 @@
       --muted:#ddd;
       --card:#2a2a2a;
       --card2:#1a1a1a;
-      --ring: 12px; /* corner radius for LED ring cutout */
     }
     body {
       background: #000;
@@ -95,20 +94,24 @@
       isolation: isolate;
     }
 
-    /* Remove the old center shine; new LED ring along edges */
-    .edge-led{
-      position:absolute; inset:0; border-radius:12px; pointer-events:none;
-      padding:2px; /* ring thickness */
-      background:
-        conic-gradient(from 0deg, rgba(255,213,120,.95) 0 12deg, rgba(255,213,120,0) 12deg 360deg);
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor; mask-composite: exclude; /* show only border ring */
-      animation: led-rotate 3.2s linear infinite;
-      opacity:.95;
-      filter: drop-shadow(0 0 6px rgba(255,220,120,.45));
-      z-index:1;
+    /* LED ring along the border: thin glowing segment rotating around edges */
+    .led-ring{ position:absolute; inset:0; z-index:1; pointer-events:none; }
+    .led-ring svg{ width:100%; height:100%; display:block; }
+    .led-ring .faint{
+      stroke: rgba(255,215,120,.12);
+      stroke-width: 1.2;
+      filter: blur(.2px);
     }
-    @keyframes led-rotate{ to { transform: rotate(360deg); } }
+    .led-ring .dash{
+      stroke: url(#glow);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 6 94;       /* small bright segment */
+      stroke-dashoffset: 0;
+      animation: dash-rotate 2.6s linear infinite;
+      filter: drop-shadow(0 0 6px rgba(255,215,120,.65)) drop-shadow(0 0 14px rgba(255,215,120,.28));
+    }
+    @keyframes dash-rotate{ to { stroke-dashoffset: -100; } }
 
     /* Images — block long-press/save */
     .mission img {
@@ -214,20 +217,16 @@
 
     /* Confetti */
     .confetti{
-      position:absolute; inset:0; pointer-events:none; overflow:hidden;
+      position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index: 2;
     }
     .confetti .piece{
-      position:absolute; width:8px; height:14px; opacity:.9;
+      position:absolute; width:8px; height:12px; opacity:.95; border-radius:2px;
       will-change: transform, opacity;
-      animation: fall 1200ms ease-out forwards, spin 1200ms linear infinite;
+      animation: confetti-fall 1200ms ease-out forwards;
     }
-    @keyframes fall{
-      0%{ transform: translate(var(--x), calc(var(--y) - 20px)) scale(1); opacity:1; }
-      100%{ transform: translate(var(--x-end), var(--y-end)) rotate(260deg) scale(.9); opacity:0; }
-    }
-    @keyframes spin{
-      from{ transform: rotate(0deg); }
-      to  { transform: rotate(360deg); }
+    @keyframes confetti-fall{
+      0%  { transform: translate(var(--x0), -24px) rotate(var(--r0)); opacity:1; }
+      100%{ transform: translate(var(--x1), var(--y1)) rotate(calc(var(--r0) + 540deg)); opacity:0; }
     }
 
     /* Global block: long press/context menu on images */
@@ -367,7 +366,8 @@
     function makeInviteModal(link){
       const wrap = document.createElement('div');
       const h = document.createElement('h3'); h.textContent = 'Invite Friends'; wrap.appendChild(h);
-      const p1 = document.createElement('p'); p1.innerHTML = `<strong>Your referral link:</strong><br><span style="word-break:break-word;color:#fff">${link}</span>`;
+      const p1 = document.createElement('p');
+      p1.innerHTML = `<strong>Your referral link:</strong><br><span style="word-break:break-word;color:#fff">${link}</span>`;
       const p2 = document.createElement('p'); p2.style.color = '#ffb86b';
       p2.style.fontSize = '13px';
       p2.innerHTML = 'Warning: Fake referrals from the same device will be checked. Violations may lead to penalties.';
@@ -396,29 +396,31 @@
         navigator.clipboard.writeText(link).then(()=>{ modal.remove(); });
       };
     }
+
+    // Confetti overlay on the whole modal (ensures visibility)
     function fireConfetti(container){
       const c = document.createElement('div'); c.className='confetti';
       container.appendChild(c);
       const colors = ['#ff4757','#fffa65','#2ed573','#1e90ff','#eccc68','#ffa502','#7bed9f','#70a1ff','#ff6b81'];
       const rect = container.getBoundingClientRect();
-      const pieces = 80;
+      const pieces = 120;
       for (let i=0;i<pieces;i++){
         const piece = document.createElement('div'); piece.className='piece';
-        const color = colors[(Math.random()*colors.length)|0];
-        piece.style.background = color;
-        const startX = (rect.width/2) + (Math.random()*60 - 30);
-        const startY = 10;
-        const endX = Math.random()*rect.width;
-        const endY = rect.height + 60 + Math.random()*80;
-        piece.style.setProperty('--x', startX+'px');
-        piece.style.setProperty('--y', startY+'px');
-        piece.style.setProperty('--x-end', endX+'px');
-        piece.style.setProperty('--y-end', endY+'px');
+        piece.style.background = colors[(Math.random()*colors.length)|0];
+        const x0 = (rect.width/2) + (Math.random()*80 - 40);
+        const x1 = Math.random()*rect.width;
+        const y1 = rect.height + 80 + Math.random()*100;
+        const r0 = (Math.random()*180 - 90) + 'deg';
+        piece.style.setProperty('--x0', x0+'px');
+        piece.style.setProperty('--x1', x1+'px');
+        piece.style.setProperty('--y1', y1+'px');
+        piece.style.setProperty('--r0', r0);
         piece.style.left = '0px'; piece.style.top = '0px';
+        piece.style.animationDuration = (900 + Math.random()*700)+'ms';
         c.appendChild(piece);
-        setTimeout(()=> piece.remove(), 1300);
+        setTimeout(()=> piece.remove(), 2000);
       }
-      setTimeout(()=> c.remove(), 1400);
+      setTimeout(()=> c.remove(), 2100);
     }
     function showCongratsModal(textHTML){
       const wrap = document.createElement('div');
@@ -427,13 +429,30 @@
       const actions = document.createElement('div'); actions.className='modal-actions';
       const ok = document.createElement('button'); ok.className='btn success'; ok.textContent = 'OK';
       actions.appendChild(ok); wrap.appendChild(actions);
-      const { modal, card } = showModal(wrap);
-      // confetti burst
-      fireConfetti(card);
+      const { modal } = showModal(wrap);
+      // confetti on the modal overlay (not clipped)
+      fireConfetti(modal);
       ok.onclick = ()=> modal.remove();
     }
 
     // Render helpers
+    function ledRingMarkup(){
+      // SVG thin dash rotating around rounded rect
+      return `
+        <div class="led-ring" aria-hidden="true">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"  stop-color="#fff2b0"/>
+                <stop offset="100%" stop-color="#ffd76a"/>
+              </linearGradient>
+            </defs>
+            <rect class="faint" x="1" y="1" width="98" height="98" rx="12" ry="12" fill="none" pathLength="100"></rect>
+            <rect class="dash"  x="1" y="1" width="98" height="98" rx="12" ry="12" fill="none" pathLength="100"></rect>
+          </svg>
+        </div>
+      `;
+    }
     function renderMission({ id, title, desc, icon, reward, progress=null, claimed=false, disabled=false, buttonText="", onClick, progressTheme=null, extraClasses='' }){
       const div = document.createElement('div');
       div.className = `mission ${extraClasses||''}`;
@@ -444,7 +463,7 @@
           <p style="margin-top:4px; font-size:12px;">${Math.round(progress)}%</p>
         ` : '';
       div.innerHTML = `
-        <span class="edge-led" aria-hidden="true"></span>
+        ${ledRingMarkup()}
         <img src="${icon}" alt="${title}" draggable="false" oncontextmenu="return false"/>
         <div class="mission-content">
           <h3>${title}</h3>
@@ -464,7 +483,7 @@
       { id: "telegram", title: "Join our Telegram",      icon: "assets/telegram-icon.png",  url: "https://t.me/WELLcoinofficial",          reward: 1, type: "join"   },
       { id: "instagram",title: "Follow us on Instagram", icon: "assets/instagram-icon.png", url: "https://instagram.com/WELLcoin1",        reward: 1, type: "follow" },
       { id: "facebook", title: "Like our Facebook page", icon: "assets/facebook-icon.png",  url: "https://www.facebook.com/profile.php?id=61562283616319", reward: 1, type: "follow" },
-      { id: "tiktok",   title: "Follow us on TikTok",    icon: "assets/tiktok-icon.png",    url: "https://www.tiktok.com/@wellcoin6?_t=ZN-8zBdro3gOQB&_r=1",          reward: 1, type: "follow" },
+      { id: "tiktok",   title: "Follow us on TikTok",    icon: "assets/tiktok-icon.png",    url: "https://www.tiktok.com/@wellcoin6?_t=ZN-8zBdro3gOQB&_r=1", reward: 1, type: "follow" },
       { id: "x",        title: "Follow us on X (Twitter)",icon:"assets/twitter-icon.png",   url: "https://x.com/WELLcoin2024?s=09",        reward: 1, type: "follow" }
     ];
 
