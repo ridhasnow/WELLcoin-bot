@@ -10,7 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-  <!-- Optional: warmup icons to render faster (browser cache) -->
+  <!-- Preload assets for instant paint -->
   <link rel="preload" as="image" href="assets/youtube-icon.png"/>
   <link rel="preload" as="image" href="assets/telegram-icon.png"/>
   <link rel="preload" as="image" href="assets/instagram-icon.png"/>
@@ -23,16 +23,26 @@
   <link rel="preload" as="image" href="assets/invit3.png"/>
 
   <style>
+    :root{
+      --gold:#d4af37;
+      --gold-2:#ffd76a;
+      --ok:#19ff74;
+      --txt:#fff;
+      --muted:#ddd;
+      --card:#2a2a2a;
+      --card2:#1a1a1a;
+      --ring: 12px; /* corner radius for LED ring cutout */
+    }
     body {
-      background: black;
-      color: white;
+      background: #000;
+      color: var(--txt);
       font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Ubuntu, 'Helvetica Neue', Arial, sans-serif;
       padding: 20px;
       margin: 0;
       -webkit-text-size-adjust: 100%;
     }
     .header-box {
-      background: #1a1a1a;
+      background: var(--card2);
       padding: 20px;
       border-radius: 10px;
       text-align: center;
@@ -41,7 +51,6 @@
     }
     .header-box h1 {
       font-size: 26px;
-      color: white;
       background: linear-gradient(90deg, gold, white);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -49,13 +58,13 @@
       margin: 0;
     }
 
-    /* Back button */
+    /* Back button — smaller */
     #back-btn {
       position: absolute;
-      top: 20px;
-      left: 20px;
-      width: 32px;
-      height: 32px;
+      top: 16px;
+      left: 16px;
+      width: 26px;   /* smaller */
+      height: 26px;  /* smaller */
       background: white;
       border: none;
       border-radius: 6px;
@@ -64,45 +73,54 @@
       justify-content: center;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.13);
-      transition: background 0.18s;
+      transition: background 0.18s, transform .12s;
       z-index: 1000;
       padding: 0;
     }
     #back-btn:hover { background: #f7f7f7; }
-    #back-btn svg { width: 18px; height: 18px; display: block; }
+    #back-btn:active { transform: scale(0.98); }
+    #back-btn svg { width: 16px; height: 16px; display: block; }
 
-    #missions { display: flex; flex-direction: column; gap: 20px; }
+    #missions { display: flex; flex-direction: column; gap: 18px; }
+
     .mission {
+      position: relative;
       display: flex;
       align-items: center;
-      background: #2a2a2a;
+      background: var(--card);
       border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
-      position: relative;
+      padding: 14px; /* a bit tighter */
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.06);
       overflow: hidden;
+      isolation: isolate;
     }
 
-    /* Orange shine */
-    .shiny-rect { position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: 12px; overflow: hidden; }
-    .shiny-rect .shine {
-      position: absolute; top: 0; left: -60%; width: 70%; height: 100%;
-      background: linear-gradient(110deg, transparent 40%, rgba(255,183,50,0.55) 55%, transparent 70%);
-      opacity: 0.7; filter: blur(0.6px);
-      animation: orange_shine_move 2.3s cubic-bezier(.72,0,.25,1) infinite;
+    /* Remove the old center shine; new LED ring along edges */
+    .edge-led{
+      position:absolute; inset:0; border-radius:12px; pointer-events:none;
+      padding:2px; /* ring thickness */
+      background:
+        conic-gradient(from 0deg, rgba(255,213,120,.95) 0 12deg, rgba(255,213,120,0) 12deg 360deg);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude; /* show only border ring */
+      animation: led-rotate 3.2s linear infinite;
+      opacity:.95;
+      filter: drop-shadow(0 0 6px rgba(255,220,120,.45));
+      z-index:1;
     }
-    @keyframes orange_shine_move { 0%{left:-60%} 100%{left:110%} }
+    @keyframes led-rotate{ to { transform: rotate(360deg); } }
 
     /* Images — block long-press/save */
     .mission img {
-      width: 60px; height: 60px; margin-right: 16px; flex-shrink: 0; z-index: 2;
+      width: 56px; height: 56px; margin-right: 14px; flex-shrink: 0; z-index: 2;
       -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-user-drag: none;
       pointer-events: none;
+      border-radius: 10px;
     }
 
     .mission-content { flex: 1; color: white; z-index: 2; }
-    .mission-content h3 { margin: 0 0 6px; font-size: 18px; }
-    .mission-content p  { margin: 0; font-size: 14px; color: #ddd; }
+    .mission-content h3 { margin: 0 0 6px; font-size: 17px; }
+    .mission-content p  { margin: 0; font-size: 13px; color: var(--muted); }
 
     /* Progress bar */
     .progress-container {
@@ -116,7 +134,12 @@
       position: relative; transition: width 0.5s cubic-bezier(.77,.2,.05,1.0);
       animation: progress_shine 2s linear infinite;
     }
-    @keyframes progress_shine { 0%{filter:brightness(1)} 50%{filter:brightness(1.22)} 100%{filter:brightness(1)} }
+    /* Gold theme for invite missions */
+    .progress-bar.gold{
+      background: linear-gradient(90deg, #a67c00 0%, #d4af37 40%, #ffd76a 70%, #a67c00 100%);
+      box-shadow: 0 0 8px 1px rgba(212,175,55,.6), 0 0 3px 1px rgba(255,215,106,.5);
+    }
+    @keyframes progress_shine { 0%{filter:brightness(1)} 50%{filter:brightness(1.18)} 100%{filter:brightness(1)} }
     .progress-bar::after {
       content:""; position:absolute; top:0; left:0; height:100%; width:28px;
       background: linear-gradient(90deg, rgba(255,255,255,0.38) 10%, transparent 70%);
@@ -124,29 +147,90 @@
     }
     @keyframes progress_move { 0%{left:0} 100%{left:calc(100% - 28px)} }
 
-    button {
-      padding: 10px 18px; background: #0f0; color: black; font-weight: bold; border: none; border-radius: 8px;
-      cursor: pointer; margin-left: auto; z-index: 2; transition: background 0.16s; min-width: 92px;
+    /* Smaller action buttons (visit/follow/invite) */
+    .mission button {
+      padding: 8px 12px;                 /* smaller */
+      background: var(--ok);
+      color: #000;
+      font-weight: 700;
+      font-size: 13px;                   /* smaller */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-left: 10px;
+      z-index: 2;
+      transition: transform .12s, filter .16s;
+      min-width: 84px;                   /* smaller min width */
     }
-    button:disabled { background: #c2c2c2; cursor: not-allowed; color: #555; }
+    .mission button:hover { filter: brightness(1.05); }
+    .mission button:active { transform: translateY(1px) scale(0.99); }
+    .mission button:disabled {
+      background: #c2c2c2; cursor: not-allowed; color: #555;
+    }
 
-    /* Popup */
-    .popup {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: #fff; padding: 24px 20px 18px 20px; border-radius: 16px;
-      box-shadow: 0 0 25px rgba(255, 255, 255, 0.22); z-index: 9999; text-align: center; display: none;
-      max-width: 94vw; min-width: 260px;
+    /* Modern modal */
+    .modal {
+      position: fixed; inset: 0; display: none; place-items: center; z-index: 9999;
+      background: rgba(0,0,0,.56); backdrop-filter: blur(4px);
     }
-    .popup p { color: black; margin-bottom: 15px; }
-    .popup button { background: dodgerblue; color: white; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; margin-top: 6px; margin-bottom: 2px; }
-    .close-btn {
-      position: absolute; top: 8px; right: 11px; font-size: 15px; background: transparent; border: none; color: #333;
-      cursor: pointer; font-weight: bold; z-index: 33; opacity: .82; transition: opacity .15s; width: 22px; height: 22px;
-      display: flex; align-items: center; justify-content: center; line-height: 1; padding: 0;
+    .modal.open { display: grid; }
+    .modal-card{
+      width: min(94vw, 420px);
+      background: #0f1115;
+      color: #eaf2ff;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 10px 30px rgba(0,0,0,.5);
+      padding: 18px 16px 14px 16px;
+      position: relative;
+      overflow: hidden;
     }
-    .close-btn:hover { opacity: 1; }
+    .modal-card h3{
+      margin: 0 0 8px;
+      font-size: 18px;
+      background: linear-gradient(90deg, #fff, #dfe9ff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .modal-card p{ margin: 6px 0; color: #cbd6f6; font-size: 14px; }
+    .modal-actions{ margin-top: 12px; display: flex; gap: 8px; justify-content: center; }
+    .btn{
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      color: #fff; font-weight: 800; letter-spacing: .2px; cursor: pointer;
+      transition: transform .12s, filter .16s;
+    }
+    .btn.primary{ background: linear-gradient(180deg, #0a84ff, #0a6bff); }
+    .btn.success{ background: linear-gradient(180deg, #17c964, #0b9d56); color:#001a10; }
+    .btn.warning{ background: linear-gradient(180deg, #ffcc00, #f0b400); color:#2b1d00; }
+    .btn:active{ transform: translateY(1px); }
 
-    /* Global block: long press/context menu */
+    .close-x{
+      position:absolute; top:8px; right:10px; width:26px; height:26px;
+      display:grid; place-items:center; border-radius:8px; border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); color:#fff; cursor:pointer;
+    }
+
+    /* Confetti */
+    .confetti{
+      position:absolute; inset:0; pointer-events:none; overflow:hidden;
+    }
+    .confetti .piece{
+      position:absolute; width:8px; height:14px; opacity:.9;
+      will-change: transform, opacity;
+      animation: fall 1200ms ease-out forwards, spin 1200ms linear infinite;
+    }
+    @keyframes fall{
+      0%{ transform: translate(var(--x), calc(var(--y) - 20px)) scale(1); opacity:1; }
+      100%{ transform: translate(var(--x-end), var(--y-end)) rotate(260deg) scale(.9); opacity:0; }
+    }
+    @keyframes spin{
+      from{ transform: rotate(0deg); }
+      to  { transform: rotate(360deg); }
+    }
+
+    /* Global block: long press/context menu on images */
     img, svg { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
   </style>
 </head>
@@ -159,7 +243,7 @@
   <div id="missions"></div>
 
   <script>
-    // Prevent context menu / long-press
+    // Prevent image context / long-press
     (function preventMediaLongPress(){
       try{
         document.addEventListener('contextmenu', e=>{
@@ -189,7 +273,7 @@
     const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
     const db  = firebase.database(app);
 
-    // Cached preload: user id from preload
+    // Cached preload: user id
     function getStoredUserId(){
       try{
         return sessionStorage.getItem('wlc_user_id') || localStorage.getItem('wlc_user_id') || tg?.initDataUnsafe?.user?.id || null;
@@ -212,6 +296,21 @@
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); history.back(); });
 
     // Utils
+    function openSmart(url){
+      try{
+        let u = String(url||'').trim();
+        if (!/^https?:\/\//i.test(u) && !/^tg:|^tme:|^mailto:/i.test(u)) {
+          u = 'https://' + u.replace(/^\/+/, '');
+        }
+        if (/^https?:\/\/t\.me\/|^tg:|^tme:/i.test(u)){
+          if (tg && typeof tg.openTelegramLink === 'function') tg.openTelegramLink(u);
+          else window.open(u, '_blank');
+        } else {
+          if (tg && typeof tg.openLink === 'function') tg.openLink(u, { try_instant_view: false });
+          else window.open(u, '_blank');
+        }
+      }catch{ window.open(url, '_blank'); }
+    }
     async function getUserOnce(uid){
       const snap = await db.ref('users/'+uid).once('value');
       return snap.val() || {};
@@ -223,39 +322,129 @@
       const ref = db.ref('users/'+uid+'/referrals');
       return ref.transaction(v => (typeof v === 'number' ? v : Number(v||0)) + delta);
     }
-    // Record a unique referral in a list to avoid double counting
     function markReferral(inviterId, newUid){
       return db.ref('referrals/'+inviterId+'/'+newUid).set(firebase.database.ServerValue.TIMESTAMP);
     }
+    // balance helpers
+    async function addWLC(uid, delta){
+      const ref = db.ref('users/'+uid+'/balance');
+      await ref.transaction(v => (typeof v === 'number' ? v : Number(v||0)) + Number(delta||0));
+    }
+    async function addUSDT(uid, delta){
+      const ref = db.ref('users/'+uid+'/usdtBalance');
+      await ref.transaction(v => (typeof v === 'number' ? v : Number(v||0)) + Number(delta||0));
+    }
+
+    // Modal helpers
+    function showModal(contentNode){
+      const m = document.createElement('div');
+      m.className = 'modal open';
+      const card = document.createElement('div');
+      card.className = 'modal-card';
+      const close = document.createElement('button');
+      close.className = 'close-x';
+      close.innerHTML = '✕';
+      close.onclick = ()=> m.remove();
+      card.appendChild(close);
+      card.appendChild(contentNode);
+      m.appendChild(card);
+      document.body.appendChild(m);
+      return { modal:m, card };
+    }
+    function makeConfirmVisitModal(title, body, yesLabel, onYes){
+      const wrap = document.createElement('div');
+      const h = document.createElement('h3'); h.textContent = title; wrap.appendChild(h);
+      const p = document.createElement('p'); p.innerHTML = body; wrap.appendChild(p);
+      const actions = document.createElement('div'); actions.className='modal-actions';
+      const yes = document.createElement('button'); yes.className='btn success'; yes.textContent = yesLabel || 'Yes';
+      const later = document.createElement('button'); later.className='btn'; later.textContent = 'Later';
+      actions.appendChild(yes); actions.appendChild(later);
+      wrap.appendChild(actions);
+      const { modal } = showModal(wrap);
+      later.onclick = ()=> modal.remove();
+      yes.onclick = async()=>{ try{ await onYes?.(); } finally{ modal.remove(); } };
+    }
+    function makeInviteModal(link){
+      const wrap = document.createElement('div');
+      const h = document.createElement('h3'); h.textContent = 'Invite Friends'; wrap.appendChild(h);
+      const p1 = document.createElement('p'); p1.innerHTML = `<strong>Your referral link:</strong><br><span style="word-break:break-word;color:#fff">${link}</span>`;
+      const p2 = document.createElement('p'); p2.style.color = '#ffb86b';
+      p2.style.fontSize = '13px';
+      p2.innerHTML = 'Warning: Fake referrals from the same device will be checked. Violations may lead to penalties.';
+      wrap.appendChild(p1); wrap.appendChild(p2);
+      const actions = document.createElement('div'); actions.className='modal-actions';
+      const copy = document.createElement('button'); copy.className='btn warning'; copy.textContent = 'Copy';
+      const share = document.createElement('button'); share.className='btn primary'; share.textContent = 'Share';
+      actions.appendChild(share); actions.appendChild(copy);
+      wrap.appendChild(actions);
+      const { modal } = showModal(wrap);
+
+      share.onclick = async ()=>{
+        try{
+          if (navigator.share){
+            await navigator.share({ title:'WELLcoin', text:'Join WELLcoin game and earn with me!', url: link });
+          }else if (tg && typeof tg.openTelegramLink === 'function'){
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Join WELLcoin game and earn with me!')}`;
+            tg.openTelegramLink(shareUrl);
+          }else{
+            window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Join WELLcoin game and earn with me!')}`,'_blank');
+          }
+        }catch{}
+        modal.remove();
+      };
+      copy.onclick = ()=>{
+        navigator.clipboard.writeText(link).then(()=>{ modal.remove(); });
+      };
+    }
+    function fireConfetti(container){
+      const c = document.createElement('div'); c.className='confetti';
+      container.appendChild(c);
+      const colors = ['#ff4757','#fffa65','#2ed573','#1e90ff','#eccc68','#ffa502','#7bed9f','#70a1ff','#ff6b81'];
+      const rect = container.getBoundingClientRect();
+      const pieces = 80;
+      for (let i=0;i<pieces;i++){
+        const piece = document.createElement('div'); piece.className='piece';
+        const color = colors[(Math.random()*colors.length)|0];
+        piece.style.background = color;
+        const startX = (rect.width/2) + (Math.random()*60 - 30);
+        const startY = 10;
+        const endX = Math.random()*rect.width;
+        const endY = rect.height + 60 + Math.random()*80;
+        piece.style.setProperty('--x', startX+'px');
+        piece.style.setProperty('--y', startY+'px');
+        piece.style.setProperty('--x-end', endX+'px');
+        piece.style.setProperty('--y-end', endY+'px');
+        piece.style.left = '0px'; piece.style.top = '0px';
+        c.appendChild(piece);
+        setTimeout(()=> piece.remove(), 1300);
+      }
+      setTimeout(()=> c.remove(), 1400);
+    }
+    function showCongratsModal(textHTML){
+      const wrap = document.createElement('div');
+      const h = document.createElement('h3'); h.textContent = 'Well done!'; wrap.appendChild(h);
+      const p = document.createElement('p'); p.innerHTML = textHTML; wrap.appendChild(p);
+      const actions = document.createElement('div'); actions.className='modal-actions';
+      const ok = document.createElement('button'); ok.className='btn success'; ok.textContent = 'OK';
+      actions.appendChild(ok); wrap.appendChild(actions);
+      const { modal, card } = showModal(wrap);
+      // confetti burst
+      fireConfetti(card);
+      ok.onclick = ()=> modal.remove();
+    }
 
     // Render helpers
-    function createCloseBtn(popup){
-      const btn = document.createElement('button');
-      btn.className = 'close-btn';
-      btn.innerHTML = '&times;';
-      btn.onclick = ()=> popup.remove();
-      return btn;
-    }
-    function formatTime(ms){
-      let sec = Math.max(0, Math.floor(ms/1000));
-      let h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s=sec%60;
-      return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':');
-    }
-
-    function renderMission({ id, title, desc, icon, reward, progress=null, claimed=false, disabled=false, buttonText="", onClick }){
+    function renderMission({ id, title, desc, icon, reward, progress=null, claimed=false, disabled=false, buttonText="", onClick, progressTheme=null, extraClasses='' }){
       const div = document.createElement('div');
-      div.className = 'mission';
-      let progressHTML = '';
-      if (progress !== null){
-        progressHTML = `
+      div.className = `mission ${extraClasses||''}`;
+      const progressHTML = (progress !== null) ? `
           <div class="progress-container">
-            <div class="progress-bar" style="width:${Math.max(0, Math.min(100, progress))}%"></div>
+            <div class="progress-bar ${progressTheme==='gold' ? 'gold':''}" style="width:${Math.max(0, Math.min(100, progress))}%"></div>
           </div>
           <p style="margin-top:4px; font-size:12px;">${Math.round(progress)}%</p>
-        `;
-      }
+        ` : '';
       div.innerHTML = `
-        <div class="shiny-rect"><div class="shine"></div></div>
+        <span class="edge-led" aria-hidden="true"></span>
         <img src="${icon}" alt="${title}" draggable="false" oncontextmenu="return false"/>
         <div class="mission-content">
           <h3>${title}</h3>
@@ -269,24 +458,24 @@
       if (btn) btn.onclick = onClick;
     }
 
-    // Social tasks config
+    // Social tasks config (URLs normalized with https)
     const socials = [
-      { id: "youtube",  title: "Follow us on YouTube",  icon: "assets/youtube-icon.png",  url: "https://www.youtube.com/@WELLcoin-y6b", reward: 1, type: "follow" },
-      { id: "telegram", title: "Join our Telegram",     icon: "assets/telegram-icon.png", url: "https://t.me/WELLcoinofficial",         reward: 1, type: "join"   },
-      { id: "instagram",title: "Follow us on Instagram",icon: "assets/instagram-icon.png",url: "https://instagram.com/WELLcoin1",        reward: 1, type: "follow" },
-      { id: "facebook", title: "Like our Facebook page",icon: "assets/facebook-icon.png", url: "https://www.facebook.com/profile.php?id=61562283616319", reward: 1, type: "follow" },
-      { id: "tiktok",   title: "Follow us on TikTok",   icon: "assets/tiktok-icon.png",   url: "https://tiktok.com/@WELLcoin6",          reward: 1, type: "follow" },
-      { id: "x",        title: "Follow us on X (Twitter)",icon:"assets/twitter-icon.png", url: "https://x.com/WELLcoin2024?s=09",        reward: 1, type: "follow" }
+      { id: "youtube",  title: "Follow us on YouTube",   icon: "assets/youtube-icon.png",   url: "https://www.youtube.com/@WELLcoin-y6b", reward: 1, type: "follow" },
+      { id: "telegram", title: "Join our Telegram",      icon: "assets/telegram-icon.png",  url: "https://t.me/WELLcoinofficial",          reward: 1, type: "join"   },
+      { id: "instagram",title: "Follow us on Instagram", icon: "assets/instagram-icon.png", url: "https://instagram.com/WELLcoin1",        reward: 1, type: "follow" },
+      { id: "facebook", title: "Like our Facebook page", icon: "assets/facebook-icon.png",  url: "https://www.facebook.com/profile.php?id=61562283616319", reward: 1, type: "follow" },
+      { id: "tiktok",   title: "Follow us on TikTok",    icon: "assets/tiktok-icon.png",    url: "https://tiktok.com/@WELLcoin6",          reward: 1, type: "follow" },
+      { id: "x",        title: "Follow us on X (Twitter)",icon:"assets/twitter-icon.png",   url: "https://x.com/WELLcoin2024?s=09",        reward: 1, type: "follow" }
     ];
 
-    // Invite missions config
+    // Invite missions config — rewards in USDT as requested
     const inviteMissions = [
-      { id: "invite5",   icon: "assets/invit1.png", label: "Invite 5 Friends",   target: 5,   reward: 0.5 },
-      { id: "invite20",  icon: "assets/invit2.png", label: "Invite 20 Friends",  target: 20,  reward: 2   },
-      { id: "invite100", icon: "assets/invit3.png", label: "Invite 100 Friends", target: 100, reward: 10  }
+      { id: "invite5",   icon: "assets/invit1.png", label: "Invite 5 Friends",   target: 5,   rewardUSD: 0.2 },
+      { id: "invite20",  icon: "assets/invit2.png", label: "Invite 20 Friends",  target: 20,  rewardUSD: 1 },
+      { id: "invite100", icon: "assets/invit3.png", label: "Invite 100 Friends", target: 100, rewardUSD: 5 }
     ];
 
-    // Preload images into memory cache (faster first paint)
+    // Preload images into memory cache
     (function preloadImages(){
       try{
         const urls = [
@@ -312,23 +501,22 @@
         const alreadyReferred = !!currentUser?.referredBy;
         if (alreadyReferred) return;
 
-        // Mark user as referred, then count for inviter (idempotent-ish)
         await updateUser(userId, {
           referredBy: inviterId,
           referredAt: firebase.database.ServerValue.TIMESTAMP
         });
         await markReferral(inviterId, userId);
         await txReferrals(inviterId, +1);
-      }catch(e){ /* silent */ }
+      }catch(e){}
     }
 
-    // Render all missions from a user snapshot (cached or live)
+    // Render
     function renderAll(user){
       missionsDiv.innerHTML = '';
       const userMissions = user.missions || {};
       const getClaimed = (id)=> !!(userMissions[id]?.claimed);
 
-      // Social tasks
+      // Social tasks (WLC rewards)
       socials.forEach(({id, title, icon, url, reward, type})=>{
         const isClaimed = getClaimed(id);
         renderMission({
@@ -341,45 +529,31 @@
           buttonText: isClaimed ? "Visit" : (type === "join" ? "Join Now" : "Follow"),
           disabled: false,
           onClick: async function(){
-            try{
-              const open = (lnk)=>{
-                if (tg && typeof tg.openTelegramLink === 'function') tg.openTelegramLink(lnk);
-                else window.open(lnk, "_blank");
-              };
-              open(url);
-              if (isClaimed) return;
+            openSmart(url);
+            if (isClaimed) return;
 
-              // Confirm popup
-              setTimeout(()=>{
-                const popup = document.createElement('div');
-                popup.className = 'popup';
-                popup.innerHTML = `
-                  <p>Did you complete this task?</p>
-                  <p style="font-size:13px; color:#444;">If you unfollow later, the reward may be deducted.</p>
-                  <button id="yes-${id}">Yes, done</button>
-                `;
-                popup.appendChild(createCloseBtn(popup));
-                document.body.appendChild(popup);
-                popup.style.display = 'block';
-                document.getElementById(`yes-${id}`).onclick = async ()=>{
-                  const newBalance = Number(user.balance||0) + Number(reward||0);
-                  await updateUser(userId, {
-                    balance: newBalance,
-                    missions: { ...userMissions, [id]: { claimed: true } }
-                  });
-                  popup.remove();
-                  // Update cache locally for instant UI
-                  const updated = { ...user, balance: newBalance, missions: { ...userMissions, [id]: { claimed: true } } };
-                  writeCachedUser(userId, updated);
-                  renderAll(updated);
+            makeConfirmVisitModal(
+              'Confirm Task',
+              'Did you complete this task? You will receive <b>'+reward+' WLC</b>.',
+              'Yes, I did',
+              async ()=>{
+                await addWLC(userId, reward);
+                const updated = {
+                  ...user,
+                  balance: (Number(user.balance||0) + Number(reward||0)),
+                  missions: { ...userMissions, [id]: { claimed: true } }
                 };
-              }, 700);
-            }catch(e){}
+                await updateUser(userId, { missions: updated.missions }); // balance updated via addWLC
+                writeCachedUser(userId, updated);
+                showCongratsModal(`You earned <b>${reward} WLC</b>!`);
+                renderAll(updated);
+              }
+            );
           }
         });
       });
 
-      // Daily reward
+      // Daily reward (WLC)
       const dailyId = 'daily';
       const lastClaim = userMissions[dailyId]?.lastClaim || 0;
       const now = Date.now();
@@ -400,11 +574,11 @@
         buttonText: "Claim",
         onClick: async function(){
           if (!available) return;
-          const newBalance = Number(user.balance||0) + 1;
-          const updatedMissions = { ...userMissions, [dailyId]: { lastClaim: Date.now() } };
-          await updateUser(userId, { balance: newBalance, missions: updatedMissions });
-          const updated = { ...user, balance: newBalance, missions: updatedMissions };
+          await addWLC(userId, 1);
+          const updated = { ...user, balance: Number(user.balance||0)+1, missions: { ...userMissions, [dailyId]: { lastClaim: Date.now() } } };
+          await updateUser(userId, { missions: updated.missions }); // balance updated via addWLC
           writeCachedUser(userId, updated);
+          showCongratsModal('You claimed <b>1 WLC</b> daily reward!');
           renderAll(updated);
         }
       });
@@ -420,85 +594,64 @@
         }, 1000);
       }
 
-      // Invite missions
+      // Invites (USDT rewards)
       const refCountNum = (typeof user.referrals === 'number') ? user.referrals : Number(user.referrals||0);
       const inviteLink = `https://t.me/WELLcoinGameBot?startapp=${encodeURIComponent(userId)}`;
-      inviteMissions.forEach(({id, label, icon, target, reward})=>{
+
+      inviteMissions.forEach(({id, label, icon, target, rewardUSD})=>{
         const achieved = refCountNum >= target;
         const alreadyClaimed = getClaimed(id);
 
         renderMission({
           id,
           title: label,
-          desc: `Progress: ${refCountNum}/${target} – Reward: ${reward} WLC`,
+          desc: `Progress: ${refCountNum}/${target} – Reward: $${rewardUSD}`,
           icon,
-          reward,
+          reward: rewardUSD,
           progress: Math.min((refCountNum/target)*100, 100),
           claimed: alreadyClaimed,
           disabled: alreadyClaimed,
+          progressTheme: 'gold',
+          extraClasses: 'invite',
           buttonText: alreadyClaimed ? "Claimed" : (achieved ? "Claim" : "Invite"),
           onClick: async function(){
             if (alreadyClaimed) return;
 
             if (!achieved){
-              // Show share/copy popup with proper Telegram deep link that carries start_param to WebApp
-              const popup = document.createElement('div');
-              popup.className = 'popup';
-              popup.innerHTML = `
-                <p>Your Invite Link</p>
-                <p style="word-break:break-word; color:#111">${inviteLink}</p>
-                <div style="display:flex; gap:8px; justify-content:center;">
-                  <button id="copy-${id}" style="background:#0a84ff">Copy</button>
-                  <button id="share-${id}" style="background:#34c759">Share</button>
-                </div>
-              `;
-              popup.appendChild(createCloseBtn(popup));
-              document.body.appendChild(popup);
-              popup.style.display = 'block';
-              document.getElementById(`copy-${id}`).onclick = ()=>{
-                navigator.clipboard.writeText(inviteLink).then(()=>{
-                  popup.remove();
-                });
-              };
-              document.getElementById(`share-${id}`).onclick = ()=>{
-                const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent('Join WELLcoin game and earn with me!')}`;
-                if (tg && typeof tg.openTelegramLink === 'function') tg.openTelegramLink(shareUrl); else window.open(shareUrl,'_blank');
-                popup.remove();
-              };
+              makeInviteModal(inviteLink);
               return;
             }
 
-            // Achieved: claim once
-            const newBalance = Number(user.balance||0) + Number(reward||0);
-            const updatedMissions = { ...userMissions, [id]: { claimed: true, claimedAt: Date.now() } };
-            await updateUser(userId, { balance: newBalance, missions: updatedMissions });
-            const updated = { ...user, balance: newBalance, missions: updatedMissions };
+            // Claim USDT reward
+            await addUSDT(userId, rewardUSD);
+            const updated = {
+              ...user,
+              usdtBalance: Number(user.usdtBalance||0) + Number(rewardUSD||0),
+              missions: { ...userMissions, [id]: { claimed: true, claimedAt: Date.now() } }
+            };
+            await updateUser(userId, { missions: updated.missions }); // usdt updated via addUSDT
             writeCachedUser(userId, updated);
-
-            const popup = document.createElement('div');
-            popup.className = 'popup';
-            popup.innerHTML = `
-              <p>🎉 +${reward} WLC</p>
-              <p style="font-size:13px; color:#444;">Great job! Keep inviting to unlock more.</p>
-              <button id="ok-${id}">OK</button>
-            `;
-            popup.appendChild(createCloseBtn(popup));
-            document.body.appendChild(popup);
-            popup.style.display = 'block';
-            document.getElementById(`ok-${id}`).onclick = ()=>{ popup.remove(); renderAll(updated); };
+            showCongratsModal(`You received <b>$${rewardUSD.toFixed(2)}</b> to your USDT balance!`);
+            renderAll(updated);
           }
         });
       });
     }
 
-    // Subscribe live user + cache, render instantly from cache first
+    // Timer formatter
+    function formatTime(ms){
+      let sec = Math.max(0, Math.floor(ms/1000));
+      let h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s=sec%60;
+      return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':');
+    }
+
+    // Subscribe live user + render from cache first
     async function boot(){
       if (!userId){ alert('Missing Telegram user. Please open from Telegram.'); return; }
 
       const cached = readCachedUser(userId);
       if (cached) renderAll(cached);
 
-      // Live stream
       const ref = db.ref('users/'+userId);
       let first = true;
       ref.on('value', async snap=>{
@@ -506,28 +659,12 @@
         writeCachedUser(userId, user);
         if (first){
           first = false;
-          // credit referral on first live snapshot if needed
           ensureReferralCredit(user).catch(()=>{});
         }
         renderAll(user);
       }, err=>{
         console.error('DB error', err);
         if (!cached) missionsDiv.innerHTML = '<div style="opacity:.85">Error loading missions.</div>';
-      });
-      // Back button sound state preservation (if you used preload audio)
-      backBtn.addEventListener('click', (e)=>{
-        e.preventDefault();
-        try{
-          const a = document.getElementById('preloadAudio');
-          if (a){
-            sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
-            sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
-            if (!sessionStorage.getItem('wlc_music_started_at_ms')){
-              sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (a.currentTime || 0) * 1000));
-            }
-          }
-        }catch{}
-        history.back();
       });
     }
 
