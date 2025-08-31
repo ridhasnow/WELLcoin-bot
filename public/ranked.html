@@ -5,6 +5,14 @@
   <title>Leaderboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
+
+  <!-- Telegram WebApp SDK (توحيد) -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Firebase v9 compat (توحيد SDK عبر المشروع) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <style>
     :root{
       --bg:#000;
@@ -102,6 +110,15 @@
     .subtitle{
       margin: 0 0 12px 6px; color:#cfe0ff;
       font-size: .96rem; letter-spacing:.3px;
+    }
+
+    /* قسم الصف المثبّت (Pinned Self Row) */
+    .pinned-section{
+      margin: 4px 4px 12px 6px;
+    }
+    .pinned-caption{
+      font-size: .92rem; color:#cfe0ff; letter-spacing:.3px; margin: 0 0 8px 6px;
+      opacity:.95;
     }
 
     .rows{ display:flex; flex-direction:column; gap:10px; }
@@ -260,6 +277,12 @@
         <div class="title"><h1>Leaderboard</h1></div>
         <div class="subtitle">Global Rank • Real-time</div>
 
+        <!-- Pinned self row (only if not within Top 100) -->
+        <div id="pinned-section" class="pinned-section" style="display:none">
+          <div class="pinned-caption">Pinned • You</div>
+          <div id="pinned-row" class="row self"></div>
+        </div>
+
         <div id="rows" class="rows"></div>
         <div id="empty" class="empty" style="display:none">No players yet. Be the first one to play!</div>
       </div>
@@ -267,10 +290,6 @@
   </div>
 
   <div id="gate" class="gate">Please open this page from Telegram App.</div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
     // منع بعض التفاعلات التخريبية
@@ -324,7 +343,7 @@
     }
     setTimeout(()=>{ if (!authOK && !(tg && tg.initDataUnsafe && tg.initDataUnsafe.user)) showGate(true); }, 200);
 
-    // Firebase
+    // Firebase (v9 compat)
     const firebaseConfig = {
       apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
       authDomain: "wellcoinbotgame.firebaseapp.com",
@@ -342,6 +361,9 @@
     const emptyEl = document.getElementById('empty');
     const scrollEl = document.getElementById('scroll');
     const backBtn = document.getElementById('back-btn');
+
+    const pinnedSection = document.getElementById('pinned-section');
+    const pinnedRowEl   = document.getElementById('pinned-row');
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
     function go(url){
@@ -404,50 +426,123 @@
       const ch = (name||'').trim()[0]; return (ch||'P').toUpperCase();
     }
 
-    let firstFocusDone = false;
+    // IndexedDB + Avatar objectURL cache (كاش الصور الرمزية)
+    const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
+    function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
+    function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
+    function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
 
-    function renderList(list){
+    const avatarObjectUrlCache = new Map(); // url -> objectURL
+    window.addEventListener('beforeunload', () => {
+      for (const url of avatarObjectUrlCache.values()) { try { URL.revokeObjectURL(url); } catch {} }
+      avatarObjectUrlCache.clear();
+    });
+
+    async function getAvatarObjectUrl(url){
+      if (!url) return null;
+      const mem = avatarObjectUrlCache.get(url);
+      if (mem) return mem;
+
+      try {
+        const cached = await idbGet('avatar:'+url);
+        if (cached instanceof Blob) {
+          const obj = URL.createObjectURL(cached);
+          avatarObjectUrlCache.set(url, obj);
+          return obj;
+        }
+      } catch {}
+
+      try {
+        const resp = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+        if (!resp.ok) throw new Error('HTTP '+resp.status);
+        const blob = await resp.blob();
+        idbSet('avatar:'+url, blob).catch(()=>{});
+        const obj = URL.createObjectURL(blob);
+        avatarObjectUrlCache.set(url, obj);
+        return obj;
+      } catch {
+        return null; // fallback لاحقًا إلى url المباشر أو الحرف
+      }
+    }
+
+    async function setAvatarInto(container, url, name){
+      container.innerHTML = '';
+      const letterDiv = document.createElement('div');
+      letterDiv.className = 'letter';
+      letterDiv.textContent = letterOf(name);
+      container.appendChild(letterDiv);
+
+      if (!url) return;
+
+      const objectUrl = await getAvatarObjectUrl(url);
+      const finalUrl = objectUrl || url;
+
+      // استبدال الحرف بالصورة عند توفرها
+      try{
+        const img = new Image();
+        img.alt = 'avatar';
+        img.decoding = 'async';
+        img.loading = 'eager';
+        img.referrerPolicy = 'no-referrer';
+        img.draggable = false;
+        img.oncontextmenu = () => false;
+        img.onload = () => { container.innerHTML=''; container.appendChild(img); };
+        img.onerror = () => { /* إبق الحرف */ };
+        img.src = finalUrl;
+      }catch{}
+    }
+
+    let firstFocusDone = false;
+    let topListIds = new Set(); // لتحديد هل المستخدم ضمن الـ 100
+
+    function makeRow(it, posOrNull){
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.setAttribute('data-id', String(it.id));
+      const isSelf = String(it.id) === String(userId);
+      if (isSelf) row.classList.add('self');
+
+      if (posOrNull === 1) row.classList.add('top-1');
+      else if (posOrNull === 2) row.classList.add('top-2');
+      else if (posOrNull === 3) row.classList.add('top-3');
+
+      const rk = computeRank(it.balance);
+      const badgeHtml = `<img class="rank-badge" src="assets/${rk.img}" alt="${rk.name}" draggable="false" oncontextmenu="return false">`;
+
+      const posLabel = (typeof posOrNull === 'number' && posOrNull > 0) ? ('#'+posOrNull) : (isSelf ? 'YOU' : '#—');
+
+      row.innerHTML = `
+        <div class="pos">${badgeHtml}<span>${posLabel}</span></div>
+        <div class="avatar"></div>
+        <div class="name">
+          <div class="label" title="${it.name}">${it.name}</div>
+          <div class="muted" title="${it.username||''}">${it.username||''}</div>
+        </div>
+        <div class="amt" title="${fmtWLC(it.balance)} WLC">${fmtWLC(it.balance)}</div>
+      `;
+
+      // Avatar async via IndexedDB cache
+      const av = row.querySelector('.avatar');
+      av.className = 'avatar';
+      setAvatarInto(av, it.avatar || '', it.name).catch(()=>{});
+
+      return row;
+    }
+
+    function renderList(arr){
       rowsEl.innerHTML = '';
-      if (!list.length){
+      if (!arr.length){
         emptyEl.style.display = '';
         return;
       }
       emptyEl.style.display = 'none';
 
       const frag = document.createDocumentFragment();
+      topListIds = new Set(arr.map(x => String(x.id)));
 
-      list.forEach((it, idx)=>{
+      arr.forEach((it, idx)=>{
         const pos = idx + 1;
-        const row = document.createElement('div');
-        row.className = 'row';
-        if (pos === 1) row.classList.add('top-1');
-        else if (pos === 2) row.classList.add('top-2');
-        else if (pos === 3) row.classList.add('top-3');
-        if (String(it.id) === String(userId)) row.classList.add('self');
-
-        const rk = computeRank(it.balance);
-        const badge = `<img class="rank-badge" src="assets/${rk.img}" alt="${rk.name}" draggable="false" oncontextmenu="return false">`;
-
-        const av = document.createElement('div');
-        av.className = 'avatar';
-        const url = avatarUrl(it.user) || '';
-        if (url){
-          av.innerHTML = `<img src="${url}" alt="avatar" referrerpolicy="no-referrer" loading="eager" decoding="async" draggable="false" oncontextmenu="return false">`;
-        } else {
-          av.innerHTML = `<div class="letter">${letterOf(it.name)}</div>`;
-        }
-
-        row.setAttribute('data-id', String(it.id));
-        row.innerHTML = `
-          <div class="pos">${badge}<span>#${pos}</span></div>
-          <div class="avatar-slot"></div>
-          <div class="name">
-            <div class="label" title="${it.name}">${it.name}</div>
-            <div class="muted" title="${it.username||''}">${it.username||''}</div>
-          </div>
-          <div class="amt" title="${fmtWLC(it.balance)} WLC">${fmtWLC(it.balance)}</div>
-        `;
-        row.querySelector('.avatar-slot').replaceWith(av);
+        const row = makeRow(it, pos);
         frag.appendChild(row);
       });
 
@@ -473,10 +568,45 @@
       }
     }
 
-    // اشتراك مباشر في كل المستخدمين (بدون حد)
-    let unsub = null;
+    // اشتراك مباشر في أعلى 100 مستخدم فقط
+    let unsubTop = null;
+    let unsubSelf = null;
+
+    async function subscribeSelfPinned(){
+      // إلغاء سابق
+      try{ unsubSelf && unsubSelf(); }catch{}
+      const ref = db.ref('users/'+userId);
+      const handler = (snap)=>{
+        const u = snap.val() || {};
+        const it = {
+          id: userId,
+          user: u,
+          balance: typeof u.balance === 'number' ? u.balance : 0,
+          name: bestName(u),
+          username: bestUsername(u),
+          avatar: avatarUrl(u)
+        };
+        const inTop = topListIds.has(String(userId));
+        if (!inTop){
+          pinnedRowEl.innerHTML = ''; // إعادة بناء
+          const row = makeRow(it, null);
+          pinnedRowEl.replaceWith(row);
+          row.id = 'pinned-row';
+          pinnedSection.style.display = '';
+        } else {
+          pinnedSection.style.display = 'none';
+        }
+      };
+      ref.on('value', handler);
+      unsubSelf = ()=> ref.off('value', handler);
+    }
+
     function subscribeLeaderboard(){
-      const q = db.ref('users').orderByChild('balance');
+      // إلغاء سابق
+      try{ unsubTop && unsubTop(); }catch{}
+
+      // ترتيب تصاعدي في RTDB، لذلك نستخدم limitToLast(100) ثم نعكس محليًا
+      const q = db.ref('users').orderByChild('balance').limitToLast(100);
       const handler = (snap)=>{
         const val = snap.val() || {};
         const arr = [];
@@ -485,13 +615,18 @@
           const bal = typeof u.balance === 'number' ? u.balance : 0;
           const nm = bestName(u);
           const uname = bestUsername(u);
-          arr.push({ id, user:u, balance: bal, name: nm, username: uname });
+          const av = avatarUrl(u);
+          arr.push({ id, user:u, balance: bal, name: nm, username: uname, avatar: av });
         }
+        // الأعلى أولاً
         arr.sort((a,b)=> b.balance - a.balance);
         renderList(arr);
+
+        // حدّث حالة pinned self
+        subscribeSelfPinned();
       };
       q.on('value', handler);
-      unsub = ()=> q.off('value', handler);
+      unsubTop = ()=> q.off('value', handler);
     }
 
     function init(){
@@ -508,7 +643,7 @@
       if (!document.hidden) focusSelfRow(true);
     });
 
-    window.addEventListener('beforeunload', ()=>{ try{ unsub && unsub(); }catch{} });
+    window.addEventListener('beforeunload', ()=>{ try{ unsubTop && unsubTop(); unsubSelf && unsubSelf(); }catch{} });
   </script>
 </body>
 </html>
