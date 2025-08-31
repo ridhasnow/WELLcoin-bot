@@ -243,7 +243,7 @@ const BASE_ASSETS = [
 
 // ---------- Firebase Config ----------
 const firebaseConfig = {
-  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5يboBkw",
+  apiKey: "AIzaSyB9uNwUURvf5RsD7CnsG2LtE6fz5yboBkw",
   authDomain: "wellcoinbotgame.firebaseapp.com",
   databaseURL: "https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "wellcoinbotgame",
