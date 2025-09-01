@@ -210,7 +210,7 @@
       .ach{ gap:10px; }
     }
 
-    /* Day card - tuned, image shows fully; timer below card */
+    /* Day card */
     .day{
       position:relative; border-radius:14px;
       overflow:visible; user-select:none;
@@ -219,7 +219,7 @@
       box-shadow: 0 6px 18px rgba(0,0,0,.40);
       display:flex; flex-direction:column;
       aspect-ratio: 1 / 1.18;
-      margin-bottom: 38px; /* space for timer below */
+      margin-bottom: 38px;
       transition: filter .25s ease;
     }
     .day.special{
@@ -227,7 +227,6 @@
       box-shadow: 0 10px 24px rgba(255,210,90,.20), inset 0 0 0 1px rgba(255,255,255,.06);
     }
 
-    /* Cap (header) */
     .cap{
       position:relative; height: clamp(26px, 6.8vw, 34px);
       display:flex; align-items:center; justify-content:center;
@@ -246,31 +245,28 @@
     }
     .cap .pin.l{ left:10px; } .cap .pin.r{ right:10px; }
 
-    /* Body holds the image with BLACK background (no gaps), image stays fully visible */
     .body{
       position:relative; flex:1;
       display:block;
       padding:0;
-      background: #000; /* requested black base to match gift.png edges */
+      background: #000;
       border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;
       overflow:hidden;
     }
     .gift-img{
       position:absolute; inset:0; z-index:1;
       width:100%; height:100%;
-      object-fit: contain; /* keep entire image visible */
+      object-fit: contain;
       filter: saturate(112%) contrast(103%) drop-shadow(0 4px 8px rgba(0,0,0,.25));
       pointer-events:none; user-select:none; -webkit-user-drag:none;
     }
 
-    /* Timer BELOW the card, single line (no 'In') */
     .timer{
       position:absolute; left:0; right:0; bottom:-24px;
       font-size:12px; font-weight:900; color:#d3ddff; opacity:.98; text-align:center;
       text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events:none; white-space:nowrap;
     }
 
-    /* States */
     .day.locked{ filter: brightness(.96) saturate(.95); }
     .day.claimable{
       border-color: rgba(255,210,90,.55);
@@ -278,15 +274,14 @@
       animation: pulse 1.4s ease-in-out infinite alternate;
     }
     .day.claimed{
-      filter: brightness(.60) saturate(.9); /* dim after claim */
+      filter: brightness(.60) saturate(.9);
     }
     @keyframes pulse{ from{ filter:none } to{ filter: drop-shadow(0 0 8px rgba(255,220,100,.36)); } }
 
-    /* Claimed overlay (modern check) - ABOVE image and slightly lower (middle of lower half) */
     .check{
       position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
       opacity:0; transform: translate(-6px, 18%) scale(.9); transition: opacity .2s ease, transform .2s ease;
-      z-index:3; /* above gift image */
+      z-index:3;
     }
     .day.claimed .check{ opacity:1; transform: translate(-6px, 18%) scale(1); }
     .check .mark{ width:76px; height:76px; }
@@ -295,7 +290,7 @@
     .spacer{ height:14px; }
     * { -webkit-tap-highlight-color: rgba(0,0,0,0); }
 
-    /* Popup (Top-up/Claim confirmation) */
+    /* Popup */
     .mask{
       position:fixed; inset:0; z-index:20; display:none; align-items:center; justify-content:center;
       background: rgba(0,0,0,0.45); backdrop-filter: blur(4px) saturate(120%);
@@ -333,7 +328,7 @@
       color:#ffe9a8; font-weight:900; letter-spacing:.3px; text-align:center; padding:24px;
     }
 
-    /* Divider between Achievements and Daily tasks (3D line/shadow) */
+    /* Divider (existing) */
     .divider{
       position:relative; height:18px; margin: 8px 2px 2px;
     }
@@ -344,7 +339,7 @@
       border-radius: 999px;
     }
 
-    /* Daily tasks button + modal - Enhanced electric 3D */
+    /* Daily tasks button */
     .tasks-cta{ display:flex; align-items:center; justify-content:center; padding:8px 0 2px; }
     .btn-earn{
       position:relative; isolation:isolate; cursor:pointer; user-select:none;
@@ -359,7 +354,6 @@
       overflow:hidden;
       transform-style: preserve-3d;
     }
-    /* sweeping highlight */
     .btn-earn::before{
       content:""; position:absolute; inset:-130% -30%; z-index:0;
       background:
@@ -371,14 +365,12 @@
       mix-blend-mode: screen; opacity:.85;
       pointer-events:none;
     }
-    /* inner glow and rim */
     .btn-earn::after{
       content:""; position:absolute; inset:0; border-radius:16px; z-index:1; pointer-events:none;
       box-shadow:
         inset 0 0 18px rgba(255,255,255,.25),
         inset 0 0 36px rgba(255,210,80,.25);
     }
-    /* electric arcs overlay using span pseudo */
     .btn-earn span{ position:relative; z-index:2; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
     .btn-earn span::before{
       content:""; position:absolute; inset:-10px; z-index:-1; border-radius:14px;
@@ -397,7 +389,6 @@
         inset 0 -1px 0 rgba(170,110,10,.25),
         0 10px 22px rgba(255,200,80,.32),
         0 3px 0 rgba(150,100,10,.35); }
-
     @keyframes electric{
       from{ transform: translateX(-45%) translateY(-12%) rotate(10deg); }
       to  { transform: translateX(45%)  translateY(12%)  rotate(10deg); }
@@ -408,7 +399,7 @@
       100%{ transform: translateY(-1px) scale(1.01); opacity:.60; }
     }
 
-    .tasks-modal{
+    .tasks-modal{ /* kept for backward compat; unused after Start opens start.html */
       position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
       background: rgba(0,0,0,.55); backdrop-filter: blur(4px) saturate(120%);
       padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
@@ -430,6 +421,65 @@
     .tasks-iframe{
       position:absolute; inset:0; width:100%; height:100%; border:0; background:#0b0f16;
     }
+
+    /* Invited list */
+    .invites{ display:flex; flex-direction:column; gap:10px; }
+    .inv-row{
+      display:grid; grid-template-columns: 1fr auto auto; align-items:center; gap:10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px; padding:10px 12px; box-shadow: var(--shadow-2);
+    }
+    .inv-name{
+      min-width:0; display:flex; flex-direction:column;
+    }
+    .inv-name .label{
+      font-weight:900; letter-spacing:.25px; color:#eef3ff; font-size:.96rem;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .inv-name .muted{
+      color:var(--muted); font-size:.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .inv-chip{
+      padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-weight:900; letter-spacing:.2px; color: var(--gold);
+      text-shadow: 0 0 10px rgba(255,255,255,.06);
+    }
+    .inv-claim{
+      border:none; border-radius:10px; padding:8px 12px; font-weight:900; cursor:pointer;
+      background: linear-gradient(90deg, #45e27f, #9dffd0); color:#0b2117;
+      box-shadow: 0 6px 16px rgba(60,220,130,.28);
+      transition: transform var(--t-fast), filter var(--t-fast);
+    }
+    .inv-claim:disabled{
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      color:#9aa8c5; box-shadow:none; cursor:not-allowed;
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .inv-claim:active{ transform: translateY(1px) scale(0.99); }
+    .empty{
+      margin: 10px 2px; padding: 12px; border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.14);
+      color:#bfd0ff; text-align:center; letter-spacing:.3px;
+    }
+
+    /* Final links */
+    .links-cta{
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px;
+    }
+    @media (max-width:420px){ .links-cta{ grid-template-columns: 1fr; } }
+    .link-btn{
+      border:1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      color:#eaf2ff; font-weight:900; letter-spacing:.3px;
+      border-radius:14px; padding:12px 14px; cursor:pointer;
+      transition: filter var(--t-fast), transform var(--t-fast);
+    }
+    .link-btn:hover{ filter: brightness(1.06) }
+    .link-btn:active{ transform: translateY(1px) scale(.99) }
   </style>
 </head>
 <body>
@@ -510,6 +560,25 @@
           </div>
         </section>
 
+        <!-- New divider between Daily tasks and Invited List -->
+        <div class="divider" role="separator" aria-hidden="true"></div>
+
+        <!-- Invited List section -->
+        <section>
+          <div class="section-title">Invited List</div>
+          <div id="invites" class="invites"></div>
+          <div id="invites-empty" class="empty" style="display:none">No invited friends yet.</div>
+        </section>
+
+        <!-- Final links -->
+        <div class="divider" role="separator" aria-hidden="true"></div>
+        <section>
+          <div class="links-cta">
+            <button id="btn-about" class="link-btn">What is WELLcoin ?</button>
+            <button id="btn-more" class="link-btn">Get More WLC</button>
+          </div>
+        </section>
+
         <div class="spacer"></div>
       </div>
     </div>
@@ -526,7 +595,7 @@
   <canvas id="confetti" class="confetti"></canvas>
   <div id="gate" class="gate">Please open this page from Telegram App.</div>
 
-  <!-- Daily tasks modal (loads tasks.html when available) -->
+  <!-- Daily tasks modal (kept for legacy, not used after Start opens start.html) -->
   <div id="tasks-modal" class="tasks-modal" style="display:none">
     <div class="tasks-frame-wrap">
       <button id="tasks-close" class="tasks-close">Close</button>
@@ -566,17 +635,14 @@
 
   <!-- Page Logic -->
   <script>
-    // Light obfuscation / reduce console noise in production
     (function harden(){
       try{
-        // Disable right-click, image drag, and common dev hotkeys
         document.addEventListener('contextmenu', e=>e.preventDefault());
         document.addEventListener('dragstart', e=>e.preventDefault(), {passive:false});
         document.addEventListener('keydown', e=>{
           const k = e.key?.toLowerCase();
           if (k==='f12' || (e.ctrlKey&&e.shiftKey&&(k==='i'||k==='j'||k==='c')) || (e.ctrlKey && k==='u')) { e.preventDefault(); e.stopPropagation(); }
         }, true);
-        // Mute console in production surfaces
         ['log','info','debug'].forEach(m=>{ try{ console[m]=()=>{} }catch{} });
       }catch{}
     })();
@@ -615,7 +681,6 @@
       app.style.filter = show ? 'blur(6px) brightness(.6)' : '';
       app.style.pointerEvents = show ? 'none' : '';
     }
-    // Early hard gate if not in Telegram
     setTimeout(()=>{
       if (!authOK && !(tg && tg.initDataUnsafe && tg.initDataUnsafe.user)) showGate(true);
     }, 200);
@@ -644,10 +709,14 @@
     const rankTextEl = document.getElementById('rank-progress-text');
     const rankNeedEl = document.getElementById('rank-next-need');
 
-    // Tasks modal refs
+    // Tasks modal refs (legacy)
     const tasksModal = document.getElementById('tasks-modal');
     const tasksFrame = document.getElementById('tasks-frame');
     const tasksClose = document.getElementById('tasks-close');
+
+    // Invited list refs
+    const invitesEl = document.getElementById('invites');
+    const invitesEmptyEl = document.getElementById('invites-empty');
 
     backBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('index.html'); });
     cfgBtn.addEventListener('click', (e)=>{ e.preventDefault(); go('config.html'); });
@@ -665,11 +734,10 @@
     // Formatters
     const fmtInt = v => Number(v||0).toLocaleString("en-US",{maximumFractionDigits:0});
     const fmtWLC = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:6, maximumFractionDigits:6});
-    // USDT with 5 decimals as requested
     const fmtUSD = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:5, maximumFractionDigits:5});
     const msToHMS = (ms)=>{ if(ms<0) ms=0; const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
 
-    // Build achievements tiles (visual only) - timer below card, check above image
+    // Build achievements grid
     const SPECIAL = new Set([7,15,24,30]);
     function buildGrid(){
       achGrid.innerHTML = '';
@@ -788,7 +856,7 @@
         } else if (t < st.nextAvailableAt){
           tile.classList.add('locked');
           timerEl.style.display='';
-          timerEl.textContent = msToHMS(st.nextAvailableAt - t); // only time
+          timerEl.textContent = msToHMS(st.nextAvailableAt - t);
         } else {
           tile.classList.add('locked');
         }
@@ -957,7 +1025,7 @@
       }
     }
 
-    // Name hydration (robust and reactive)
+    // Name hydration
     function bestNameFromFirebase(u){
       if (!u || typeof u !== 'object') return null;
       const p = u.profile || {};
@@ -1006,19 +1074,151 @@
       }catch{}
     }
 
-    // Daily tasks open/close handlers (loads tasks.html when available)
+    // Daily tasks Start opens start.html (as requested)
     function openTasks(){
       try{
-        tasksFrame.src = 'tasks.html';
-        tasksModal.style.display = 'flex';
+        go('start.html'); // open dedicated start.html
       }catch(e){
-        // fallback: navigate
-        window.location.href = 'tasks.html';
+        window.location.href = 'start.html';
       }
     }
     function closeTasks(){
       tasksModal.style.display = 'none';
       try{ tasksFrame.src = 'about:blank'; }catch{}
+    }
+
+    // WELLcoin links
+    function openWellcoin(){
+      const url = 'https://wellcoin.lol';
+      try{
+        if (tg && typeof tg.openLink === 'function') tg.openLink(url, { try_instant_view:false });
+        else window.open(url,'_blank');
+      }catch{ window.open(url,'_blank'); }
+    }
+
+    // Referral earnings (10% every 24h per friend)
+    const ONE_DAY = 24*3600*1000;
+    const refUnsubs = new Map(); // friendId -> { bal:fn, led:fn, user:fn }
+
+    function clearInvitesUI(){
+      invitesEl.innerHTML = '';
+      for (const [fid, fns] of refUnsubs){
+        try{ fns.bal && fns.bal(); }catch{}
+        try{ fns.led && fns.led(); }catch{}
+        try{ fns.user && fns.user(); }catch{}
+      }
+      refUnsubs.clear();
+    }
+
+    function createInviteRow(friendId){
+      const row = document.createElement('div'); row.className='inv-row'; row.dataset.id = String(friendId);
+      const nameBox = document.createElement('div'); nameBox.className='inv-name';
+      const lbl = document.createElement('div'); lbl.className='label'; lbl.textContent = 'Friend';
+      const muted = document.createElement('div'); muted.className='muted'; muted.textContent = '@';
+      nameBox.appendChild(lbl); nameBox.appendChild(muted);
+
+      const chip = document.createElement('div'); chip.className='inv-chip'; chip.textContent = '0.000000 WLC';
+      const btn = document.createElement('button'); btn.className='inv-claim'; btn.textContent='Claim'; btn.disabled = true;
+
+      row.appendChild(nameBox); row.appendChild(chip); row.appendChild(btn);
+      invitesEl.appendChild(row);
+
+      return { row, nameBox, lbl, muted, chip, btn };
+    }
+
+    function ensureLedgerTransaction(inviterId, friendId, friendBalance){
+      const tNow = now();
+      const ref = db.ref(`referralsLedger/${inviterId}/${friendId}`);
+      return ref.transaction(L=>{
+        L = L || { lastSettledAt: 0, lastSnapshotBalance: 0, pendingWLC: 0 };
+        const lastSet = Number(L.lastSettledAt||0);
+        if (!lastSet){
+          // Initialize window starting now
+          L.lastSettledAt = tNow;
+          L.lastSnapshotBalance = Number(friendBalance||0);
+          return L;
+        }
+        if (tNow - lastSet >= ONE_DAY){
+          const prevSnap = Number(L.lastSnapshotBalance||0);
+          const delta = Number(friendBalance||0) - prevSnap;
+          const accr = delta > 0 ? (delta * 0.10) : 0;
+          L.pendingWLC = Number(L.pendingWLC||0) + (accr>0?accr:0);
+          L.lastSettledAt = tNow;
+          L.lastSnapshotBalance = Number(friendBalance||0);
+          return L;
+        }
+        return L;
+      });
+    }
+
+    function subscribeInvite(friendId){
+      const { row, lbl, muted, chip, btn } = createInviteRow(friendId);
+
+      // Update friend display name live
+      const userRef = db.ref('users/'+friendId);
+      const userHandler = s=>{
+        const u = s.val()||{};
+        const name = bestNameFromFirebase(u) || 'Friend';
+        lbl.textContent = name;
+        const uname = u?.username || u?.profile?.username || '';
+        muted.textContent = uname ? ('@'+String(uname).replace(/^@+/,'') ) : '';
+      };
+      userRef.on('value', userHandler);
+
+      // Update ledger UI
+      const ledRef = db.ref(`referralsLedger/${userId}/${friendId}`);
+      const ledHandler = s=>{
+        const L = s.val() || { pendingWLC: 0 };
+        const pend = Number(L.pendingWLC||0);
+        chip.textContent = `${fmtWLC(pend)} WLC`;
+        btn.disabled = !(pend > 0);
+      };
+      ledRef.on('value', ledHandler);
+
+      // Watch friend's balance to settle every 24h window when due
+      const balRef = db.ref('users/'+friendId+'/balance');
+      const balHandler = async sv=>{
+        const fb = typeof sv.val()==='number' ? sv.val() : 0;
+        try{ await ensureLedgerTransaction(userId, friendId, fb); }catch(e){}
+      };
+      balRef.on('value', balHandler);
+
+      // Claim handler
+      btn.addEventListener('click', async ()=>{
+        try{
+          const snap = await ledRef.once('value');
+          const L = snap.val() || {};
+          const pend = Number(L.pendingWLC||0);
+          if (!(pend > 0)) return;
+          // Add to inviter balance
+          await db.ref('users/'+userId+'/balance').transaction(v => (typeof v==='number'?v:Number(v||0)) + pend);
+          // Reset pending
+          await ledRef.update({ pendingWLC: 0, lastClaimAt: firebase.database.ServerValue.TIMESTAMP });
+        }catch(e){}
+      });
+
+      // Keep unsub funcs
+      refUnsubs.set(String(friendId), {
+        bal: ()=> balRef.off('value', balHandler),
+        led: ()=> ledRef.off('value', ledHandler),
+        user:()=> userRef.off('value', userHandler)
+      });
+    }
+
+    function loadInvites(){
+      clearInvitesUI();
+      const r = db.ref('referrals/'+userId);
+      r.on('value', async s=>{
+        clearInvitesUI();
+        const val = s.val() || {};
+        const ids = Object.keys(val);
+        if (!ids.length){
+          invitesEmptyEl.style.display = '';
+          return;
+        }
+        invitesEmptyEl.style.display = 'none';
+        ids.forEach(fid=> subscribeInvite(fid));
+      });
     }
 
     function init(){
@@ -1054,14 +1254,22 @@
       document.getElementById('wlc-withdraw').addEventListener('click', ()=>alert('Withdraw WLC: Coming soon'));
       document.getElementById('usdt-withdraw').addEventListener('click', ()=>alert('Withdraw USDT: Coming soon'));
 
-      // Daily tasks button + modal close
+      // Start button -> start.html
       const earnBtn = document.getElementById('start-earn');
       if (earnBtn) earnBtn.addEventListener('click', openTasks);
       if (tasksClose) tasksClose.addEventListener('click', closeTasks);
       tasksModal?.addEventListener('click', (e)=>{ if (e.target === tasksModal) closeTasks(); });
 
+      // Final links
+      document.getElementById('btn-about')?.addEventListener('click', openWellcoin);
+      document.getElementById('btn-more')?.addEventListener('click', openWellcoin);
+
+      // Daily achievements logic
       sync(userRef).catch(console.warn);
       attachTileHandlers(userRef);
+
+      // Invited list
+      loadInvites();
     }
 
     ensureUserId(init);
