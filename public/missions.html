@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Missions</title>
 
+  <!-- Preconnect to speed up first DB and SDK handshakes -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://wellcoinbotgame-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+
   <!-- Telegram + Firebase (compat, unified) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-  <!-- Preload assets for instant paint -->
+  <!-- Preload assets for instant paint (kept) -->
   <link rel="preload" as="image" href="assets/youtube-icon.png"/>
   <link rel="preload" as="image" href="assets/telegram-icon.png"/>
   <link rel="preload" as="image" href="assets/instagram-icon.png"/>
@@ -45,7 +49,7 @@
       padding: 20px;
       border-radius: 10px;
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 18px;
       box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
     }
     .header-box h1 {
@@ -57,7 +61,7 @@
       margin: 0;
     }
 
-    /* Back button — go to index.html reliably */
+    /* Back button — guaranteed return to index.html */
     #back-btn {
       position: absolute;
       top: 16px;
@@ -75,6 +79,22 @@
     #back-btn:hover { background: #f7f7f7; }
     #back-btn:active { transform: scale(0.98); }
     #back-btn svg { width: 16px; height: 16px; display: block; }
+
+    /* Skeleton loader (instant paint, modern shimmer) */
+    #skeleton { margin-top: 6px; }
+    .skel-mission{
+      height: 84px; border-radius:12px; margin-bottom:18px;
+      background: #2a2a2a;
+      border:1px solid rgba(255,215,106,.18);
+      position: relative; overflow: hidden;
+    }
+    .skel-mission::after{
+      content:""; position:absolute; inset:0;
+      background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.07), rgba(255,255,255,0));
+      transform: translateX(-100%);
+      animation: shimmer 1.2s ease-in-out infinite;
+    }
+    @keyframes shimmer { to { transform: translateX(100%); } }
 
     #missions { display: flex; flex-direction: column; gap: 18px; }
 
@@ -210,6 +230,15 @@
   </button>
 
   <div class="header-box"><h1>You Can Do It</h1></div>
+
+  <!-- Skeleton appears instantly; hidden on first data render -->
+  <div id="skeleton" aria-hidden="true">
+    <div class="skel-mission"></div>
+    <div class="skel-mission"></div>
+    <div class="skel-mission"></div>
+    <div class="skel-mission"></div>
+  </div>
+
   <div id="missions"></div>
 
   <script>
@@ -245,25 +274,43 @@
 
     // Reliable server time
     let serverOffset = 0;
-    db.ref(".info/serverTimeOffset").on("value", s=>{ serverOffset = s.val() || 0; });
+    let lastUser = null;
+    db.ref(".info/serverTimeOffset").on("value", s=>{
+      serverOffset = s.val() || 0;
+      // Repaint timers precisely when offset updates
+      if (lastUser) renderAll(lastUser);
+    });
     const now = ()=> Date.now() + serverOffset;
 
-    // IndexedDB cache (replace localStorage dependency)
+    // IndexedDB cache (no localStorage dependency)
     const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
     function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
     function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
     function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
+    // Warm IDB channel early
+    openIDB().catch(()=>{});
 
-    // Cached preload: user id (session preferred)
+    // User id from session (no localStorage)
     function getStoredUserId(){
       try{
         return sessionStorage.getItem('wlc_user_id') || tg?.initDataUnsafe?.user?.id || null;
       }catch{ return tg?.initDataUnsafe?.user?.id || null; }
     }
     const userId = String(getStoredUserId() || '');
-
-    // Keep session id aligned (no dependency on localStorage)
     try { if (userId) sessionStorage.setItem('wlc_user_id', userId); } catch {}
+
+    // Session snapshot for instant paint (kept in sessionStorage)
+    function readSessionSnapshot(){
+      try {
+        const raw = sessionStorage.getItem('wlc_user_snapshot');
+        if (!raw) return null;
+        const u = JSON.parse(raw);
+        return u && typeof u === 'object' ? u : null;
+      } catch { return null; }
+    }
+    function writeSessionSnapshot(user){
+      try { sessionStorage.setItem('wlc_user_snapshot', JSON.stringify(user)); } catch {}
+    }
 
     // Cache helpers (IndexedDB)
     const userCacheKey = uid => `user:${uid}`;
@@ -277,8 +324,11 @@
     // UI refs
     const backBtn = document.getElementById('back-btn');
     const missionsDiv = document.getElementById('missions');
+    const skeleton = document.getElementById('skeleton');
+    function hideSkeleton(){ if (skeleton) skeleton.style.display='none'; }
+    function showSkeleton(){ if (skeleton) skeleton.style.display='block'; }
 
-    // Back: always go to index.html (reliable)
+    // Back: always return to index.html (replace to avoid stacking)
     backBtn.addEventListener('click', (e)=>{
       e.preventDefault();
       try{
@@ -291,7 +341,7 @@
           }
         }
       }catch{}
-      window.location.href = 'index.html';
+      window.location.replace('index.html');
     });
 
     // Utils
@@ -322,7 +372,6 @@
       return ref.transaction(v => (typeof v === 'number' ? v : Number(v||0)) + delta);
     }
     function markReferral(inviterId, newUid){
-      // FIX: أزلت القوس الخاطئ الذي كسر السكربت
       return db.ref('referrals/'+inviterId+'/'+newUid).set(firebase.database.ServerValue.TIMESTAMP);
     }
     // balance helpers
@@ -484,8 +533,8 @@
       { id: "invite100", icon: "assets/invit3.png", label: "Invite 100 Friends", target: 100, rewardUSD: 5 }
     ];
 
-    // Preload images into memory cache
-    (function preloadImages(){
+    // Defer preloading icons until idle to not compete with DB
+    function preloadImages(){
       try{
         const urls = [
           ...socials.map(s=>s.icon),
@@ -494,9 +543,10 @@
         ];
         urls.forEach(u => { const im = new Image(); im.decoding='async'; im.loading='eager'; im.src = u; });
       }catch{}
-    })();
+    }
+    if ('requestIdleCallback' in window) requestIdleCallback(preloadImages); else setTimeout(preloadImages, 0);
 
-    // Referral credit (uses server timestamp already)
+    // Referral credit (server timestamp)
     let referralChecked = false;
     async function ensureReferralCredit(currentUser){
       if (referralChecked) return;
@@ -521,6 +571,7 @@
 
     // Render
     function renderAll(user){
+      lastUser = user;
       missionsDiv.innerHTML = '';
       const userMissions = user.missions || {};
       const getClaimed = (id)=> !!(userMissions[id]?.claimed);
@@ -547,14 +598,15 @@
               'Yes, I did',
               async ()=>{
                 await addWLC(userId, reward);
-                // Mark claimed (no client-side time dependency)
+                // Mark claimed (server time)
                 const updates = {};
                 updates['users/'+userId+'/missions/'+id+'/claimed'] = true;
                 updates['users/'+userId+'/missions/'+id+'/claimedAt'] = firebase.database.ServerValue.TIMESTAMP;
                 await db.ref().update(updates);
-                // Let the live subscription refresh UI; also write to IDB for fast next paint
+                // Refresh caches
                 const fresh = await getUserOnce(userId).catch(()=>user);
                 await writeCachedUser(userId, fresh);
+                writeSessionSnapshot(fresh);
                 showCongratsModal(`You earned <b>${reward} WLC</b>!`);
               }
             );
@@ -562,7 +614,7 @@
         });
       });
 
-      // Daily reward (WLC) — uses server time
+      // Daily reward (WLC) — server-time-based
       const dailyId = 'daily';
       const lastClaim = Number(userMissions[dailyId]?.lastClaim || 0);
       const elapsed = now() - lastClaim;
@@ -583,15 +635,16 @@
         onClick: async function(){
           if (!available) return;
           await addWLC(userId, 1);
-          // Set lastClaim to server timestamp for integrity
+          // Server timestamp for lastClaim
           await db.ref('users/'+userId+'/missions/'+dailyId+'/lastClaim').set(firebase.database.ServerValue.TIMESTAMP);
           const fresh = await getUserOnce(userId).catch(()=>user);
           await writeCachedUser(userId, fresh);
+          writeSessionSnapshot(fresh);
           showCongratsModal('You claimed <b>1 WLC</b> daily reward!');
         }
       });
 
-      // Live daily timer (server time based)
+      // Live daily timer (server time)
       if (!available){
         let prev = remaining;
         const tick = ()=>{
@@ -599,11 +652,9 @@
           const el = document.getElementById('daily-timer');
           if (el) el.textContent = 'Time left: ' + formatTime(rem);
           if (rem <= 0) {
-            // Re-render to flip to available state
             renderAll(user);
             return;
           }
-          // Drift-safe: next tick in ~1s
           setTimeout(tick, Math.max(500, 1000 - Math.abs(rem - prev)));
           prev = rem;
         };
@@ -647,10 +698,14 @@
 
             const fresh = await getUserOnce(userId).catch(()=>user);
             await writeCachedUser(userId, fresh);
+            writeSessionSnapshot(fresh);
             showCongratsModal(`You received <b>$${rewardUSD.toFixed(2)}</b> to your USDT balance!`);
           }
         });
       });
+
+      // Skeleton is no longer needed once we've painted
+      hideSkeleton();
     }
 
     // Timer formatter
@@ -660,18 +715,31 @@
       return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':');
     }
 
-    // Subscribe live user + render from IndexedDB cache first
+    // Subscribe live user + render from session/IDB first
     async function boot(){
       if (!userId){ alert('Missing Telegram user. Please open from Telegram.'); return; }
 
-      const cached = await readCachedUser(userId);
-      if (cached) renderAll(cached);
+      // 1) Try session snapshot (instant)
+      const snapUser = readSessionSnapshot();
+      if (snapUser) {
+        renderAll(snapUser);
+      } else {
+        showSkeleton();
+      }
 
+      // 2) Then IDB cache as next-best
+      if (!snapUser) {
+        const cached = await readCachedUser(userId);
+        if (cached) renderAll(cached);
+      }
+
+      // 3) Live subscription (authoritative)
       const ref = db.ref('users/'+userId);
       let first = true;
       ref.on('value', async snap=>{
         const user = snap.val() || {};
         await writeCachedUser(userId, user);
+        writeSessionSnapshot(user);
         if (first){
           first = false;
           ensureReferralCredit(user).catch(()=>{});
@@ -679,7 +747,9 @@
         renderAll(user);
       }, err=>{
         console.error('DB error', err);
-        if (!cached) missionsDiv.innerHTML = '<div style="opacity:.85">Error loading missions.</div>';
+        // Keep skeleton only if nothing painted yet
+        if (!lastUser) missionsDiv.innerHTML = '<div style="opacity:.85">Error loading missions.</div>';
+        hideSkeleton();
       });
     }
 
