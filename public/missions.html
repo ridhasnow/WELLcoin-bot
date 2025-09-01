@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Missions</title>
 
-  <!-- Telegram + Firebase (compat) -->
+  <!-- Telegram + Firebase (compat, unified) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -31,15 +31,6 @@
       --muted:#ddd;
       --card:#2a2a2a;
       --card2:#1a1a1a;
-
-      /* LED ring controls (slower + softer by default) */
-      --led-speed: 6s;     /* bigger = slower */
-      --led-width: 1.2;    /* stroke width of the bright segment */
-      --led-on: 3.2;       /* bright segment length (of 100 pathLength) */
-      --led-off: 96.8;     /* gap after the segment */
-      --led-faint: .06;    /* overall faint border glow */
-      --led-ds1: .28;      /* outer glow intensity 1 */
-      --led-ds2: .10;      /* outer glow intensity 2 */
     }
     body {
       background: #000;
@@ -66,19 +57,15 @@
       margin: 0;
     }
 
-    /* Back button — smaller */
+    /* Back button — go to index.html reliably */
     #back-btn {
       position: absolute;
       top: 16px;
       left: 16px;
-      width: 26px;   /* smaller */
-      height: 26px;  /* smaller */
+      width: 26px; height: 26px;
       background: white;
-      border: none;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border: none; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.13);
       transition: background 0.18s, transform .12s;
@@ -97,32 +84,15 @@
       align-items: center;
       background: var(--card);
       border-radius: 12px;
-      padding: 14px; /* a bit tighter */
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.06);
+      padding: 14px;
+      /* Thin golden edge + sharp subtle glow (no rotating animation) */
+      border: 1px solid rgba(255, 215, 106, 0.32);
+      box-shadow:
+        0 0 0.5px rgba(255,215,106,0.65),
+        0 0 7px rgba(255,215,106,0.18);
       overflow: hidden;
       isolation: isolate;
     }
-
-    /* LED ring along the border: thin glowing segment rotating around edges (slower + softer) */
-    .led-ring{ position:absolute; inset:0; z-index:1; pointer-events:none; }
-    .led-ring svg{ width:100%; height:100%; display:block; }
-    .led-ring .faint{
-      stroke: rgba(255,215,120,var(--led-faint));
-      stroke-width: 1;
-      filter: none;
-    }
-    .led-ring .dash{
-      stroke: url(#glow);
-      stroke-width: var(--led-width);
-      stroke-linecap: round;
-      stroke-dasharray: var(--led-on) var(--led-off);
-      stroke-dashoffset: 0;
-      animation: dash-rotate var(--led-speed) linear infinite;
-      filter:
-        drop-shadow(0 0 4px rgba(255,215,120, var(--led-ds1)))
-        drop-shadow(0 0 10px rgba(255,215,120, var(--led-ds2)));
-    }
-    @keyframes dash-rotate{ to { stroke-dashoffset: -100; } }
 
     /* Images — block long-press/save */
     .mission img {
@@ -146,35 +116,25 @@
       background: linear-gradient(90deg, #ff2e2e 0%, orange 60%, #6fff00 100%);
       box-shadow: 0 0 10px 1px #fff700c7, 0 0 4px 1px #b6b000a4;
       position: relative; transition: width 0.5s cubic-bezier(.77,.2,.05,1.0);
-      animation: progress_shine 2s linear infinite;
     }
-    /* Gold theme for invite missions */
     .progress-bar.gold{
       background: linear-gradient(90deg, #a67c00 0%, #d4af37 40%, #ffd76a 70%, #a67c00 100%);
       box-shadow: 0 0 8px 1px rgba(212,175,55,.6), 0 0 3px 1px rgba(255,215,106,.5);
     }
-    @keyframes progress_shine { 0%{filter:brightness(1)} 50%{filter:brightness(1.18)} 100%{filter:brightness(1)} }
-    .progress-bar::after {
-      content:""; position:absolute; top:0; left:0; height:100%; width:28px;
-      background: linear-gradient(90deg, rgba(255,255,255,0.38) 10%, transparent 70%);
-      opacity: .7; animation: progress_move 1.7s linear infinite;
-    }
-    @keyframes progress_move { 0%{left:0} 100%{left:calc(100% - 28px)} }
 
-    /* Smaller action buttons (visit/follow/invite) */
+    /* Smaller action buttons */
     .mission button {
-      padding: 8px 12px;                 /* smaller */
+      padding: 8px 12px;
       background: var(--ok);
       color: #000;
       font-weight: 700;
-      font-size: 13px;                   /* smaller */
-      border: none;
-      border-radius: 8px;
+      font-size: 13px;
+      border: none; border-radius: 8px;
       cursor: pointer;
       margin-left: 10px;
       z-index: 2;
       transition: transform .12s, filter .16s;
-      min-width: 84px;                   /* smaller min width */
+      min-width: 84px;
     }
     .mission button:hover { filter: brightness(1.05); }
     .mission button:active { transform: translateY(1px) scale(0.99); }
@@ -226,7 +186,7 @@
       background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); color:#fff; cursor:pointer;
     }
 
-    /* Confetti (visible over modal) */
+    /* Confetti */
     .confetti{
       position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index: 2;
     }
@@ -283,27 +243,56 @@
     const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
     const db  = firebase.database(app);
 
-    // Cached preload: user id
+    // Reliable server time
+    let serverOffset = 0;
+    db.ref(".info/serverTimeOffset").on("value", s=>{ serverOffset = s.val() || 0; });
+    const now = ()=> Date.now() + serverOffset;
+
+    // IndexedDB cache (replace localStorage dependency)
+    const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
+    function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
+    function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
+    function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
+
+    // Cached preload: user id (session preferred)
     function getStoredUserId(){
       try{
-        return sessionStorage.getItem('wlc_user_id') || localStorage.getItem('wlc_user_id') || tg?.initDataUnsafe?.user?.id || null;
+        return sessionStorage.getItem('wlc_user_id') || tg?.initDataUnsafe?.user?.id || null;
       }catch{ return tg?.initDataUnsafe?.user?.id || null; }
     }
     const userId = String(getStoredUserId() || '');
 
-    // Cache helpers (instant UI)
-    const userCacheKey = uid => `wlc_cache_user_${uid}`;
-    function readCachedUser(uid){
-      try{ const raw = localStorage.getItem(userCacheKey(uid)); return raw ? JSON.parse(raw) : null; }catch{ return null; }
+    // Keep session id aligned (no dependency on localStorage)
+    try { if (userId) sessionStorage.setItem('wlc_user_id', userId); } catch {}
+
+    // Cache helpers (IndexedDB)
+    const userCacheKey = uid => `user:${uid}`;
+    async function readCachedUser(uid){
+      try{ const v = await idbGet(userCacheKey(uid)); return v || null; }catch{ return null; }
     }
-    function writeCachedUser(uid, data){
-      try{ localStorage.setItem(userCacheKey(uid), JSON.stringify(data)); }catch{}
+    async function writeCachedUser(uid, data){
+      try{ await idbSet(userCacheKey(uid), data); }catch{}
     }
 
     // UI refs
     const backBtn = document.getElementById('back-btn');
     const missionsDiv = document.getElementById('missions');
-    backBtn.addEventListener('click', (e)=>{ e.preventDefault(); history.back(); });
+
+    // Back: always go to index.html (reliable)
+    backBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      try{
+        const a = document.getElementById('preloadAudio');
+        if (a) {
+          sessionStorage.setItem('wlc_music_ct', String(a.currentTime||0));
+          sessionStorage.setItem('wlc_music_track','assets/preload.mp3');
+          if (!sessionStorage.getItem('wlc_music_started_at_ms')) {
+            sessionStorage.setItem('wlc_music_started_at_ms', String(Date.now() - (a.currentTime || 0) * 1000));
+          }
+        }
+      }catch{}
+      window.location.href = 'index.html';
+    });
 
     // Utils
     function openSmart(url){
@@ -333,7 +322,7 @@
       return ref.transaction(v => (typeof v === 'number' ? v : Number(v||0)) + delta);
     }
     function markReferral(inviterId, newUid){
-      return db.ref('referrals/'+inviterId+'/'+newUid).set(firebase.database.ServerValue.TIMESTAMP);
+      return db.ref('referrals/'+inviterId+'/'+newUid').set(firebase.database.ServerValue.TIMESTAMP);
     }
     // balance helpers
     async function addWLC(uid, delta){
@@ -404,11 +393,19 @@
         modal.remove();
       };
       copy.onclick = ()=>{
-        navigator.clipboard.writeText(link).then(()=>{ modal.remove(); });
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link).then(()=>{ modal.remove(); });
+        } else {
+          // Fallback
+          const ta = document.createElement('textarea');
+          ta.value = link; document.body.appendChild(ta);
+          ta.select(); try { document.execCommand('copy'); } catch {}
+          ta.remove(); modal.remove();
+        }
       };
     }
 
-    // Confetti overlay on the modal (high visibility)
+    // Confetti overlay on the modal
     function fireConfetti(container){
       const c = document.createElement('div'); c.className='confetti';
       container.appendChild(c);
@@ -441,29 +438,11 @@
       const ok = document.createElement('button'); ok.className='btn success'; ok.textContent = 'OK';
       actions.appendChild(ok); wrap.appendChild(actions);
       const { modal } = showModal(wrap);
-      // confetti on the modal overlay (not clipped)
       fireConfetti(modal);
       ok.onclick = ()=> modal.remove();
     }
 
     // Render helpers
-    function ledRingMarkup(){
-      // SVG thin dash rotating around rounded rect (uses CSS vars for speed/softness)
-      return `
-        <div class="led-ring" aria-hidden="true">
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%"  stop-color="#fff2b0"/>
-                <stop offset="100%" stop-color="#ffd76a"/>
-              </linearGradient>
-            </defs>
-            <rect class="faint" x="1" y="1" width="98" height="98" rx="12" ry="12" fill="none" pathLength="100"></rect>
-            <rect class="dash"  x="1" y="1" width="98" height="98" rx="12" ry="12" fill="none" pathLength="100"></rect>
-          </svg>
-        </div>
-      `;
-    }
     function renderMission({ id, title, desc, icon, reward, progress=null, claimed=false, disabled=false, buttonText="", onClick, progressTheme=null, extraClasses='' }){
       const div = document.createElement('div');
       div.className = `mission ${extraClasses||''}`;
@@ -474,7 +453,6 @@
           <p style="margin-top:4px; font-size:12px;">${Math.round(progress)}%</p>
         ` : '';
       div.innerHTML = `
-        ${ledRingMarkup()}
         <img src="${icon}" alt="${title}" draggable="false" oncontextmenu="return false"/>
         <div class="mission-content">
           <h3>${title}</h3>
@@ -488,7 +466,7 @@
       if (btn) btn.onclick = onClick;
     }
 
-    // Social tasks config (URLs normalized with https)
+    // Social tasks config
     const socials = [
       { id: "youtube",  title: "Follow us on YouTube",   icon: "assets/youtube-icon.png",   url: "https://www.youtube.com/@WELLcoin-y6b", reward: 1, type: "follow" },
       { id: "telegram", title: "Join our Telegram",      icon: "assets/telegram-icon.png",  url: "https://t.me/WELLcoinofficial",          reward: 1, type: "join"   },
@@ -498,7 +476,7 @@
       { id: "x",        title: "Follow us on X (Twitter)",icon:"assets/twitter-icon.png",   url: "https://x.com/WELLcoin2024?s=09",        reward: 1, type: "follow" }
     ];
 
-    // Invite missions config — rewards in USDT as requested
+    // Invite missions config — rewards in USDT
     const inviteMissions = [
       { id: "invite5",   icon: "assets/invit1.png", label: "Invite 5 Friends",   target: 5,   rewardUSD: 0.2 },
       { id: "invite20",  icon: "assets/invit2.png", label: "Invite 20 Friends",  target: 20,  rewardUSD: 1 },
@@ -517,7 +495,7 @@
       }catch{}
     })();
 
-    // Referral: credit inviter if we have start_param and not yet credited
+    // Referral credit (uses server timestamp already)
     let referralChecked = false;
     async function ensureReferralCredit(currentUser){
       if (referralChecked) return;
@@ -568,26 +546,25 @@
               'Yes, I did',
               async ()=>{
                 await addWLC(userId, reward);
-                const updated = {
-                  ...user,
-                  balance: (Number(user.balance||0) + Number(reward||0)),
-                  missions: { ...userMissions, [id]: { claimed: true } }
-                };
-                await updateUser(userId, { missions: updated.missions }); // balance updated via addWLC
-                writeCachedUser(userId, updated);
+                // Mark claimed (no client-side time dependency)
+                const updates = {};
+                updates['users/'+userId+'/missions/'+id+'/claimed'] = true;
+                updates['users/'+userId+'/missions/'+id+'/claimedAt'] = firebase.database.ServerValue.TIMESTAMP;
+                await db.ref().update(updates);
+                // Let the live subscription refresh UI; also write to IDB for fast next paint
+                const fresh = await getUserOnce(userId).catch(()=>user);
+                await writeCachedUser(userId, fresh);
                 showCongratsModal(`You earned <b>${reward} WLC</b>!`);
-                renderAll(updated);
               }
             );
           }
         });
       });
 
-      // Daily reward (WLC)
+      // Daily reward (WLC) — uses server time
       const dailyId = 'daily';
-      const lastClaim = userMissions[dailyId]?.lastClaim || 0;
-      const now = Date.now();
-      const elapsed = now - Number(lastClaim || 0);
+      const lastClaim = Number(userMissions[dailyId]?.lastClaim || 0);
+      const elapsed = now() - lastClaim;
       const oneDay = 24*60*60*1000;
       const available = elapsed > oneDay;
       const remaining = Math.max(0, oneDay - elapsed);
@@ -605,23 +582,31 @@
         onClick: async function(){
           if (!available) return;
           await addWLC(userId, 1);
-          const updated = { ...user, balance: Number(user.balance||0)+1, missions: { ...userMissions, [dailyId]: { lastClaim: Date.now() } } };
-          await updateUser(userId, { missions: updated.missions }); // balance updated via addWLC
-          writeCachedUser(userId, updated);
+          // Set lastClaim to server timestamp for integrity
+          await db.ref('users/'+userId+'/missions/'+dailyId+'/lastClaim').set(firebase.database.ServerValue.TIMESTAMP);
+          const fresh = await getUserOnce(userId).catch(()=>user);
+          await writeCachedUser(userId, fresh);
           showCongratsModal('You claimed <b>1 WLC</b> daily reward!');
-          renderAll(updated);
         }
       });
 
-      // Daily timer live update
+      // Live daily timer (server time based)
       if (!available){
-        let remain = remaining;
-        const timerEl = document.getElementById('daily-timer');
-        const intv = setInterval(()=>{
-          remain -= 1000;
-          if (remain <= 0){ clearInterval(intv); renderAll({ ...user, missions: { ...userMissions, [dailyId]: { lastClaim } } }); }
-          else if (timerEl){ timerEl.textContent = 'Time left: ' + formatTime(remain); }
-        }, 1000);
+        let prev = remaining;
+        const tick = ()=>{
+          const rem = Math.max(0, oneDay - (now() - lastClaim));
+          const el = document.getElementById('daily-timer');
+          if (el) el.textContent = 'Time left: ' + formatTime(rem);
+          if (rem <= 0) {
+            // Re-render to flip to available state
+            renderAll(user);
+            return;
+          }
+          // Drift-safe: next tick in ~1s
+          setTimeout(tick, Math.max(500, 1000 - Math.abs(rem - prev)));
+          prev = rem;
+        };
+        setTimeout(tick, 1000);
       }
 
       // Invites (USDT rewards)
@@ -654,15 +639,14 @@
 
             // Claim USDT reward
             await addUSDT(userId, rewardUSD);
-            const updated = {
-              ...user,
-              usdtBalance: Number(user.usdtBalance||0) + Number(rewardUSD||0),
-              missions: { ...userMissions, [id]: { claimed: true, claimedAt: Date.now() } }
-            };
-            await updateUser(userId, { missions: updated.missions }); // usdt updated via addUSDT
-            writeCachedUser(userId, updated);
+            const updates = {};
+            updates['users/'+userId+'/missions/'+id+'/claimed'] = true;
+            updates['users/'+userId+'/missions/'+id+'/claimedAt'] = firebase.database.ServerValue.TIMESTAMP;
+            await db.ref().update(updates);
+
+            const fresh = await getUserOnce(userId).catch(()=>user);
+            await writeCachedUser(userId, fresh);
             showCongratsModal(`You received <b>$${rewardUSD.toFixed(2)}</b> to your USDT balance!`);
-            renderAll(updated);
           }
         });
       });
@@ -675,18 +659,18 @@
       return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':');
     }
 
-    // Subscribe live user + render from cache first
+    // Subscribe live user + render from IndexedDB cache first
     async function boot(){
       if (!userId){ alert('Missing Telegram user. Please open from Telegram.'); return; }
 
-      const cached = readCachedUser(userId);
+      const cached = await readCachedUser(userId);
       if (cached) renderAll(cached);
 
       const ref = db.ref('users/'+userId);
       let first = true;
       ref.on('value', async snap=>{
         const user = snap.val() || {};
-        writeCachedUser(userId, user);
+        await writeCachedUser(userId, user);
         if (first){
           first = false;
           ensureReferralCredit(user).catch(()=>{});
