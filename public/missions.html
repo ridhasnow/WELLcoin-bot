@@ -322,7 +322,8 @@
       return ref.transaction(v => (typeof v === 'number' ? v : Number(v||0)) + delta);
     }
     function markReferral(inviterId, newUid){
-      return db.ref('referrals/'+inviterId+'/'+newUid').set(firebase.database.ServerValue.TIMESTAMP);
+      // FIX: أزلت القوس الخاطئ الذي كسر السكربت
+      return db.ref('referrals/'+inviterId+'/'+newUid).set(firebase.database.ServerValue.TIMESTAMP);
     }
     // balance helpers
     async function addWLC(uid, delta){
