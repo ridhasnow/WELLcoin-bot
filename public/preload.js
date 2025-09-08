@@ -36,7 +36,7 @@ function idbGet(key) {
     const tx = db.transaction(IDB_STORE, 'readonly');
     const req = tx.objectStore(IDB_STORE).get(key);
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onerror = () => reject(tx.error);
   }));
 }
 function idbClear() {
@@ -370,7 +370,7 @@ async function preloadAssetsWithConcurrency(assets) {
   return results;
 }
 
-// ---------- Main Preload Logic ----------
+// ---------- Main Preload Logic (7s enforced waiting) ----------
 async function preloadAll() {
   // 1) الخلفية + الموسيقى
   await preloadBackgroundAndMusic();
@@ -422,7 +422,19 @@ async function preloadAll() {
   }
 
   setProgress(100, "Ready! Entering the game...");
-  setTimeout(()=>{ window.location.replace('index.html'); }, 400);
+
+  // ---------- انتظـار إجباري 7 ثواني ----------
+  const waitMs = 7000;
+  const startWait = Date.now();
+  // قد يكون التحميل أطول من 7 ثواني، لكن إذا أسرع يجب الانتظار
+  const endWait = async () => {
+    const elapsed = Date.now() - startWait;
+    if (elapsed < waitMs) {
+      await new Promise(res => setTimeout(res, waitMs - elapsed));
+    }
+    window.location.replace('index.html');
+  };
+  endWait();
 }
 document.addEventListener('DOMContentLoaded', preloadAll);
 
