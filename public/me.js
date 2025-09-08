@@ -190,7 +190,10 @@ let daily = null, timerId = null;
 const DAY_MS = 24*3600*1000;
 const CLAIM_WINDOW_MS = 8*3600*1000;
 
-// Improved: roll-forward missed days (no unexpected reset)
+// ENSURE: strict rules requested by user
+// - If user misses the 8h window for any day -> reset to Day 1, clear progress.
+// - After reset, Day 1 stays available indefinitely until claimed (no expiry).
+// - After finishing Day 30, mark completed=true; no more progress/rewards.
 function ensureStateInit(u, tNow){
   if (!u) u = {};
   if (!u.meDailyState){
@@ -199,27 +202,41 @@ function ensureStateInit(u, tNow){
       lastClaimAt: 0,
       nextAvailableAt: tNow,
       expiresAt: tNow + CLAIM_WINDOW_MS,
+      stickyStart: false, // becomes true only after a reset due to a miss
+      completed: false,
       claimedDays: {},
-      version: 2
+      version: 3
     };
   } else {
     const st = u.meDailyState;
-    if (!st.nextAvailableAt || !st.expiresAt){
-      st.nextAvailableAt = tNow;
-      st.expiresAt = tNow + CLAIM_WINDOW_MS;
-    }
-    while (tNow > (st.expiresAt||0) && tNow >= (st.nextAvailableAt||0)){
-      if (st.currentDay >= 30){
+    // Ensure fields exist
+    if (typeof st.currentDay !== 'number') st.currentDay = 1;
+    if (typeof st.lastClaimAt !== 'number') st.lastClaimAt = 0;
+    if (typeof st.nextAvailableAt !== 'number') st.nextAvailableAt = tNow;
+    if (typeof st.expiresAt !== 'number') st.expiresAt = tNow + CLAIM_WINDOW_MS;
+    if (typeof st.stickyStart !== 'boolean') st.stickyStart = false;
+    if (typeof st.completed !== 'boolean') st.completed = false;
+    st.claimedDays = st.claimedDays || {};
+    st.version = 3;
+
+    // If already completed, freeze state
+    if (!st.completed){
+      // If missed window for the current day AND not stickyStart (because stickyStart means no expiry on Day1)
+      const missed = (tNow > st.expiresAt) && (tNow >= st.nextAvailableAt) && !(st.stickyStart && st.currentDay===1);
+      if (missed){
+        // Reset to day 1 and keep it available indefinitely until claim
         st.currentDay = 1;
+        st.lastClaimAt = 0;
+        st.nextAvailableAt = tNow;
+        st.expiresAt = Number.MAX_SAFE_INTEGER; // effectively no expiry for start until claim
+        st.stickyStart = true;
         st.claimedDays = {};
-      } else {
-        st.currentDay = Number(st.currentDay||1) + 1;
       }
-      st.nextAvailableAt = Number(st.nextAvailableAt||tNow) + DAY_MS;
-      st.expiresAt = st.nextAvailableAt + CLAIM_WINDOW_MS;
     }
+
     u.meDailyState = st;
   }
+
   if (typeof u.usdtBalance !== 'number') u.usdtBalance = 0;
   if (typeof u.balance !== 'number') u.balance = 0;
   return u;
@@ -241,20 +258,51 @@ function rewardFor(day){
 
 function render(){
   if (!daily) return;
+
   const t = now(), st = daily;
+  const completed = !!st.completed;
+
   document.querySelectorAll('.day').forEach(tile=>{
     const day = Number(tile.dataset.day);
     tile.classList.remove('locked','claimable','claimed');
     const timerEl = tile.querySelector('.timer');
     timerEl.style.display='none'; timerEl.textContent='';
 
+    if (completed){
+      tile.classList.add('claimed');
+      return;
+    }
+
+    const isCurrent = (day === st.currentDay);
+    const isSticky = (st.stickyStart && st.currentDay===1);
+
+    // Already claimed explicitly?
     const claimed = !!(st.claimedDays && st.claimedDays[day]);
-    if (claimed){ tile.classList.add('claimed'); return; }
-    if (day < st.currentDay){ tile.classList.add('claimed'); return; }
-    if (day > st.currentDay){ tile.classList.add('locked'); return; }
+
+    if (claimed){
+      tile.classList.add('claimed');
+      return;
+    }
+
+    if (!isCurrent){
+      // Before current day: show as locked (not auto-claimed)
+      // After current: locked
+      tile.classList.add('locked');
+      return;
+    }
+
+    // Current day
+    if (isSticky){
+      // Day 1 after reset: always claimable; no timer
+      tile.classList.add('claimable');
+      return;
+    }
 
     if (t >= st.nextAvailableAt && t <= st.expiresAt){
       tile.classList.add('claimable');
+      // Optional: countdown to expires
+      timerEl.style.display='';
+      timerEl.textContent = `Ends in ${msToHMS(st.expiresAt - t)}`;
     } else if (t < st.nextAvailableAt){
       tile.classList.add('locked');
       timerEl.style.display='';
@@ -312,8 +360,18 @@ function showWithdrawInfo(){
 function attachTileHandlers(userRef){
   achGrid.addEventListener('click', (e)=>{
     const tile = e.target.closest('.day'); if (!tile) return;
-    const day = Number(tile.dataset.day); if (day !== daily.currentDay) return;
-    const t = now(); if (t < daily.nextAvailableAt || t > daily.expiresAt) return;
+    if (!daily || daily.completed) return;
+
+    const day = Number(tile.dataset.day);
+    if (day !== daily.currentDay) return;
+
+    const t = now();
+    const isSticky = (daily.stickyStart && daily.currentDay===1);
+
+    // Allow claim if sticky-start OR within the window
+    const inWindow = (t >= daily.nextAvailableAt && t <= daily.expiresAt);
+    if (!(isSticky || inWindow)) return;
+
     claim(userRef, day);
   });
 }
@@ -329,19 +387,28 @@ async function sync(userRef){
     timerId = setInterval(()=>{
       const t = now();
       render();
-      if (t > daily.expiresAt) { sync(userRef).catch(()=>{}); }
+      // If window passed (and not sticky/completed), let server reset to day1 on next sync
+      if (!daily.completed && !(daily.stickyStart && daily.currentDay===1) && t > daily.expiresAt) {
+        sync(userRef).catch(()=>{});
+      }
     }, 1000);
   }
 }
 
 async function claim(userRef, day){
-  const tNow = now(); let reward = null;
+  const tNow = now(); let reward = null; let finished = false;
   await userRef.transaction(u=>{
     u = ensureStateInit(u, tNow);
     const st = u.meDailyState;
+    if (st.completed) return u;
     if (day !== st.currentDay) return u;
-    if (tNow < st.nextAvailableAt || tNow > st.expiresAt) return u;
 
+    const isSticky = (st.stickyStart && st.currentDay===1);
+    const inWindow = (tNow >= st.nextAvailableAt && tNow <= st.expiresAt);
+
+    if (!(isSticky || inWindow)) return u;
+
+    // Grant reward
     const rw = rewardFor(day);
     if (rw.type.startsWith('WLC')) u.balance = (u.balance||0) + rw.amount;
     if (rw.type==='USDT')         u.usdtBalance = (u.usdtBalance||0) + rw.amount;
@@ -350,16 +417,21 @@ async function claim(userRef, day){
     st.claimedDays[String(day)] = tNow;
     st.lastClaimAt = tNow;
 
+    // Progress or finish
     if (day >= 30){
-      st.currentDay = 1;
-      st.nextAvailableAt = tNow + DAY_MS;
-      st.expiresAt = st.nextAvailableAt + CLAIM_WINDOW_MS;
-      st.claimedDays = {};
+      st.completed = true;
+      st.currentDay = 30;
+      st.nextAvailableAt = Number.MAX_SAFE_INTEGER;
+      st.expiresAt = Number.MAX_SAFE_INTEGER;
+      st.stickyStart = false;
+      finished = true;
     } else {
       st.currentDay = day + 1;
+      st.stickyStart = false; // turn off sticky after Day 1 claim
       st.nextAvailableAt = tNow + DAY_MS;
       st.expiresAt = st.nextAvailableAt + CLAIM_WINDOW_MS;
     }
+
     u.meDailyState = st; reward = rw; return u;
   });
 
@@ -376,7 +448,11 @@ async function claim(userRef, day){
       const newU = s.val().usdtBalance || 0;
       usdtEl.textContent = fmtUSD(newU);
     }
-    showPop('Congratulations!', 'Your daily reward has been added to your balance.', reward.label);
+    if (finished){
+      showPop('All Daily Achievements Completed!', 'You finished all 30 days. This section is now complete.', reward.label);
+    } else {
+      showPop('Congratulations!', 'Your daily reward has been added to your balance.', reward.label);
+    }
   }
 }
 
