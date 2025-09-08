@@ -8,39 +8,69 @@ const firebaseConfig = {
   messagingSenderId: "108640533638",
   appId: "1:108640533638:web:ed07516d96ac38f47f6507"
 };
-const app = firebase.initializeApp(firebaseConfig);
+const app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
 const db = firebase.database(app);
 
-const tg = window.Telegram.WebApp;
-tg.ready();
-const userId = tg.initDataUnsafe?.user?.id;
+// Server time sync (prevent local clock abuse)
+let serverOffset = 0;
+db.ref(".info/serverTimeOffset").on("value", s => { serverOffset = s.val() || 0; });
+const now = () => Date.now() + serverOffset;
+
+const tg = window.Telegram?.WebApp;
+tg && tg.ready();
+const userId = tg?.initDataUnsafe?.user?.id;
+
+// === IndexedDB (we rely on Indexed) ===
+const IDB_NAME='wellcoin_game_cache', IDB_STORE='cache';
+function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_NAME,1); r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);}; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
+function idbGet(key){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const rq=tx.objectStore(IDB_STORE).get(key); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);}));}
+function idbSet(key,val){ return openIDB().then(db=>new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error);}));}
+
+const IDBK = {
+  sessionBalance: (uid)=> `mg:${uid}:sessionBalance`,
+  hearts: (uid)=> `mg:${uid}:hearts`,
+  sessionStarted: (uid)=> `mg:${uid}:sessionStarted`
+};
 
 // === Health System (Hearts) ===
 let maxHearts = 3;
 
-// =========== استرجاع رصيد العملات والقلوب من localStorage ===========
+// =========== حالة الجلسة (باستخدام IndexedDB) ===========
 let sessionBalance = 0;
 let currentHearts = maxHearts;
 let sessionActive = true;
 
-// ====== إصلاح localStorage: بداية جلسة نظيفة دائماً =======
-function initSessionStorage() {
-  localStorage.setItem("sessionBalance", "0");
-  localStorage.setItem("currentHearts", maxHearts);
-  localStorage.setItem("sessionStarted", "1");
+async function initSessionStorageIDB() {
+  await idbSet(IDBK.sessionBalance(userId), 0);
+  await idbSet(IDBK.hearts(userId), maxHearts);
+  await idbSet(IDBK.sessionStarted(userId), 1);
 }
-if (
-  !localStorage.getItem("sessionStarted") ||
-  isNaN(parseFloat(localStorage.getItem("sessionBalance"))) ||
-  isNaN(parseInt(localStorage.getItem("currentHearts"))) ||
-  parseFloat(localStorage.getItem("sessionBalance")) < 0 ||
-  parseInt(localStorage.getItem("currentHearts")) > maxHearts ||
-  parseInt(localStorage.getItem("currentHearts")) < 0
-) {
-  initSessionStorage();
+
+async function loadSessionFromIDB() {
+  try{
+    const started = await idbGet(IDBK.sessionStarted(userId));
+    let sb = await idbGet(IDBK.sessionBalance(userId));
+    let ch = await idbGet(IDBK.hearts(userId));
+
+    const invalid =
+      started !== 1 ||
+      typeof sb !== 'number' || isNaN(sb) || sb < 0 ||
+      typeof ch !== 'number' || isNaN(ch) || ch < 0 || ch > maxHearts;
+
+    if (invalid){
+      await initSessionStorageIDB();
+      sessionBalance = 0;
+      currentHearts = maxHearts;
+    } else {
+      sessionBalance = Number(sb||0);
+      currentHearts = Number(ch||maxHearts);
+    }
+  }catch{
+    await initSessionStorageIDB();
+    sessionBalance = 0;
+    currentHearts = maxHearts;
+  }
 }
-sessionBalance = parseFloat(localStorage.getItem("sessionBalance") || "0");
-currentHearts = parseInt(localStorage.getItem("currentHearts") || maxHearts);
 
 let lastPlayerHitTime = 0;
 let warningActive = false;
@@ -48,14 +78,14 @@ let warningActive = false;
 // === COOL DOWN نظام الانتظار بعد نهاية الجولة ===
 const GAME_COOLDOWN_HOURS = 5;
 const GAME_COOLDOWN_MS = GAME_COOLDOWN_HOURS * 60 * 60 * 1000;
-// فايربيز فقط: لا تستعمل localStorage بعد الآن
 const COOLDOWN_KEY_FIREBASE = "nextPlayTime";
 
 // Firebase: احصل على توقيت نهاية الانتظار من حساب اللاعب
 async function getCooldownTimestampFirebase() {
   if (!userId) return 0;
   const snap = await db.ref("users/" + userId + "/" + COOLDOWN_KEY_FIREBASE).get();
-  return parseInt(snap.val() || "0");
+  const v = snap.val();
+  return typeof v === "number" ? v : parseInt(v || "0");
 }
 // Firebase: عداد الواجهة
 function showCooldownOverlay(remainingMs) {
@@ -84,7 +114,7 @@ function showCooldownOverlay(remainingMs) {
   }
   overlay.style.display = "flex";
   function updateTimer() {
-    let msLeft = window._nextPlayTime - Date.now();
+    const msLeft = (window._nextPlayTime || 0) - now();
     if (msLeft <= 0) {
       overlay.style.display = "none";
     } else {
@@ -95,6 +125,7 @@ function showCooldownOverlay(remainingMs) {
   updateTimer();
 }
 function msToHMS(ms) {
+  if (ms < 0) ms = 0;
   let totalSeconds = Math.floor(ms / 1000);
   let h = Math.floor(totalSeconds / 3600);
   let m = Math.floor((totalSeconds % 3600) / 60);
@@ -124,7 +155,8 @@ function updateHeartsUI() {
 }
 
 function setBalance(val) {
-  document.getElementById('balance-value').textContent = Number(val).toFixed(8);
+  const el = document.getElementById('balance-value');
+  if (el) el.textContent = Number(val || 0).toFixed(8);
 }
 
 const gameWidth = window.innerWidth;
@@ -136,9 +168,10 @@ let enemies = [], enemySpeed1=0, enemySpeed2=0, lastFireTime=0;
 let bulletsGroup, coinsGroup, coinAnimDuration=800, balanceValue=0, lastEnemyWaveTime=0;
 let enemy1Key='enemy1', enemy2Key='enemy2', enemyBulletGroup;
 let waveCount = 1;
-let enemy1AttackFrames = ['enemy1-attack1.png', 'enemy1-attack2.png'];
+let enemy1AttackFrames = ['enemy1-attack1', 'enemy1-attack2']; // use keys directly
 let isPlayerDying = false;
 
+// Phaser Main Scene
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
   preload() {
@@ -203,9 +236,9 @@ class MainScene extends Phaser.Scene {
       }
     });
 
-    // === تصادم: أول رصاصة تلمس اللاعب تقتله فوراً مهما كان يجري ===
+    // تصادم: أول رصاصة تلمس اللاعب تقتله فوراً
     this.events.on('update', () => {
-      if (!player.active || isPlayerDying) return;
+      if (!player?.active || isPlayerDying || !sessionActive) return;
       enemyBulletGroup.children.each(bullet => {
         if (!bullet.active) return;
         let bulletRadius = bullet.displayWidth / 2.2;
@@ -286,6 +319,11 @@ class MainScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (!sessionActive) {
+      this.physics.world.isPaused = true;
+      return;
+    }
+
     if (player && (player.displayWidth > bgWidth*0.2 || player.displayWidth < 10)) {
       player.setScale(0.11, 0.11);
     }
@@ -301,55 +339,52 @@ class MainScene extends Phaser.Scene {
     }
     player.setVelocity(vx, vy);
 
+    // Enemies behavior
     for (let enemyObj of enemies) {
       let enemy = enemyObj.sprite;
-      if (!enemy.active || enemyObj.dead) continue;
+      if (!enemy?.active || enemyObj.dead) continue;
       let dx = player.x - enemy.x, dy = player.y - enemy.y;
       let dist = Math.sqrt(dx*dx + dy*dy);
 
-      let evx = 0, evy = 0;
       if (enemyObj.type === 1) {
-        let speed = 110;
+        const speed = 110;
         enemySpeed1 = speed;
         if (!enemyObj.attacking) {
           if (dist > 35) {
-            evx = (dx/dist)*speed; evy = (dy/dist)*speed;
+            const evx = (dx/dist)*speed, evy = (dy/dist)*speed;
             enemy.setVelocity(evx, evy);
+          } else {
+            enemy.setVelocity(0,0);
           }
-          else enemy.setVelocity(0,0);
         } else {
           enemy.setVelocity(0,0);
         }
       } else if (enemyObj.type === 2) {
-        let speed = 110;
+        const speed = 110;
         enemySpeed2 = speed;
-        let shootRange = 220;
-        if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
-        if (!enemyObj.hasShot) enemyObj.hasShot = false;
+        const shootRange = 220;
+        const COOLDOWN = 3000; // ms
+
         if (dist > shootRange) {
-          evx = (dx/dist)*speed; evy = (dy/dist)*speed;
+          const evx = (dx/dist)*speed, evy = (dy/dist)*speed;
           enemy.setVelocity(evx, evy);
-          enemyObj.hasShot = false;
         } else {
           enemy.setVelocity(0,0);
-          if (!enemyObj.hasShot) {
-            enemyObj.hasShot = true;
+          if (!enemyObj.lastShotTime) enemyObj.lastShotTime = 0;
+          if ((time - enemyObj.lastShotTime) >= COOLDOWN) {
             enemyObj.lastShotTime = time;
-            fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
-          }
-          if (time - enemyObj.lastShotTime > 3000) {
-            enemyObj.lastShotTime = time;
-            fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, enemy.scene, true);
+            fireEnemyBullet(enemy.x, enemy.y, player.x, player.y, this, true);
           }
         }
       }
     }
 
+    // Auto-fire by player
     if (sessionActive && !isPlayerDying && time > lastFireTime + 500) {
       let nearest = null, minD = 999999, fireRadius=220;
       for (let enemyObj of enemies) {
         let enemy = enemyObj.sprite;
-        if (!enemy.active || enemyObj.dead) continue;
+        if (!enemy?.active || enemyObj.dead) continue;
         let dx = player.x - enemy.x, dy = player.y - enemy.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < fireRadius && dist < minD) {minD=dist; nearest=enemy;}
@@ -363,10 +398,7 @@ class MainScene extends Phaser.Scene {
 
     enemyBulletGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
-        if (
-          bullet.x < 0 || bullet.x > bgWidth ||
-          bullet.y < 0 || bullet.y > bgHeight
-        ) {
+        if (bullet.x < 0 || bullet.x > bgWidth || bullet.y < 0 || bullet.y > bgHeight) {
           bullet.disableBody(true, true);
         }
       }
@@ -374,10 +406,7 @@ class MainScene extends Phaser.Scene {
 
     bulletsGroup.children.iterate(function(bullet){
       if (bullet && bullet.active) {
-        if (
-          bullet.x < 0 || bullet.x > bgWidth ||
-          bullet.y < 0 || bullet.y > bgHeight
-        ) {
+        if (bullet.x < 0 || bullet.x > bgWidth || bullet.y < 0 || bullet.y > bgHeight) {
           bullet.disableBody(true, true);
         }
       }
@@ -391,7 +420,7 @@ function cleanAllGameObjects(scene) {
     if (scene.bulletsGroup) scene.bulletsGroup.clear(true, true);
     if (scene.enemyBulletGroup) scene.enemyBulletGroup.clear(true, true);
     if (scene.coinsGroup) scene.coinsGroup.clear(true, true);
-  } catch (e) {}
+  } catch {}
 }
 
 function resetGameCamera(scene) {
@@ -399,7 +428,7 @@ function resetGameCamera(scene) {
     scene.cameras.main.setZoom(1.35);
     scene.cameras.main.setScroll(0, 0);
     scene.cameras.main.roundPixels = true;
-  } catch (e) {}
+  } catch {}
 }
 
 function triggerPlayerHit(scene, player, bullet) {
@@ -451,9 +480,9 @@ function killEnemy(enemy, scene) {
   coin.setScale(0.07).setDepth(20);
   animateCoinToBalance(coin);
 
-  sessionBalance += COIN_VALUE;
+  sessionBalance = Number(sessionBalance || 0) + COIN_VALUE;
   setBalance(sessionBalance);
-  localStorage.setItem("sessionBalance", sessionBalance);
+  idbSet(IDBK.sessionBalance(userId), sessionBalance).catch(()=>{});
 
   let obj = enemies.find(e => e.sprite === enemy);
   if (obj) obj.dead = true;
@@ -461,8 +490,10 @@ function killEnemy(enemy, scene) {
 
 function animateCoinToBalance(coin) {
   let balanceBar = document.getElementById('balance-bar');
+  let gameCont = document.getElementById('game-container');
+  if (!balanceBar || !gameCont) return;
   let rect = balanceBar.getBoundingClientRect();
-  let gameRect = document.getElementById('game-container').getBoundingClientRect();
+  let gameRect = gameCont.getBoundingClientRect();
   let fx = (rect.left+rect.width/2-gameRect.left)*(coin.scene.cameras.main.worldView.width/gameRect.width)+coin.scene.cameras.main.worldView.x;
   let fy = (rect.top+rect.height/2-gameRect.top)*(coin.scene.cameras.main.worldView.height/gameRect.height)+coin.scene.cameras.main.worldView.y;
   coin.scene.tweens.add({
@@ -474,6 +505,7 @@ function animateCoinToBalance(coin) {
 function setupJoystick() {
   const joystickBase = document.getElementById('joystick-base');
   const joystickStick = document.getElementById('joystick-stick');
+  if (!joystickBase || !joystickStick) return;
   let baseX=0, baseY=0, stickX=0, stickY=0;
   function showJoystick(x, y) {
     baseX = x - 55; baseY = y - 55; stickX = x - 28; stickY = y - 28;
@@ -497,7 +529,7 @@ function setupJoystick() {
       joyOrigin.x = touch.clientX; joyOrigin.y = touch.clientY; joyDelta.x = 0; joyDelta.y = 0;
       showJoystick(joyOrigin.x, joyOrigin.y);
     }
-  });
+  }, { passive: true });
   window.addEventListener('touchmove', function(e) {
     if (joyActive) {
       for (let i=0;i<e.touches.length; i++) {
@@ -506,7 +538,7 @@ function setupJoystick() {
         }
       }
     }
-  });
+  }, { passive: true });
   window.addEventListener('touchend', function(e) {
     if (joyActive) {
       let stillActive = false;
@@ -519,13 +551,16 @@ function setupJoystick() {
 }
 
 function showStartBanner() {
-  document.getElementById('start-banner').classList.add('active');
+  const el = document.getElementById('start-banner');
+  if (el) el.classList.add('active');
 }
 function hideStartBanner() {
-  document.getElementById('start-banner').classList.remove('active');
+  const el = document.getElementById('start-banner');
+  if (el) el.classList.remove('active');
 }
 function showCountdown(sec, after) {
   const cd = document.getElementById('start-countdown');
+  if (!cd) { if (after) after(); return; }
   cd.textContent = sec; cd.style.display = 'block';
   let s = sec;
   let interval = setInterval(() => {
@@ -545,26 +580,24 @@ function randomEdgePosition(cityW, cityH) {
 }
 
 function addEnemyWave(scene) {
+  if (!sessionActive) return;
   let cityW = bgWidth, cityH = bgHeight;
   let n_enemy1 = 6 + (waveCount-1);
   let n_enemy2 = 4 + (waveCount-1);
 
-  let enemy1List = [];
   for(let i=0;i<n_enemy1;i++) {
     let pos = randomEdgePosition(cityW, cityH);
     let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy1Key);
     enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-    enemy.attackFrameIndex = 0;
-    enemy.attacking = false;
     enemies.push({sprite: enemy, type: 1, attacking: false, attackFrameIndex: 0, dead: false});
-    enemy1List.push(enemy);
   }
   function spawnEnemy2Wave() {
+    if (!sessionActive) return;
     for(let i=0;i<n_enemy2;i++) {
       let pos = randomEdgePosition(cityW, cityH);
       let enemy = scene.enemyGroup.create(pos.x, pos.y, enemy2Key);
       enemy.setScale(0.10).setDepth(1).body.setCollideWorldBounds(true);
-      enemies.push({sprite: enemy, type: 2, dead: false});
+      enemies.push({sprite: enemy, type: 2, dead: false, lastShotTime: 0});
     }
   }
 
@@ -572,6 +605,7 @@ function addEnemyWave(scene) {
 
   waveCount++;
   setTimeout(() => {
+    if (!sessionActive) return;
     addEnemyWave(scene);
   }, 7000);
 }
@@ -591,55 +625,79 @@ function prepareSession() {
 function getUserData() {
   return db.ref("users/" + userId).once("value").then(snap => snap.val() || {});
 }
-function updateBalance(newVal) {
-  db.ref("users/" + userId).once("value").then(snap => {
-    let user = snap.val() || {};
-    let mainBalance = parseFloat(user.balance || 0);
-    let newTotal = (mainBalance + newVal).toFixed(8);
-    db.ref("users/" + userId).update({
-      balance: newTotal,
-      minigame_balance: 0
-    });
+
+// Numeric, atomic balance update to avoid string/NaN issues
+async function updateBalance(delta) {
+  if (!userId) return;
+  const inc = Number(delta) || 0;
+  await db.ref("users/" + userId + "/balance").transaction(v => {
+    const cur = (typeof v === "number") ? v : Number(v || 0);
+    return cur + inc;
   });
+  try { await db.ref("users/" + userId + "/minigame_balance").set(0); } catch {}
 }
 
 function showGameOver() {
   setTimeout(()=>{
     sessionActive = false;
-    document.getElementById('gameover-coins-val').textContent = Number(sessionBalance).toFixed(8);
-    document.getElementById('gameover-overlay').style.display = 'flex';
+    const valEl = document.getElementById('gameover-coins-val');
+    if (valEl) valEl.textContent = Number(sessionBalance).toFixed(8);
+    const over = document.getElementById('gameover-overlay');
+    if (over) over.style.display = 'flex';
     gameoverFireworks();
   }, 500);
 }
 
-// === نقطة التعديل: عند الضغط على claim يتم إرسال العملات للرصيد الرئيسي وتفعيل التبريد والعودة للرئيسية ===
+// Claim flow guard
+let claimInProgress = false;
+
+// عند الضغط على Claim: أرسل الرصيد ثم فعّل التبريد وأغلق الجلسة وارجع للرئيسية
 document.getElementById('gameover-claim-btn').onclick = async function() {
-  // تحديث الرصيد الرئيسي
-  updateBalance(sessionBalance);
+  if (claimInProgress) return;
+  claimInProgress = true;
+  const btn = this;
+  btn.disabled = true;
+  btn.classList.add('disabled');
 
-  // إعادة تعيين الجلسة
-  sessionBalance = 0;
-  currentHearts = maxHearts;
-  localStorage.setItem("sessionBalance", "0");
-  localStorage.setItem("currentHearts", maxHearts);
-  localStorage.removeItem("sessionStarted");
-  sessionActive = true;
-  prepareSession();
-  document.getElementById('gameover-overlay').style.display = 'none';
+  // Freeze gameplay immediately
+  sessionActive = false;
+  try {
+    // Pause physics and stop scene timers to avoid any extra round
+    try {
+      const scene = game?.scene?.scenes?.[0];
+      if (scene) {
+        scene.physics.world.isPaused = true;
+        scene.time?.removeAllEvents?.();
+      }
+    } catch {}
 
-  // تفعيل وقت الانتظار (في فايربيز وليس localStorage)
-  let nextTime = Date.now() + GAME_COOLDOWN_MS;
-  if (userId) {
-    await db.ref("users/" + userId + "/nextPlayTime").set(nextTime);
+    const credit = Number(sessionBalance || 0);
+    await updateBalance(credit);
+
+    // Reset session in IndexedDB AFTER credit
+    await idbSet(IDBK.sessionBalance(userId), 0);
+    await idbSet(IDBK.hearts(userId), maxHearts);
+    await idbSet(IDBK.sessionStarted(userId), 1);
+
+    // Set cooldown using server time
+    const nextTime = now() + GAME_COOLDOWN_MS;
+    if (userId) {
+      await db.ref("users/" + userId + "/nextPlayTime").set(nextTime);
+    }
+
+    // Destroy game instance to hard stop loops then redirect
+    try { game?.destroy(true); } catch {}
+    window.location.href = "index.html";
+  } catch (e) {
+    btn.disabled = false;
+    btn.classList.remove('disabled');
+    claimInProgress = false;
   }
-  // العودة للواجهة الرئيسية
-  window.location.href = "index.html";
 };
-
-// باقي الكود كما هو...
 
 function gameoverFireworks() {
   let canvas = document.getElementById('gameover-fireworks');
+  if (!canvas) return;
   let ctx = canvas.getContext('2d');
   let w = canvas.width = 300, h = canvas.height = 75;
   let sparks = [];
@@ -694,11 +752,10 @@ function enemyAttackSword(enemyObj, scene, playerObj) {
   if (enemyObj.dead) return;
   let enemy = enemyObj.sprite;
   enemyObj.attacking = true;
-  enemy.setTexture(enemy1AttackFrames[enemyObj.attackFrameIndex % 2].replace('.png',''));
+  enemy.setTexture(enemy1AttackFrames[enemyObj.attackFrameIndex % 2]);
   enemyObj.attackFrameIndex = (enemyObj.attackFrameIndex + 1) % 2;
   setTimeout(() => {
-    if (enemy.active)
-      enemy.setTexture(enemy1Key);
+    if (enemy.active) enemy.setTexture(enemy1Key);
     enemyObj.attacking = false;
   }, 350);
   let dx = playerObj.x - enemy.x, dy = playerObj.y - enemy.y, dist = Math.sqrt(dx*dx + dy*dy);
@@ -709,11 +766,11 @@ function handlePlayerHit(cb) {
   if (currentHearts > 0 && !warningActive) {
     warningActive = true;
     currentHearts -= 1;
-    localStorage.setItem("currentHearts", currentHearts);
+    idbSet(IDBK.hearts(userId), currentHearts).catch(()=>{});
     updateHeartsUI();
 
     if (currentHearts > 0) {
-      localStorage.setItem("sessionBalance", sessionBalance);
+      idbSet(IDBK.sessionBalance(userId), sessionBalance).catch(()=>{});
       setTimeout(() => {
         if (cb) cb();
         window.location.reload();
@@ -726,13 +783,17 @@ function handlePlayerHit(cb) {
 }
 
 function showWarningOverlay(cb) {
-  document.getElementById('warning-overlay').style.display = 'flex';
+  const over = document.getElementById('warning-overlay');
+  if (!over) { showGameOver(); if (cb) cb(); return; }
+  over.style.display = 'flex';
   updateHeartsUI();
-  document.getElementById('warning-tryagain-btn').style.display = 'none';
-  document.getElementById('warning-title').innerText = '';
+  const tryBtn = document.getElementById('warning-tryagain-btn');
+  const title = document.getElementById('warning-title');
+  if (tryBtn) tryBtn.style.display = 'none';
+  if (title) title.innerText = '';
   if (currentHearts <= 0) {
     setTimeout(() => {
-      document.getElementById('warning-overlay').style.display = 'none';
+      over.style.display = 'none';
       warningActive = false;
       showGameOver();
       if (cb) cb();
@@ -772,40 +833,45 @@ function showPlayerHitExplosion(scene, playerObj) {
 
 // =============== واجهة الانتظار عند زر play (في الصفحة الرئيسية) ===============
 window.handlePlayButton = async function() {
-  // تحقق من التبريد عبر فايربيز وليس localStorage
   if (!userId) return true;
   const nextPlayTime = await getCooldownTimestampFirebase();
   window._nextPlayTime = nextPlayTime;
-  if (nextPlayTime > Date.now()) {
-    showCooldownOverlay(nextPlayTime - Date.now());
+  if (nextPlayTime > now()) {
+    showCooldownOverlay(nextPlayTime - now());
     return false;
   }
   return true;
 }
 
 // =============== عند تحميل الصفحة، اربط زر play مع التحقق من التبريد ===============
-window.onload = function() {
-  if (!userId) return;
-  getUserData().then(user => {
+window.onload = async function() {
+  if (!userId) { window.location.href = "welcome.html"; return; }
+
+  await loadSessionFromIDB();
+
+  await getUserData().then(() => {
     prepareSession();
   });
   showStartBanner();
-  document.querySelector("#start-banner .banner-btn").onclick = function() {
-    hideStartBanner();
-    setTimeout(()=>{
-      showCountdown(5, ()=>{
-        startEnemyWaves();
-      });
-    }, 440);
-  };
+  const bannerBtn = document.querySelector("#start-banner .banner-btn");
+  if (bannerBtn) {
+    bannerBtn.onclick = function() {
+      hideStartBanner();
+      setTimeout(()=>{
+        showCountdown(5, ()=>{
+          startEnemyWaves();
+        });
+      }, 440);
+    };
+  }
   updateHeartsUI();
   setBalance(sessionBalance);
-  document.getElementById('warning-overlay').style.display = 'none';
+  const warn = document.getElementById('warning-overlay');
+  if (warn) warn.style.display = 'none';
 
   let playBtn = document.getElementById("play-btn");
   if (playBtn) {
     playBtn.onclick = async function(e) {
-      // تحقق من التبريد عبر فايربيز وليس localStorage
       const allowed = await window.handlePlayButton();
       if (!allowed) e.preventDefault();
     };
