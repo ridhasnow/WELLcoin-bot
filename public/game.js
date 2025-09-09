@@ -908,7 +908,7 @@ function setupNavShortcuts() {
 
 // ========== SHOP FLOATING ICONS & CHARACTER MAIN LOGIC ==========
 function formatWLC(val) {
-  return parseFloat(val).toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 6 });
+  return parseFloat(val).toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 10 });
 }
 function formatTimeLeft(ms) {
   if (ms < 0) ms = 0;
